@@ -60,7 +60,7 @@ from reportlab.lib.pagesizes import letter, landscape
 from reportlab.platypus import Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import inch
-
+from flask_cors import CORS
 
 
 db = SQLAlchemy() 
@@ -87,125 +87,220 @@ with app.app_context():
     
 app.secret_key = "your_secret_key"
 
-
+CORS(app, supports_credentials=True)  # Allow requests from React frontend
 
 ############## Authentication and Authorizarion-START###########
 
 
 
-@app.route("/register", methods=["GET", "POST"])
+# @app.route("/register", methods=["GET", "POST"])
+# def register():
+#     if request.method == "POST":
+#         # Get form data
+#         empid = request.form["empid"]
+#         fname = request.form["fname"]
+#         lname = request.form["lname"]
+#         email = request.form["email"]
+#         password = request.form["password"]
+#         confirm_password = request.form["confirm_password"]
+#         dept_id = request.form["dept_id"]
+#         approver_id = request.form[
+#             "approver_id"
+#         ]  # You may leave this empty or use an existing empid
+
+#         # Check if passwords match
+#         if password != confirm_password:
+#             flash("Passwords do not match. Please try again.", "danger")
+#             return redirect(url_for("register"))
+
+#         # Check if the email already exists
+#         user = Employee_Info.query.filter_by(email=email).first()
+#         if user:
+#             flash("Email already registered. Please log in.", "danger")
+#             return redirect(url_for("login"))
+
+#         # Check if the empid already exists
+#         existing_emp = Employee_Info.query.filter_by(empid=empid).first()
+#         if existing_emp:
+#             flash(
+#                 "Employee ID already exists. Please choose a different one.", "danger"
+#             )
+#             return redirect(url_for("register"))
+
+#         # Validate approver_id if provided
+#         if approver_id:
+#             approver = Employee_Info.query.filter_by(empid=approver_id).first()
+#             if not approver:
+#                 flash(
+#                     f"No employee found with empid {approver_id}. Please provide a valid approver ID.",
+#                     "danger",
+#                 )
+#                 return redirect(url_for("register"))
+
+#         # Create a new user instance and hash the password
+#         new_user = Employee_Info(
+#             empid=empid,
+#             fname=fname,
+#             lname=lname,
+#             email=email,
+#             dept_id=dept_id,
+#             approver_id=approver_id
+#             if approver_id
+#             else None,  # Set approver_id if it's provided
+#         )
+#         new_user.set_password(password)  # Set the hashed password
+
+#         # Add the new user to the database
+#         db.session.add(new_user)
+#         db.session.commit()
+
+#         flash("Registration successful! You can now log in.", "success")
+#         return redirect(url_for("login"))
+    
+    
+#     departments = Department.query.all()
+#     return render_template("register.html", departments=departments)
+
+
+@app.route("/register", methods=["POST"])
 def register():
-    if request.method == "POST":
-        # Get form data
-        empid = request.form["empid"]
-        fname = request.form["fname"]
-        lname = request.form["lname"]
-        email = request.form["email"]
-        password = request.form["password"]
-        confirm_password = request.form["confirm_password"]
-        dept_id = request.form["dept_id"]
-        approver_id = request.form[
-            "approver_id"
-        ]  # You may leave this empty or use an existing empid
+    # Get JSON data from frontend
+    data = request.get_json()
 
-        # Check if passwords match
-        if password != confirm_password:
-            flash("Passwords do not match. Please try again.", "danger")
-            return redirect(url_for("register"))
+    empid = data.get("empid")
+    fname = data.get("fname")
+    lname = data.get("lname")
+    email = data.get("email")
+    password = data.get("password")
+    confirm_password = data.get("confirm_password")
+    dept_id = data.get("dept_id")
+    approver_id = data.get("approver_id")
 
-        # Check if the email already exists
-        user = Employee_Info.query.filter_by(email=email).first()
-        if user:
-            flash("Email already registered. Please log in.", "danger")
-            return redirect(url_for("login"))
+    # Check if passwords match
+    if password != confirm_password:
+        return jsonify({"error": "Passwords do not match. Please try again."}), 400
 
-        # Check if the empid already exists
-        existing_emp = Employee_Info.query.filter_by(empid=empid).first()
-        if existing_emp:
-            flash(
-                "Employee ID already exists. Please choose a different one.", "danger"
-            )
-            return redirect(url_for("register"))
+    # Check if the email already exists
+    user = Employee_Info.query.filter_by(email=email).first()
+    if user:
+        return jsonify({"error": "Email already registered. Please log in."}), 400
 
-        # Validate approver_id if provided
-        if approver_id:
-            approver = Employee_Info.query.filter_by(empid=approver_id).first()
-            if not approver:
-                flash(
-                    f"No employee found with empid {approver_id}. Please provide a valid approver ID.",
-                    "danger",
-                )
-                return redirect(url_for("register"))
+    # Check if the empid already exists
+    existing_emp = Employee_Info.query.filter_by(empid=empid).first()
+    if existing_emp:
+        return jsonify({"error": "Employee ID already exists. Please choose a different one."}), 400
 
-        # Create a new user instance and hash the password
-        new_user = Employee_Info(
-            empid=empid,
-            fname=fname,
-            lname=lname,
-            email=email,
-            dept_id=dept_id,
-            approver_id=approver_id
-            if approver_id
-            else None,  # Set approver_id if it's provided
-        )
-        new_user.set_password(password)  # Set the hashed password
+    # Validate approver_id if provided
+    if approver_id:
+        approver = Employee_Info.query.filter_by(empid=approver_id).first()
+        if not approver:
+            return jsonify({"error": f"No employee found with empid {approver_id}. Please provide a valid approver ID."}), 400
 
-        # Add the new user to the database
-        db.session.add(new_user)
-        db.session.commit()
+    # Create a new user instance and hash the password
+    new_user = Employee_Info(
+        empid=empid,
+        fname=fname,
+        lname=lname,
+        email=email,
+        dept_id=dept_id,
+        approver_id=approver_id if approver_id else None,
+    )
+    new_user.set_password(password)  # same password hashing method
 
-        flash("Registration successful! You can now log in.", "success")
-        return redirect(url_for("login"))
-    
-    
-    departments = Department.query.all()
-    return render_template("register.html", departments=departments)
+    # Add the new user to the database
+    db.session.add(new_user)
+    db.session.commit()
 
-@app.route("/", methods=["GET", "POST"])
+    return jsonify({"message": "success"}), 201
+
+
+
+
+
+# @app.route("/", methods=["GET", "POST"])
+# def login():
+#     if request.method == "POST":
+#         email = request.form["email"]
+#         password = request.form["password"]
+
+#         # Basic validation
+#         if not email or not password:
+#             flash("Please enter both email and password", "error")
+#             return redirect(url_for("login"))
+
+#         # Query user by email
+#         user = Employee_Info.query.filter_by(email=email).first()
+
+#         if user and check_password_hash(
+#             user.password, password
+#         ):  # Use check_password_hash to verify password
+#             # Store user info in the session (empid can serve as a unique identifier)
+#             session["user_id"] = user.empid
+#             session["user_fname"] = user.fname
+#             session["user_lname"] = user.lname
+#             session["user_email"] = user.email
+#             # flash("Login successful!", "success")
+
+#             # Check if the user is an approver for any employees
+#             # is_admin = (
+#             #     db.session.query(Employee_Info)
+#             #     .filter(Employee_Info.empid == 'N0482')
+#             #     .first()
+#             # )
+#             is_admin = (user.empid == 'N0482')
+#             # Convert to binary flag
+#             is_admin = 1 if is_admin else 0
+            
+#             # flash("Login successful!", "success")
+            
+#             # Redirect based on user role
+#             if is_admin:
+#                 return redirect(url_for("admin_dashboard"))
+#             else:
+#                 return redirect(url_for("dashboard"))
+#         else:
+#             flash("Invalid credentials. Please try again.", "danger")
+
+#     return render_template("login.html")
+
+
+
+@app.route("/login", methods=["POST"])
 def login():
-    if request.method == "POST":
-        email = request.form["email"]
-        password = request.form["password"]
+    data = request.get_json()  # ✅ Receive JSON from React
+    email = data.get("email")
+    password = data.get("password")
 
-        # Basic validation
-        if not email or not password:
-            flash("Please enter both email and password", "error")
-            return redirect(url_for("login"))
+    if not email or not password:
+        return jsonify({"error": "Please enter both email and password"}), 400
 
-        # Query user by email
-        user = Employee_Info.query.filter_by(email=email).first()
+    user = Employee_Info.query.filter_by(email=email).first()
 
-        if user and check_password_hash(
-            user.password, password
-        ):  # Use check_password_hash to verify password
-            # Store user info in the session (empid can serve as a unique identifier)
-            session["user_id"] = user.empid
-            session["user_fname"] = user.fname
-            session["user_lname"] = user.lname
-            session["user_email"] = user.email
-            # flash("Login successful!", "success")
+    if user and check_password_hash(user.password, password):
+        # Store in session (optional)
+        session["user_id"] = user.empid
+        session["user_fname"] = user.fname
+        session["user_lname"] = user.lname
+        session["user_email"] = user.email
 
-            # Check if the user is an approver for any employees
-            # is_admin = (
-            #     db.session.query(Employee_Info)
-            #     .filter(Employee_Info.empid == 'N0482')
-            #     .first()
-            # )
-            is_admin = (user.empid == 'N0482')
-            # Convert to binary flag
-            is_admin = 1 if is_admin else 0
-            
-            # flash("Login successful!", "success")
-            
-            # Redirect based on user role
-            if is_admin:
-                return redirect(url_for("admin_dashboard"))
-            else:
-                return redirect(url_for("dashboard"))
-        else:
-            flash("Invalid credentials. Please try again.", "danger")
+        # Check role
+        is_admin = 1 if user.empid == '1' else 0
 
-    return render_template("login.html")
+        # ✅ Return JSON response instead of redirect
+        return jsonify({
+            "message": "Login successful",
+            "user": {
+                "empid": user.empid,
+                "fname": user.fname,
+                "lname": user.lname,
+                "email": user.email,
+                "is_admin": is_admin
+            }
+        }), 200
+    else:
+        return jsonify({"error": "Invalid credentials"}), 401
+
+
 
 
 @app.route("/logout")
