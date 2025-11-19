@@ -7,7 +7,7 @@ export default function Register() {
     fname: "",
     lname: "",
     email: "",
-    dept: "",
+    dept_id: "",
     password: "",
     confirm_password: "",
     approver_id: "",
@@ -40,7 +40,7 @@ export default function Register() {
         fname: "",
         lname: "",
         email: "",
-        dept: "",
+        dept_id: "",
         password: "",
         confirm_password: "",
         approver_id: "",
@@ -52,22 +52,17 @@ export default function Register() {
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-100 px-4 py-6">
-      <div className="bg-white shadow-2xl shadow-blue-100 rounded-2xl p-8 w-full max-w-xl 
-                      border border-gray-200 transition-all duration-300 hover:shadow-[0_8px_35px_rgba(0,0,0,0.15)]">
+    <div className="flex justify-center items-center min-h-screen bg-gray-50 px-4 py-6">
+      <div className="bg-white shadow-xl rounded-2xl p-8 w-full max-w-xl border">
 
-        <h1 className="text-3xl font-bold text-center text-gray-800 mb-6">
+        <h1 className="text-3xl font-bold text-center mb-6">
           Employee Registration
         </h1>
 
         {message && (
           <div
-            className={`mb-4 px-4 py-3 rounded-lg text-center font-medium transition-all duration-200 
-            ${
-              success
-                ? "bg-green-100 text-green-700 border border-green-300 shadow-sm"
-                : "bg-red-100 text-red-700 border border-red-300 shadow-sm"
-            }`}
+            className={`mb-4 px-4 py-3 rounded-lg text-center font-medium 
+              ${success ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}
           >
             {message}
           </div>
@@ -82,26 +77,25 @@ export default function Register() {
 
           <InputBox label="Email" type="email" name="email" value={formData.email} onChange={handleChange} />
 
-          {/* Department */}
+          {/* Department ID */}
           <div>
-            <label className="block text-sm font-medium mb-1 text-gray-700">Department</label>
+            <label className="block text-sm font-medium mb-1">Department</label>
             <select
-              name="dept"
-              value={formData.dept}
+              name="dept_id"
+              value={formData.dept_id}
               onChange={handleChange}
               required
-              className="w-full border rounded-lg px-3 py-2 bg-white shadow-sm 
-                         focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full border rounded-lg px-3 py-2"
             >
               <option value="">Select Department</option>
-              <option value="Digital Automation">Digital Automation</option>
-              <option value="App Dev">App Dev</option>
-              <option value="Product">Product</option>
-              <option value="IT Support">IT Support</option>
-              <option value="HR and Admin">HR and Admin</option>
-              <option value="DevOps">DevOps</option>
-              <option value="QA">QA</option>
-              <option value="Salesforce Enterprise">Salesforce Enterprise</option>
+              <option value="1">Digital Automation</option>
+              <option value="2">App Dev</option>
+              <option value="3">Product</option>
+              <option value="4">IT Support</option>
+              <option value="5">HR and Admin</option>
+              <option value="6">DevOps</option>
+              <option value="7">QA</option>
+              <option value="8">Salesforce Enterprise</option>
             </select>
           </div>
 
@@ -119,18 +113,10 @@ export default function Register() {
 
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white font-semibold py-2 rounded-lg 
-                       hover:bg-blue-700 active:bg-blue-800 transition-all duration-200 shadow-md"
+            className="w-full bg-blue-600 text-white font-semibold py-2 rounded-lg hover:bg-blue-700"
           >
             Register
           </button>
-
-          <p className="text-center text-sm mt-4 text-gray-600">
-            Already have an account?{" "}
-            <a href="/" className="text-blue-600 font-semibold hover:underline">
-              Login here
-            </a>
-          </p>
         </form>
       </div>
     </div>
@@ -140,15 +126,14 @@ export default function Register() {
 function InputBox({ label, type = "text", name, value, onChange }) {
   return (
     <div>
-      <label className="block text-sm font-medium mb-1 text-gray-700">{label}</label>
+      <label className="block text-sm font-medium mb-1">{label}</label>
       <input
         type={type}
         name={name}
         value={value}
         required
         onChange={onChange}
-        className="w-full border rounded-lg px-3 py-2 bg-white shadow-sm 
-                   focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        className="w-full border rounded-lg px-3 py-2"
       />
     </div>
   );
