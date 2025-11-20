@@ -169,41 +169,6 @@ def register_api():
 
 @app.route("/login", methods=["POST"])
 def login():
-# <<<<<<< Updated upstream
-#     data = request.get_json()  # ✅ Receive JSON from React
-#     email = data.get("email")
-#     password = data.get("password")
-
-#     if not email or not password:
-#         return jsonify({"error": "Please enter both email and password"}), 400
-
-#     user = Employee_Info.query.filter_by(email=email).first()
-
-#     if user and check_password_hash(user.password, password):
-#         # Store in session (optional)
-#         session["user_id"] = user.empid
-#         session["user_fname"] = user.fname
-#         session["user_lname"] = user.lname
-#         session["user_email"] = user.email
-
-#         # Check role
-#         is_admin = 1 if user.empid == '1' else 0
-
-#         # ✅ Return JSON response instead of redirect
-#         return jsonify({
-#             "message": "Login successful",
-#             "user": {
-#                 "empid": user.empid,
-#                 "fname": user.fname,
-#                 "lname": user.lname,
-#                 "email": user.email,
-#                 "is_admin": is_admin
-#             }
-#         }), 200
-#     else:
-#         return jsonify({"error": "Invalid credentials"}), 401
-
-
     data = request.get_json()  # Read raw JSON
 
     email = data.get("email")
