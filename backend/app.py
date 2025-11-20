@@ -62,11 +62,14 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import inch
 from flask_cors import CORS
 
+from flasgger import Swagger
+
 
 db = SQLAlchemy() 
 
 app = Flask(__name__)
 
+swagger = Swagger(app)
 
 db_path = os.path.join(app.root_path, 'mydatabase.db') #this is for local
 # db_path = '/home/nts_sqlite_db/mydatabase.db'          #this for server
@@ -92,81 +95,9 @@ CORS(app, supports_credentials=True)  # Allow requests from React frontend
 ############## Authentication and Authorizarion-START###########
 
 
-
-# @app.route("/register", methods=["GET", "POST"])
-# def register():
-#     if request.method == "POST":
-#         # Get form data
-#         empid = request.form["empid"]
-#         fname = request.form["fname"]
-#         lname = request.form["lname"]
-#         email = request.form["email"]
-#         password = request.form["password"]
-#         confirm_password = request.form["confirm_password"]
-#         dept_id = request.form["dept_id"]
-#         approver_id = request.form[
-#             "approver_id"
-#         ]  # You may leave this empty or use an existing empid
-
-#         # Check if passwords match
-#         if password != confirm_password:
-#             flash("Passwords do not match. Please try again.", "danger")
-#             return redirect(url_for("register"))
-
-#         # Check if the email already exists
-#         user = Employee_Info.query.filter_by(email=email).first()
-#         if user:
-#             flash("Email already registered. Please log in.", "danger")
-#             return redirect(url_for("login"))
-
-#         # Check if the empid already exists
-#         existing_emp = Employee_Info.query.filter_by(empid=empid).first()
-#         if existing_emp:
-#             flash(
-#                 "Employee ID already exists. Please choose a different one.", "danger"
-#             )
-#             return redirect(url_for("register"))
-
-#         # Validate approver_id if provided
-#         if approver_id:
-#             approver = Employee_Info.query.filter_by(empid=approver_id).first()
-#             if not approver:
-#                 flash(
-#                     f"No employee found with empid {approver_id}. Please provide a valid approver ID.",
-#                     "danger",
-#                 )
-#                 return redirect(url_for("register"))
-
-#         # Create a new user instance and hash the password
-#         new_user = Employee_Info(
-#             empid=empid,
-#             fname=fname,
-#             lname=lname,
-#             email=email,
-#             dept_id=dept_id,
-#             approver_id=approver_id
-#             if approver_id
-#             else None,  # Set approver_id if it's provided
-#         )
-#         new_user.set_password(password)  # Set the hashed password
-
-#         # Add the new user to the database
-#         db.session.add(new_user)
-#         db.session.commit()
-
-#         flash("Registration successful! You can now log in.", "success")
-#         return redirect(url_for("login"))
-    
-    
-#     departments = Department.query.all()
-#     return render_template("register.html", departments=departments)
-
-
-@app.route("/register", methods=["POST"])
-def register():
-    # Get JSON data from frontend
+@app.route("/api/register", methods=["POST"])
+def register_api():
     data = request.get_json()
-
     empid = data.get("empid")
     fname = data.get("fname")
     lname = data.get("lname")
@@ -176,120 +107,128 @@ def register():
     dept_id = data.get("dept_id")
     approver_id = data.get("approver_id")
 
-    # Check if passwords match
+    # Validate required fields
+    required = ["empid", "fname", "lname", "email", "password", "confirm_password", "dept_id"]
+    for field in required:
+        if not data.get(field):
+            return jsonify({"error": f"{field} is required"}), 400
+
+    # Check password match
     if password != confirm_password:
-        return jsonify({"error": "Passwords do not match. Please try again."}), 400
+        return jsonify({"error": "Passwords do not match"}), 400
 
-    # Check if the email already exists
-    user = Employee_Info.query.filter_by(email=email).first()
-    if user:
-        return jsonify({"error": "Email already registered. Please log in."}), 400
+    # Check email exists
+    if Employee_Info.query.filter_by(email=email).first():
+        return jsonify({"error": "Email already registered"}), 409
 
-    # Check if the empid already exists
-    existing_emp = Employee_Info.query.filter_by(empid=empid).first()
-    if existing_emp:
-        return jsonify({"error": "Employee ID already exists. Please choose a different one."}), 400
+    # Check empid exists
+    if Employee_Info.query.filter_by(empid=empid).first():
+        return jsonify({"error": "Employee ID already exists"}), 409
+# >>>>>>> Stashed changes
 
     # Validate approver_id if provided
     if approver_id:
         approver = Employee_Info.query.filter_by(empid=approver_id).first()
         if not approver:
-            return jsonify({"error": f"No employee found with empid {approver_id}. Please provide a valid approver ID."}), 400
+# <<<<<<< Updated upstream
+#             return jsonify({"error": f"No employee found with empid {approver_id}. Please provide a valid approver ID."}), 400
 
-    # Create a new user instance and hash the password
+#     # Create a new user instance and hash the password
+# =======
+            return jsonify({"error": f"No employee found with empid {approver_id}"}), 400
+
+    # Create user
+# >>>>>>> Stashed changes
     new_user = Employee_Info(
         empid=empid,
         fname=fname,
         lname=lname,
         email=email,
         dept_id=dept_id,
-        approver_id=approver_id if approver_id else None,
+        approver_id=approver_id if approver_id else None
     )
-    new_user.set_password(password)  # same password hashing method
+    new_user.set_password(password)
 
-    # Add the new user to the database
     db.session.add(new_user)
     db.session.commit()
 
-    return jsonify({"message": "success"}), 201
+    return jsonify({
+        "message": "Registration successful",
+        "user": {
+            "empid": empid,
+            "fname": fname,
+            "lname": lname,
+            "email": email,
+            "dept_id": dept_id
+            # "approver_id": approver_id
+        }
+    }), 201
 
-
-
-
-
-# @app.route("/", methods=["GET", "POST"])
-# def login():
-#     if request.method == "POST":
-#         email = request.form["email"]
-#         password = request.form["password"]
-
-#         # Basic validation
-#         if not email or not password:
-#             flash("Please enter both email and password", "error")
-#             return redirect(url_for("login"))
-
-#         # Query user by email
-#         user = Employee_Info.query.filter_by(email=email).first()
-
-#         if user and check_password_hash(
-#             user.password, password
-#         ):  # Use check_password_hash to verify password
-#             # Store user info in the session (empid can serve as a unique identifier)
-#             session["user_id"] = user.empid
-#             session["user_fname"] = user.fname
-#             session["user_lname"] = user.lname
-#             session["user_email"] = user.email
-#             # flash("Login successful!", "success")
-
-#             # Check if the user is an approver for any employees
-#             # is_admin = (
-#             #     db.session.query(Employee_Info)
-#             #     .filter(Employee_Info.empid == 'N0482')
-#             #     .first()
-#             # )
-#             is_admin = (user.empid == 'N0482')
-#             # Convert to binary flag
-#             is_admin = 1 if is_admin else 0
-            
-#             # flash("Login successful!", "success")
-            
-#             # Redirect based on user role
-#             if is_admin:
-#                 return redirect(url_for("admin_dashboard"))
-#             else:
-#                 return redirect(url_for("dashboard"))
-#         else:
-#             flash("Invalid credentials. Please try again.", "danger")
-
-#     return render_template("login.html")
 
 
 
 @app.route("/login", methods=["POST"])
 def login():
-    data = request.get_json()  # ✅ Receive JSON from React
+# <<<<<<< Updated upstream
+#     data = request.get_json()  # ✅ Receive JSON from React
+#     email = data.get("email")
+#     password = data.get("password")
+
+#     if not email or not password:
+#         return jsonify({"error": "Please enter both email and password"}), 400
+
+#     user = Employee_Info.query.filter_by(email=email).first()
+
+#     if user and check_password_hash(user.password, password):
+#         # Store in session (optional)
+#         session["user_id"] = user.empid
+#         session["user_fname"] = user.fname
+#         session["user_lname"] = user.lname
+#         session["user_email"] = user.email
+
+#         # Check role
+#         is_admin = 1 if user.empid == '1' else 0
+
+#         # ✅ Return JSON response instead of redirect
+#         return jsonify({
+#             "message": "Login successful",
+#             "user": {
+#                 "empid": user.empid,
+#                 "fname": user.fname,
+#                 "lname": user.lname,
+#                 "email": user.email,
+#                 "is_admin": is_admin
+#             }
+#         }), 200
+#     else:
+#         return jsonify({"error": "Invalid credentials"}), 401
+
+
+    data = request.get_json()  # Read raw JSON
+
     email = data.get("email")
     password = data.get("password")
 
+    # Basic validation
     if not email or not password:
-        return jsonify({"error": "Please enter both email and password"}), 400
+        return jsonify({
+            "status": "error",
+            "message": "Email and password are required"
+        }), 400
 
+    # Query user by email
     user = Employee_Info.query.filter_by(email=email).first()
 
     if user and check_password_hash(user.password, password):
-        # Store in session (optional)
-        session["user_id"] = user.empid
-        session["user_fname"] = user.fname
-        session["user_lname"] = user.lname
-        session["user_email"] = user.email
 
-        # Check role
-        is_admin = 1 if user.empid == '1' else 0
+        # Check admin role
+        is_admin = (user.empid == 'N0482')
 
-        # ✅ Return JSON response instead of redirect
+        # Prepare success response
         return jsonify({
+            "status": "success",
             "message": "Login successful",
-            "user": {
+            "data": {
                 "empid": user.empid,
                 "fname": user.fname,
                 "lname": user.lname,
@@ -297,8 +236,12 @@ def login():
                 "is_admin": is_admin
             }
         }), 200
-    else:
-        return jsonify({"error": "Invalid credentials"}), 401
+
+    # Invalid credentials
+    return jsonify({
+        "status": "error",
+        "message": "Invalid email or password"
+    }), 401
 
 
 
@@ -309,41 +252,55 @@ def logout():
     flash("You have been logged out.", "info")
     return redirect(url_for("login"))  # Redirect to login instead of 'home'
 
-@app.route("/forgot_password", methods=["GET", "POST"])
+
+
+
+@app.route("/forgot_password", methods=["POST"])
 def forgot_password():
-    if request.method == "POST":
-        empid = request.form["empid"]
-        email = request.form["email"]
-        new_password = request.form["new_password"]
-        confirm_password = request.form["confirm_password"]
- 
-        # Validate input
-        if not empid or not email or not new_password or not confirm_password:
-            flash("All fields are required.", "danger")
-            return redirect(url_for("forgot_password"))
- 
-        if new_password != confirm_password:
-            flash("Passwords do not match.", "danger")
-            return redirect(url_for("forgot_password"))
- 
-        # Check if Employee ID and Email match an existing user
-        user = Employee_Info.query.filter_by(empid=empid, email=email).first()
- 
-        if user:
-            # Update password
-            hashed_password = generate_password_hash(new_password)
-            user.password = hashed_password
-            db.session.commit()
- 
-            flash("Password reset successful! You can now log in.", "success")
-            return redirect(url_for("login"))
-        else:
-            flash("Invalid Employee ID or Email.", "danger")
- 
-    return render_template("forgot_password.html")
+
+    data = request.get_json()  # Accept JSON body
+
+    empid = data.get("empid")
+    email = data.get("email")
+    new_password = data.get("new_password")
+    confirm_password = data.get("confirm_password")
+
+    # Validate input
+    if not empid or not email or not new_password or not confirm_password:
+        return jsonify({
+            "status": "error",
+            "message": "All fields are required."
+        }), 400
+
+    if new_password != confirm_password:
+        return jsonify({
+            "status": "error",
+            "message": "Passwords do not match."
+        }), 400
+
+    # Check if Employee exists
+    user = Employee_Info.query.filter_by(empid=empid, email=email).first()
+
+    if user:
+        # Update password
+        hashed_password = generate_password_hash(new_password)
+        user.password = hashed_password
+        db.session.commit()
+
+        return jsonify({
+            "status": "success",
+            "message": "Password reset successful."
+        }), 200
+
+    else:
+        return jsonify({
+            "status": "error",
+            "message": "Invalid Employee ID or Email."
+        }), 404
+    
 
 
-#Tushar's code
+#Tushar's code - not used now
 # @app.route("/dashboard", methods=["GET", "POST"])
 # def dashboard():
     if request.method == "POST":
@@ -622,66 +579,90 @@ def forgot_password():
                               employees=[])
 
 
+# Hardcoded admin login for testing purpose
+@app.route('/login-admin-test')
+def login_admin_test():
+    session['user_id'] = 'N0482'
+    return {"message": "Admin session created"}
+
+
+
+from flask import jsonify
+# Show client allocations, department allocations, billable vs non-billable counts
 @app.route('/admin')
 def admin_dashboard():
     if 'user_id' not in session:
-        return redirect(url_for('login'))
+        return jsonify({"error": "Unauthorized", "message": "User not logged in"}), 401
    
     if session['user_id'] != 'N0482':
-        flash('You do not have permission to access the admin dashboard', 'error')
-        return redirect(url_for('login'))
-   
+        return jsonify({"error": "Forbidden", "message": "You do not have permission to access the admin dashboard"}), 403
+
     try:
-        # Get counts for the dashboard
+        # Counts
         total_employees = Employee_Info.query.count()
         total_clients = Client_Info.query.count()
         total_projects = Project_Info.query.count()
-       
-        # Get client allocations (client name vs. number of employees allocated)
+
+        # Client allocations
         client_allocations = db.session.query(
             Client_Info.client_name,
             func.count(Client_Employee.empid).label('employee_count')
         ).join(
             Client_Employee, Client_Info.clientID == Client_Employee.clientID
         ).group_by(Client_Info.client_name).all()
- 
-        client_names = [client.client_name for client in client_allocations]
-        employee_counts = [client.employee_count for client in client_allocations]
- 
-        # Get department-wise employee count
+
+        client_data = [
+            {"client_name": c.client_name, "employee_count": c.employee_count}
+            for c in client_allocations
+        ]
+
+        # Department allocations
         department_allocations = db.session.query(
             Department.dept_name,
             func.count(Employee_Info.empid).label('employee_count')
         ).join(Employee_Info, Employee_Info.dept_id == Department.id)\
         .group_by(Department.dept_name).all()
 
-        department_names = [row.dept_name for row in department_allocations]
-        department_counts = [row.employee_count for row in department_allocations]
+        department_data = [
+            {"department_name": d.dept_name, "employee_count": d.employee_count}
+            for d in department_allocations
+        ]
 
- 
-        # Get Billable & Non-Billable Project Count
-        billable_count = db.session.query(func.count()).filter(Project_Info.project_billability == 'Billable').scalar()
-        non_billable_count = db.session.query(func.count()).filter(Project_Info.project_billability == 'Non-Billable').scalar()
- 
-        return render_template('admin_dashboard.html',
-                               session=session,
-                               total_employees=total_employees,
-                               total_clients=total_clients,
-                               total_projects=total_projects,
-                               client_names=client_names,
-                               employee_counts=employee_counts,
-                               department_names=department_names,
-                               department_counts=department_counts,
-                               billable_count=billable_count,
-                               non_billable_count=non_billable_count)
+        # Billable vs Non-Billable
+        billable_count = db.session.query(func.count()).filter(
+            Project_Info.project_billability == 'Billable'
+        ).scalar()
+
+        non_billable_count = db.session.query(func.count()).filter(
+            Project_Info.project_billability == 'Non-Billable'
+        ).scalar()
+
+        # --- RETURN JSON FOR REACT ---
+        return jsonify({
+            "status": "success",
+            "data": {
+                "total_employees": total_employees,
+                "total_clients": total_clients,
+                "total_projects": total_projects,
+
+                "client_allocations": client_data,
+                "department_allocations": department_data,
+
+                "billable_count": billable_count,
+                "non_billable_count": non_billable_count
+            }
+        }), 200
+
     except Exception as e:
-        print(f"Error in admin dashboard: {str(e)}")
-        return render_template('admin_dashboard.html',
-                               session=session,
-                               total_employees=total_employees,
-                               total_clients=total_clients,
-                               total_projects=total_projects)
-      
+        print("Error:", str(e))
+        return jsonify({
+            "status": "error",
+            "message": "Failed to load dashboard data",
+            "error": str(e)
+        }), 500
+
+
+# show client allocations export to csv
 @app.route('/admin/export_client_allocations')
 def export_client_allocations():
     if 'user_id' not in session:
@@ -728,251 +709,366 @@ def export_client_allocations():
         flash('Error exporting client allocations', 'error')
         return redirect(url_for('admin_dashboard'))
 
-@app.route('/admin/add_employee', methods=['GET', 'POST'])
-def add_employee():
-    if 'user_id' not in session:
-        flash('Please login to continue', 'error')
-        return redirect(url_for('login'))
-
-    clients = Client_Info.query.all()
-    departments = Department.query.all()# Fetch departments for dropdown
-    selected_leave_names = ["Sick leave", "Paid Time Off", "Restricted Holiday"]
-    leave_types = LeaveType.query.filter(LeaveType.leave_type.in_(selected_leave_names)).all()
-    print("Leave Types:", [lt.leave_type for lt in leave_types])
 
 
-    if request.method == 'POST':
-        try:
-            dept_id = request.form.get('dept_id')
+# @app.route('/admin/add_employee', methods=['GET', 'POST'])
+# def add_employee():
+#     if 'user_id' not in session:
+#         flash('Please login to continue', 'error')
+#         return redirect(url_for('login'))
 
-            # Add New Department
-            if dept_id == 'custom':
-                custom_dept = request.form.get('custom_dept', '').strip()
-                if not custom_dept:
-                    flash('New department name is required', 'error')
-                    return render_template('add_employee.html',
-                                        clients=clients,
-                                        departments=departments,
-                                        leave_types=leave_types,
-                                        today=datetime.now().strftime('%Y-%m-%d'))
+#     clients = Client_Info.query.all()
+#     departments = Department.query.all()# Fetch departments for dropdown
+#     selected_leave_names = ["Sick leave", "Paid Time Off", "Restricted Holiday"]
+#     leave_types = LeaveType.query.filter(LeaveType.leave_type.in_(selected_leave_names)).all()
+#     print("Leave Types:", [lt.leave_type for lt in leave_types])
 
-                existing_dept = Department.query.filter_by(dept_name=custom_dept).first()
-                if existing_dept:
-                    dept_id = existing_dept.id
-                else:
-                    new_dept = Department(dept_name=custom_dept)
-                    db.session.add(new_dept)
-                    db.session.flush()
-                    dept_id = new_dept.id
 
-            # Edit Existing Department
-            elif dept_id == 'edit':
-                edit_dept_id = request.form.get('edit_dept_id')
-                new_dept_name = request.form.get('new_dept_name', '').strip()
+#     if request.method == 'POST':
+#         try:
+#             dept_id = request.form.get('dept_id')
 
-                if not edit_dept_id or not new_dept_name:
-                    flash('Please select a department and provide a new name to edit', 'error')
-                    return render_template('add_employee.html',
-                                        clients=clients,
-                                        departments=departments,
-                                        leave_types=leave_types,
-                                        today=datetime.now().strftime('%Y-%m-%d'))
+#             # Add New Department
+#             if dept_id == 'custom':
+#                 custom_dept = request.form.get('custom_dept', '').strip()
+#                 if not custom_dept:
+#                     flash('New department name is required', 'error')
+#                     return render_template('add_employee.html',
+#                                         clients=clients,
+#                                         departments=departments,
+#                                         leave_types=leave_types,
+#                                         today=datetime.now().strftime('%Y-%m-%d'))
 
-                existing = Department.query.filter_by(dept_name=new_dept_name).first()
-                if existing:
-                    flash('A department with the new name already exists', 'error')
-                    return render_template('add_employee.html',
-                                        clients=clients,
-                                        departments=departments,
-                                        leave_types=leave_types,
-                                        today=datetime.now().strftime('%Y-%m-%d'))
+#                 existing_dept = Department.query.filter_by(dept_name=custom_dept).first()
+#                 if existing_dept:
+#                     dept_id = existing_dept.id
+#                 else:
+#                     new_dept = Department(dept_name=custom_dept)
+#                     db.session.add(new_dept)
+#                     db.session.flush()
+#                     dept_id = new_dept.id
 
-                dept_to_edit = Department.query.get(edit_dept_id)
-                if dept_to_edit:
-                    dept_to_edit.dept_name = new_dept_name
-                    db.session.flush()
+#             # Edit Existing Department
+#             elif dept_id == 'edit':
+#                 edit_dept_id = request.form.get('edit_dept_id')
+#                 new_dept_name = request.form.get('new_dept_name', '').strip()
 
-                dept_id = edit_dept_id
+#                 if not edit_dept_id or not new_dept_name:
+#                     flash('Please select a department and provide a new name to edit', 'error')
+#                     return render_template('add_employee.html',
+#                                         clients=clients,
+#                                         departments=departments,
+#                                         leave_types=leave_types,
+#                                         today=datetime.now().strftime('%Y-%m-%d'))
 
-            required_fields = ['empid', 'fname', 'lname', 'email', 'designation',
-                               'mobile', 'gender', 'employee_type', 'location',
-                               'company', 'doj', 'approver_id', 'password']
+#                 existing = Department.query.filter_by(dept_name=new_dept_name).first()
+#                 if existing:
+#                     flash('A department with the new name already exists', 'error')
+#                     return render_template('add_employee.html',
+#                                         clients=clients,
+#                                         departments=departments,
+#                                         leave_types=leave_types,
+#                                         today=datetime.now().strftime('%Y-%m-%d'))
 
-            has_error = False
-            for field in required_fields:
-                if not request.form.get(field):
-                    flash(f'{field.replace("_", " ").title()} is required', 'error')
-                    has_error = True
+#                 dept_to_edit = Department.query.get(edit_dept_id)
+#                 if dept_to_edit:
+#                     dept_to_edit.dept_name = new_dept_name
+#                     db.session.flush()
 
-            email = request.form.get('email', '')
-            if email and not re.match(r"[^@]+@[^@]+\.[^@]+", email):
-                flash('Invalid email format', 'error')
-                has_error = True
+#                 dept_id = edit_dept_id
 
-            mobile = request.form.get('mobile', '')
-            if mobile and not re.match(r"^\d{10}$", mobile):
-                flash('Mobile number must be 10 digits', 'error')
-                has_error = True
+#             required_fields = ['empid', 'fname', 'lname', 'email', 'designation',
+#                                'mobile', 'gender', 'employee_type', 'location',
+#                                'company', 'doj', 'approver_id', 'password']
 
-            empid = request.form.get('empid', '')
-            if empid:
-                existing_employee = Employee_Info.query.filter_by(empid=empid).first()
-                if existing_employee:
-                    flash('Employee ID already exists', 'error')
-                    has_error = True
+#             has_error = False
+#             for field in required_fields:
+#                 if not request.form.get(field):
+#                     flash(f'{field.replace("_", " ").title()} is required', 'error')
+#                     has_error = True
 
-            if email:
-                existing_email = Employee_Info.query.filter_by(email=email).first()
-                if existing_email:
-                    flash('Email already registered', 'error')
-                    has_error = True
+#             email = request.form.get('email', '')
+#             if email and not re.match(r"[^@]+@[^@]+\.[^@]+", email):
+#                 flash('Invalid email format', 'error')
+#                 has_error = True
 
-            doj, lwd = None, None
-            if request.form.get('doj'):
-                try:
-                    doj = datetime.strptime(request.form['doj'], '%Y-%m-%d').date()
-                except ValueError:
-                    flash('Invalid date format for Date of Joining', 'error')
-                    has_error = True
+#             mobile = request.form.get('mobile', '')
+#             if mobile and not re.match(r"^\d{10}$", mobile):
+#                 flash('Mobile number must be 10 digits', 'error')
+#                 has_error = True
 
-            if request.form.get('lwd'):
-                try:
-                    lwd = datetime.strptime(request.form['lwd'], '%Y-%m-%d').date()
-                    if doj and lwd <= doj:
-                        flash('Last working day must be after date of joining', 'error')
-                        has_error = True
-                except ValueError:
-                    flash('Invalid date format for Last Working Day', 'error')
-                    has_error = True
+#             empid = request.form.get('empid', '')
+#             if empid:
+#                 existing_employee = Employee_Info.query.filter_by(empid=empid).first()
+#                 if existing_employee:
+#                     flash('Employee ID already exists', 'error')
+#                     has_error = True
 
-            selected_clients = request.form.getlist('clients')
-            for client_id in selected_clients:
-                start_date = request.form.get(f'start_date_{client_id}')
-                end_date = request.form.get(f'end_date_{client_id}')
+#             if email:
+#                 existing_email = Employee_Info.query.filter_by(email=email).first()
+#                 if existing_email:
+#                     flash('Email already registered', 'error')
+#                     has_error = True
 
-                if not start_date:
-                    flash('Start date is required for selected clients', 'error')
-                    has_error = True
-                    continue
+#             doj, lwd = None, None
+#             if request.form.get('doj'):
+#                 try:
+#                     doj = datetime.strptime(request.form['doj'], '%Y-%m-%d').date()
+#                 except ValueError:
+#                     flash('Invalid date format for Date of Joining', 'error')
+#                     has_error = True
 
-                try:
-                    start_date_obj = datetime.strptime(start_date, '%Y-%m-%d').date()
-                    if doj and start_date_obj < doj:
-                        flash('Client start date cannot be before date of joining', 'error')
-                        has_error = True
-                except ValueError:
-                    flash(f'Invalid start date format for client {client_id}', 'error')
-                    has_error = True
+#             if request.form.get('lwd'):
+#                 try:
+#                     lwd = datetime.strptime(request.form['lwd'], '%Y-%m-%d').date()
+#                     if doj and lwd <= doj:
+#                         flash('Last working day must be after date of joining', 'error')
+#                         has_error = True
+#                 except ValueError:
+#                     flash('Invalid date format for Last Working Day', 'error')
+#                     has_error = True
 
-                if end_date:
-                    try:
-                        end_date_obj = datetime.strptime(end_date, '%Y-%m-%d').date()
-                        if end_date_obj <= start_date_obj:
-                            flash('Client end date must be after start date', 'error')
-                            has_error = True
-                    except ValueError:
-                        flash(f'Invalid end date format for client {client_id}', 'error')
-                        has_error = True
+#             selected_clients = request.form.getlist('clients')
+#             for client_id in selected_clients:
+#                 start_date = request.form.get(f'start_date_{client_id}')
+#                 end_date = request.form.get(f'end_date_{client_id}')
 
-            if has_error:
-                return render_template('add_employee.html',
-                                       clients=clients,
-                                       departments=departments,
-                                       leave_types=leave_types,
-                                       today=datetime.now().strftime('%Y-%m-%d'))
+#                 if not start_date:
+#                     flash('Start date is required for selected clients', 'error')
+#                     has_error = True
+#                     continue
 
-            new_employee = Employee_Info(
-                empid=request.form['empid'].upper(),
-                fname=request.form['fname'].strip(),
-                lname=request.form['lname'].strip(),
-                email=email.lower(),
-                dept_id=dept_id,  # Now using dept_id FK
-                designation=request.form['designation'].strip(),
-                mobile=mobile,
-                gender=request.form['gender'],
-                employee_type=request.form['employee_type'],
-                location=request.form['location'],
-                company=request.form['company'],
-                work_location=request.form.get('work_location', '').strip(),
-                payroll=request.form['company'],
-                country=request.form['company'],
-                city=request.form.get('city', '').strip(),
-                core_skill=request.form.get('core_skill', '').strip(),
-                skill_details=request.form.get('skill_details', '').strip(),
-                doj=doj,
-                lwd=lwd,
-                approver_id=request.form['approver_id'].upper(),
-                password=generate_password_hash(request.form['password']),
-                prev_total_exp=float(request.form.get('prev_total_exp')) if request.form.get('prev_total_exp') else None
-            )
+#                 try:
+#                     start_date_obj = datetime.strptime(start_date, '%Y-%m-%d').date()
+#                     if doj and start_date_obj < doj:
+#                         flash('Client start date cannot be before date of joining', 'error')
+#                         has_error = True
+#                 except ValueError:
+#                     flash(f'Invalid start date format for client {client_id}', 'error')
+#                     has_error = True
 
-            db.session.add(new_employee)
-            db.session.flush()
+#                 if end_date:
+#                     try:
+#                         end_date_obj = datetime.strptime(end_date, '%Y-%m-%d').date()
+#                         if end_date_obj <= start_date_obj:
+#                             flash('Client end date must be after start date', 'error')
+#                             has_error = True
+#                     except ValueError:
+#                         flash(f'Invalid end date format for client {client_id}', 'error')
+#                         has_error = True
+
+#             if has_error:
+#                 return render_template('add_employee.html',
+#                                        clients=clients,
+#                                        departments=departments,
+#                                        leave_types=leave_types,
+#                                        today=datetime.now().strftime('%Y-%m-%d'))
+
+#             new_employee = Employee_Info(
+#                 empid=request.form['empid'].upper(),
+#                 fname=request.form['fname'].strip(),
+#                 lname=request.form['lname'].strip(),
+#                 email=email.lower(),
+#                 dept_id=dept_id,  # Now using dept_id FK
+#                 designation=request.form['designation'].strip(),
+#                 mobile=mobile,
+#                 gender=request.form['gender'],
+#                 employee_type=request.form['employee_type'],
+#                 location=request.form['location'],
+#                 company=request.form['company'],
+#                 work_location=request.form.get('work_location', '').strip(),
+#                 payroll=request.form['company'],
+#                 country=request.form['company'],
+#                 city=request.form.get('city', '').strip(),
+#                 core_skill=request.form.get('core_skill', '').strip(),
+#                 skill_details=request.form.get('skill_details', '').strip(),
+#                 doj=doj,
+#                 lwd=lwd,
+#                 approver_id=request.form['approver_id'].upper(),
+#                 password=generate_password_hash(request.form['password']),
+#                 prev_total_exp=float(request.form.get('prev_total_exp')) if request.form.get('prev_total_exp') else None
+#             )
+
+#             db.session.add(new_employee)
+#             db.session.flush()
             
-            try:
-                leave_balances = {
-                    int(key.split("[")[1].rstrip("]")): float(value) if value else 0.0
-                    for key, value in request.form.items()
-                    if key.startswith("leave_balances[")
-                }
+#             try:
+#                 leave_balances = {
+#                     int(key.split("[")[1].rstrip("]")): float(value) if value else 0.0
+#                     for key, value in request.form.items()
+#                     if key.startswith("leave_balances[")
+#                 }
 
-                for leave_id, balance in leave_balances.items():
-                    leave_entry = Leave_Balance(
-                        empid=new_employee.empid,
-                        leave_id=leave_id,
-                        balance=balance
-                    )
-                    db.session.add(leave_entry)
+#                 for leave_id, balance in leave_balances.items():
+#                     leave_entry = Leave_Balance(
+#                         empid=new_employee.empid,
+#                         leave_id=leave_id,
+#                         balance=balance
+#                     )
+#                     db.session.add(leave_entry)
 
-                db.session.commit()
+#                 db.session.commit()
 
-            except Exception as e:
-                db.session.rollback()
-                flash(f'Error saving leave balances: {str(e)}', 'error')
-                return render_template(
-                    'add_employee.html',
-                    clients=clients,
-                    departments=departments,
-                    leave_types=leave_types,
-                    today=datetime.now().strftime('%Y-%m-%d')
-                )
+#             except Exception as e:
+#                 db.session.rollback()
+#                 flash(f'Error saving leave balances: {str(e)}', 'error')
+#                 return render_template(
+#                     'add_employee.html',
+#                     clients=clients,
+#                     departments=departments,
+#                     leave_types=leave_types,
+#                     today=datetime.now().strftime('%Y-%m-%d')
+#                 )
 
-            for client_id in selected_clients:
-                start_date = request.form.get(f'start_date_{client_id}')
-                end_date = request.form.get(f'end_date_{client_id}')
+#             for client_id in selected_clients:
+#                 start_date = request.form.get(f'start_date_{client_id}')
+#                 end_date = request.form.get(f'end_date_{client_id}')
 
-                start_date_obj = datetime.strptime(start_date, '%Y-%m-%d').date()
-                end_date_obj = datetime.strptime(end_date, '%Y-%m-%d').date() if end_date else None
+#                 start_date_obj = datetime.strptime(start_date, '%Y-%m-%d').date()
+#                 end_date_obj = datetime.strptime(end_date, '%Y-%m-%d').date() if end_date else None
 
-                client_employee_entry = Client_Employee(
-                    empid=new_employee.empid,
-                    clientID=client_id,
-                    start_date=start_date_obj,
-                    end_date=end_date_obj
-                )
-                db.session.add(client_employee_entry)
+#                 client_employee_entry = Client_Employee(
+#                     empid=new_employee.empid,
+#                     clientID=client_id,
+#                     start_date=start_date_obj,
+#                     end_date=end_date_obj
+#                 )
+#                 db.session.add(client_employee_entry)
 
-            db.session.commit()
-            flash('Employee added successfully!', 'success')
-            return redirect(url_for('admin_dashboard'))
+#             db.session.commit()
+#             flash('Employee added successfully!', 'success')
+#             return redirect(url_for('admin_dashboard'))
 
-        except IntegrityError:
-            db.session.rollback()
-            flash('Database error: Duplicate entry or invalid data', 'error')
-        except ValueError as e:
-            db.session.rollback()
-            flash(f'Invalid data format: {str(e)}', 'error')
-        except Exception as e:
-            db.session.rollback()
-            flash(f'Unexpected error: {str(e)}', 'error')
+#         except IntegrityError:
+#             db.session.rollback()
+#             flash('Database error: Duplicate entry or invalid data', 'error')
+#         except ValueError as e:
+#             db.session.rollback()
+#             flash(f'Invalid data format: {str(e)}', 'error')
+#         except Exception as e:
+#             db.session.rollback()
+#             flash(f'Unexpected error: {str(e)}', 'error')
 
-    return render_template('add_employee.html', 
-                           clients=clients,
-                           departments=departments,
-                           leave_types=leave_types,
-                           today=datetime.now().strftime('%Y-%m-%d'))
+#     return render_template('add_employee.html', 
+#                            clients=clients,
+#                            departments=departments,
+#                            leave_types=leave_types,
+#                            today=datetime.now().strftime('%Y-%m-%d'))
+
+
+
+# sending data in json format instaed of form data
+@app.route('/admin/add_employee', methods=['POST'])
+def add_employee_api():
+    if 'user_id' not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.get_json()
+
+    # Required fields
+    required_fields = [
+        'empid', 'fname', 'lname', 'email', 'designation',
+        'mobile', 'gender', 'employee_type', 'location',
+        'company', 'doj', 'approver_id', 'password', 'dept_id'
+    ]
+
+    errors = {}
+    for field in required_fields:
+        if field not in data or data[field] == "":
+            errors[field] = f"{field} is required"
+
+    if errors:
+        return jsonify({"error": "Validation error", "details": errors}), 400
+
+    # Email validation
+    if not re.match(r"[^@]+@[^@]+\.[^@]+", data["email"]):
+        return jsonify({"error": "Invalid email format"}), 400
+
+    # Mobile validation
+    if not re.match(r"^\d{10}$", data["mobile"]):
+        return jsonify({"error": "Mobile number must be 10 digits"}), 400
+
+    # Check duplicate empID
+    if Employee_Info.query.filter_by(empid=data["empid"]).first():
+        return jsonify({"error": "Employee ID already exists"}), 400
+
+    # Check duplicate email
+    if Employee_Info.query.filter_by(email=data["email"]).first():
+        return jsonify({"error": "Email already exists"}), 400
+
+    # Convert dates
+    try:
+        doj = datetime.strptime(data["doj"], "%Y-%m-%d").date()
+        lwd = datetime.strptime(data["lwd"], "%Y-%m-%d").date() if data.get("lwd") else None
+    except:
+        return jsonify({"error": "Invalid date format"}), 400
+
+    # CREATE EMPLOYEE
+    new_employee = Employee_Info(
+        empid=data["empid"].upper(),
+        fname=data["fname"],
+        lname=data["lname"],
+        email=data["email"].lower(),
+        dept_id=data["dept_id"],
+        designation=data["designation"],
+        mobile=data["mobile"],
+        gender=data["gender"],
+        employee_type=data["employee_type"],
+        location=data["location"],
+        company=data["company"],
+        work_location=data.get("work_location"),
+        payroll=data["company"],
+        country=data["company"],
+        city=data.get("city"),
+        core_skill=data.get("core_skill"),
+        skill_details=data.get("skill_details"),
+        doj=doj,
+        lwd=lwd,
+        approver_id=data["approver_id"].upper(),
+        password=generate_password_hash(data["password"]),
+        prev_total_exp=data.get("prev_total_exp")
+    )
+
+    db.session.add(new_employee)
+    db.session.flush()
+
+    # ----- LEAVE BALANCES -----
+    leave_balances = data.get("leave_balances", {})
+    for leave_id, balance in leave_balances.items():
+        entry = Leave_Balance(
+            empid=new_employee.empid,
+            leave_id=int(leave_id),
+            balance=float(balance)
+        )
+        db.session.add(entry)
+
+    # ----- CLIENT ASSIGNMENTS -----
+    clients = data.get("clients", [])
+    for client in clients:
+        try:
+            start_date = datetime.strptime(client["start_date"], "%Y-%m-%d").date()
+            end_date = datetime.strptime(client["end_date"], "%Y-%m-%d").date() if client.get("end_date") else None
+        except:
+            return jsonify({"error": "Invalid client date format"}), 400
+
+        client_entry = Client_Employee(
+            empid=new_employee.empid,
+            clientID=client["client_id"],
+            start_date=start_date,
+            end_date=end_date
+        )
+        db.session.add(client_entry)
+
+    db.session.commit()
+
+    return jsonify({
+        "status": "success",
+        "message": "Employee added successfully"
+    }), 201
 
  
+
+# //Not changed
 @app.route('/admin/employees', methods=['GET'])
 @app.route('/admin/employees/view', methods=['GET'])
 def view_employees():
@@ -1051,19 +1147,16 @@ def view_employees():
                            end_date=end_date)
 
     
-@app.route('/admin/export_employees')
-def export_employees():
-    if 'user_id' not in session:
-        flash('Please login to continue', 'error')
-        return redirect(url_for('login'))
-
-    # Get filter parameters
+############ getting emp info respons in csv format
+@app.route('/admin/export_employees', methods=['GET'])
+def api_export_employees():
+    # Get filter parameters from React
     department_name = request.args.get('dept', '')
     approver_id = request.args.get('approver_id', '')
     start_date = request.args.get('start_date', '')
     end_date = request.args.get('end_date', '')
 
-    # Base query (join Department for filtering)
+    # Base query
     query = Employee_Info.query.outerjoin(Department, Employee_Info.dept_id == Department.id)
 
     # Department filter
@@ -1074,14 +1167,14 @@ def export_employees():
     if approver_id:
         query = query.filter(Employee_Info.approver_id == approver_id)
 
-    # DOJ range filter
+    # DOJ date range filter
     if start_date and end_date:
         try:
-            start_date_obj = datetime.strptime(start_date, '%Y-%m-%d').date()
-            end_date_obj = datetime.strptime(end_date, '%Y-%m-%d').date()
-            query = query.filter(Employee_Info.doj.between(start_date_obj, end_date_obj))
+            s = datetime.strptime(start_date, '%Y-%m-%d').date()
+            e = datetime.strptime(end_date, '%Y-%m-%d').date()
+            query = query.filter(Employee_Info.doj.between(s, e))
         except ValueError:
-            flash('Invalid date format. Please use YYYY-MM-DD format.', 'error')
+            return jsonify({"error": "Invalid date format"}), 400
 
     employees = query.all()
 
@@ -1089,7 +1182,7 @@ def export_employees():
     si = StringIO()
     writer = csv.writer(si)
 
-    # Header
+    # CSV Header
     writer.writerow([
         'Emp ID', 'Emp Name', 'Gender', 'Emp Type', 'Location', 'Company', 'Work location',
         'Country', 'City', 'Mobile', 'Email', 'Designation', 'Reporting Manager',
@@ -1105,14 +1198,11 @@ def export_employees():
         dept_name = emp.department.dept_name if emp.department else ""
 
         # Experience calculations
-        exp_on_doj = "N/A"
-        total_exp = "N/A"
-        if emp.doj:
-            years_since_joining = (current_date - emp.doj).days / 365.25
-            total_exp = f"{years_since_joining:.1f}"
-            exp_on_doj = "0"  # Placeholder; adjust if you track prior exp
+        exp_on_doj = "0" if emp.doj else "N/A"
+        total_exp = (
+            f"{(current_date - emp.doj).days / 365.25:.1f}" if emp.doj else "N/A"
+        )
 
-        # Common emp data
         employee_data = [
             emp.empid,
             f"{emp.fname} {emp.lname}",
@@ -1141,16 +1231,20 @@ def export_employees():
 
         if client_assignments:
             for assignment in client_assignments:
-                client_name, daily_hours = "", ""
-                project_name, project_type, project_billability = "", "", ""
+                client_name = ""
+                daily_hours = ""
+                project_name = ""
+                project_type = ""
+                project_billability = ""
 
+                # Client info
                 if assignment.clientID:
-                    client_info = Client_Info.query.get(int(assignment.clientID))
-                    if client_info:
-                        client_name = client_info.client_name
-                        daily_hours = str(client_info.daily_hours or "")
+                    cinfo = Client_Info.query.get(int(assignment.clientID))
+                    if cinfo:
+                        client_name = cinfo.client_name
+                        daily_hours = str(cinfo.daily_hours or "")
 
-                        # Get projects linked to this client
+                        # Get project
                         project = (
                             db.session.query(Project_Info)
                             .join(Employee_Project, Employee_Project.project_id == Project_Info.id)
@@ -1177,23 +1271,28 @@ def export_employees():
 
                 writer.writerow(employee_data + client_data)
         else:
+            # No client assignment
             writer.writerow(employee_data + ["", "", "", "", "", "", ""])
 
+    # Response CSV
     output = make_response(si.getvalue())
     output.headers["Content-Disposition"] = "attachment; filename=employees_export.csv"
     output.headers["Content-type"] = "text/csv"
+
     return output
 
+
+
+# Get client details and employee details in json format
 @app.route('/admin/employees/<empid>', methods=['GET'])
 def view_employee(empid):
     if 'user_id' not in session:
-        flash('Please login to continue', 'error')
-        return redirect(url_for('login'))
+        return jsonify({"error": "Unauthorized"}), 401
 
-    # Fetch employee details
+    # Fetch employee data
     employee = Employee_Info.query.filter_by(empid=empid.upper()).first_or_404()
 
-    # Calculate end_date as LWD if exists and <= today, else today
+    # Calculate end date
     today = date.today()
     end_date = employee.lwd if employee.lwd and employee.lwd <= today else today
 
@@ -1203,36 +1302,57 @@ def view_employee(empid):
         delta = end_date - employee.doj
         years_in_company = delta.days / 365.25
 
-    # Add previous experience from prev_total_exp field
+    # Add previous experience if exists
     total_experience = years_in_company
     if hasattr(employee, 'prev_total_exp') and employee.prev_total_exp:
         try:
             total_experience += float(employee.prev_total_exp)
         except ValueError:
-            pass  # In case of bad data, skip adding
+            pass  
 
     total_experience = round(total_experience, 1)
 
     # Fetch client assignments
     client_assignments = Client_Employee.query.filter_by(empid=empid.upper()).all()
-    client_details = [
-        {'client': a.client, 'assignment': a}
-        for a in client_assignments if a.client
-    ]
 
-    return render_template(
-        'employee_list.html',
-        employee=employee,
-        client_details=client_details,
-        total_experience=total_experience
-    )
+    client_details = []
+    for a in client_assignments:
+        if a.client:
+            client_details.append({
+                "client_name": a.client.client_name,
+                "client_id": a.client.clientID,
+                "start_date": a.start_date.strftime("%Y-%m-%d") if a.start_date else None,
+                "end_date": a.end_date.strftime("%Y-%m-%d") if a.end_date else None,
+                "project_name": a.client.project_name if hasattr(a.client, "project_name") else None
+            })
+
+    # Prepare JSON response
+    response = {
+        "employee": {
+            "empid": employee.empid,
+            "name": f"{employee.fname} {employee.lname}",
+            "gender": employee.gender,
+            "email": employee.email,
+            "mobile": employee.mobile,
+            "designation": employee.designation,
+            "employee_type": employee.employee_type,
+            "department": employee.department.dept_name if employee.department else None,
+            "doj": employee.doj.strftime("%Y-%m-%d") if employee.doj else None,
+            "lwd": employee.lwd.strftime("%Y-%m-%d") if employee.lwd else None,
+        },
+        "total_experience": total_experience,
+        "client_details": client_details
+    }
+
+    return jsonify(response), 200
 
 
+
+# // Get employee details for editing in json format and updating employee details
 @app.route('/dashboard/edit_employee/<empid>', methods=['GET', 'POST'])
 def edit_employee_dashboard(empid):
     if 'user_id' not in session:
-        flash('Please login to continue', 'error')
-        return redirect(url_for('login'))
+        return jsonify({"error": "Please login to continue"}), 401
 
     employee = Employee_Info.query.filter_by(empid=empid.upper()).first_or_404()
 
@@ -1244,364 +1364,218 @@ def edit_employee_dashboard(empid):
         delta = end_date - employee.doj
         years_in_company = delta.days / 365.25
 
+
     total_experience = years_in_company
-    if hasattr(employee, 'prev_experience') and employee.prev_experience:
-        total_experience += float(employee.prev_experience)
+    if hasattr(employee, 'prev_total_exp') and employee.prev_total_exp:
+        try:
+            total_experience += float(employee.prev_total_exp)
+        except:
+            pass
     total_experience = round(total_experience, 1)
+
 
     is_admin = session.get('user_id') == 'N0482'
     is_self_edit = session.get('user_id') == employee.empid
 
     if not (is_admin or is_self_edit):
-        flash('You do not have permission to edit this employee information', 'error')
-        return redirect(url_for('dashboard'))
+        return jsonify({"error": "You do not have permission to edit this employee"}), 403
 
     client_assignments = Client_Employee.query.filter_by(empid=empid.upper()).all()
     assignment_dict = {
         int(ca.clientID): {
-            'start_date': ca.start_date.strftime('%Y-%m-%d') if ca.start_date else '',
-            'end_date': ca.end_date.strftime('%Y-%m-%d') if ca.end_date else ''
+            'start_date': ca.start_date.strftime('%Y-%m-%d') if ca.start_date else None,
+            'end_date': ca.end_date.strftime('%Y-%m-%d') if ca.end_date else None
         } for ca in client_assignments
     }
 
+    # --------------------------------------------------
+    # GET → Return data to React (JSON only)
+    # --------------------------------------------------
+    if request.method == 'GET':
+        all_departments = Department.query.order_by(Department.dept_name).all()
+
+        return jsonify({
+            "employee": {
+                "empid": employee.empid,
+                "fname": employee.fname,
+                "lname": employee.lname,
+                "email": employee.email,
+                "mobile": employee.mobile,
+                "gender": employee.gender,
+                "work_location": employee.work_location,
+                "country": employee.country,
+                "city": employee.city,
+                "core_skill": employee.core_skill,
+                "skill_details": employee.skill_details,
+                "prev_total_exp": employee.prev_total_exp,
+                "designation": employee.designation,
+                "employee_type": employee.employee_type,
+                "location": employee.location,
+                "company": employee.company,
+                "approver_id": employee.approver_id,
+                "dept_id": employee.dept_id,
+                "doj": employee.doj.strftime('%Y-%m-%d') if employee.doj else None,
+                "lwd": employee.lwd.strftime('%Y-%m-%d') if employee.lwd else None,
+            },
+            "client_assignments": assignment_dict,
+            "available_clients": [
+                {"clientID": c.clientID, "client_name": c.client_name}
+                for c in Client_Info.query.all()
+            ] if is_admin else [],
+            "departments": [
+                {"id": d.id, "dept_name": d.dept_name}
+                for d in all_departments
+            ],
+            "total_experience": total_experience,
+            "is_admin": is_admin
+        }), 200
+
+    # --------------------------------------------------
+    # POST → Update Employee from JSON Body
+    # --------------------------------------------------
     if request.method == 'POST':
-        print("Form submitted!")
+        data = request.json
+        if not data:
+            return jsonify({"error": "JSON body required"}), 400
+
         try:
-            # Update Employee Info
-            employee.fname = request.form.get('fname', employee.fname)
-            employee.lname = request.form.get('lname', employee.lname)
-            employee.email = request.form.get('email', employee.email)
-            employee.mobile = request.form.get('mobile', employee.mobile)
-            employee.gender = request.form.get('gender', employee.gender)
-            employee.work_location = request.form.get('work_location', employee.work_location)
-            employee.country = request.form.get('country', employee.country)
-            employee.city = request.form.get('city', employee.city)
-            employee.core_skill = request.form.get('core_skill', employee.core_skill)
-            employee.skill_details = request.form.get('skill_details', employee.skill_details)
+            # BASIC FIELDS
+            employee.fname = data.get('fname', employee.fname)
+            employee.lname = data.get('lname', employee.lname)
+            employee.email = data.get('email', employee.email)
+            employee.mobile = data.get('mobile', employee.mobile)
+            employee.gender = data.get('gender', employee.gender)
+            employee.work_location = data.get('work_location', employee.work_location)
+            employee.country = data.get('country', employee.country)
+            employee.city = data.get('city', employee.city)
+            employee.core_skill = data.get('core_skill', employee.core_skill)
+            employee.skill_details = data.get('skill_details', employee.skill_details)
 
-            prev_exp = request.form.get('prev_experience')
-            if prev_exp is not None:
+            if data.get('prev_total_exp') is not None:
                 try:
-                    employee.prev_total_exp = float(prev_exp)
-                except ValueError:
-                    flash('Previous experience must be a valid number', 'error')
+                    employee.prev_total_exp = float(data['prev_total_exp'])
+                except:
+                    return jsonify({"error": "Previous experience must be numeric"}), 400
 
+            # ADMIN ONLY FIELDS
             if is_admin:
-                # Department & Admin fields
-                is_new_dept = request.form.get('is_new_dept') == 'true'
-                dept_value = request.form.get('dept_id')
+                dept_value = data.get("dept_id")
+                is_new_dept = data.get("is_new_dept", False)
 
                 if is_new_dept and dept_value:
-                    existing_dept = Department.query.filter_by(dept_name=dept_value.strip()).first()
-                    if existing_dept:
-                        employee.dept_id = existing_dept.id
+                    existing = Department.query.filter_by(dept_name=dept_value.strip()).first()
+                    if existing:
+                        employee.dept_id = existing.id
                     else:
                         new_dept = Department(dept_name=dept_value.strip())
                         db.session.add(new_dept)
                         db.session.flush()
                         employee.dept_id = new_dept.id
                 else:
-                    if dept_value and dept_value.isdigit():
+                    if dept_value and str(dept_value).isdigit():
                         employee.dept_id = int(dept_value)
-                        
 
-                employee.designation = request.form.get('designation', employee.designation)
-                employee.employee_type = request.form.get('employee_type', employee.employee_type)
-                employee.location = request.form.get('location', employee.location)
-                employee.company = request.form.get('company', employee.company)
-                employee.approver_id = request.form.get('approver_id', employee.approver_id)
+                employee.designation = data.get('designation', employee.designation)
+                employee.employee_type = data.get('employee_type', employee.employee_type)
+                employee.location = data.get('location', employee.location)
+                employee.company = data.get('company', employee.company)
+                employee.approver_id = data.get('approver_id', employee.approver_id)
 
-                doj = request.form.get('doj')
-                lwd = request.form.get('lwd')
+                if data.get("doj"):
+                    employee.doj = datetime.strptime(data["doj"], "%Y-%m-%d").date()
 
-                if doj and doj.strip():
-                    employee.doj = datetime.strptime(doj, '%Y-%m-%d').date()
-                if lwd and lwd.strip():
-                    employee.lwd = datetime.strptime(lwd, '%Y-%m-%d').date()
+                if data.get("lwd"):
+                    employee.lwd = datetime.strptime(data["lwd"], "%Y-%m-%d").date()
                 else:
                     employee.lwd = None
 
-                db.session.commit()
-                print("✅ Employee & client assignments saved")
-                flash('Employee information updated successfully', 'success')
-                return redirect(url_for('view_employee', empid=empid) if is_admin else url_for('dashboard'))
+            db.session.commit()
+            return jsonify({"message": "Employee updated successfully"}), 200
 
         except Exception as e:
             db.session.rollback()
-            print(f" Commit failed: {e}")
-            import traceback
-            traceback.print_exc()
-            flash(f'Error updating employee information: {str(e)}', 'error')
-
-    # Render page
-    available_clients = Client_Info.query.all() if is_admin else []
-    # ✅ Ensure safe JSON for JS
-    available_clients_js = json.dumps([
-        {"clientID": int(c.clientID), "client_name": c.client_name}
-        for c in available_clients
-    ]) if is_admin else "[]"
-
-    all_departments = Department.query.order_by(Department.dept_name).all()
-    assigned_client_ids = [int(ca.clientID) for ca in client_assignments]
-
-    return render_template(
-        'edit_employee.html',
-        employee=employee,
-        is_admin=is_admin,
-        client_assignments=client_assignments,
-        available_clients=available_clients,
-        available_clients_js=available_clients_js,
-        assigned_client_ids=assigned_client_ids,
-        assignment_dict=assignment_dict,
-        all_departments=all_departments,
-        total_experience=total_experience
-    )
+            return jsonify({"error": str(e)}), 500
 
 
-@app.route('/admin/edit_employee/<empid>', methods=['GET', 'POST'])
-def edit_employee(empid):
-    if 'user_id' not in session:
-        flash('Please login to continue', 'error')
-        return redirect(url_for('login'))
-
-    employee = Employee_Info.query.filter_by(empid=empid.upper()).first_or_404()
- 
-    today = date.today()
-    end_date = employee.lwd if employee.lwd and employee.lwd <= today else today
-
-    years_in_company = 0
-    if employee.doj:
-        delta = end_date - employee.doj
-        years_in_company = delta.days / 365.25
-
-    total_experience = years_in_company
-    if hasattr(employee, 'prev_experience') and employee.prev_experience:
-        total_experience += float(employee.prev_experience)
-    total_experience = round(total_experience, 1)
-
-    is_admin = session.get('user_id') == 'N0482'
-    is_self_edit = session.get('user_id') == employee.empid
-
-    if not (is_admin or is_self_edit):
-        flash('You do not have permission to edit this employee information', 'error')
-        return redirect(url_for('dashboard'))
-
-    client_assignments = Client_Employee.query.filter_by(empid=empid.upper()).all()
-    assignment_dict = {
-        int(ca.clientID): {
-            'start_date': ca.start_date.strftime('%Y-%m-%d') if ca.start_date else '',
-            'end_date': ca.end_date.strftime('%Y-%m-%d') if ca.end_date else ''
-        } for ca in client_assignments
-    }
-
-    if request.method == 'POST':
-        print("Form submitted!")
-        try:
-            # Update Employee Info
-            employee.fname = request.form.get('fname', employee.fname)
-            employee.lname = request.form.get('lname', employee.lname)
-            employee.email = request.form.get('email', employee.email)
-            employee.mobile = request.form.get('mobile', employee.mobile)
-            employee.gender = request.form.get('gender', employee.gender)
-            employee.work_location = request.form.get('work_location', employee.work_location)
-            employee.country = request.form.get('country', employee.country)
-            employee.city = request.form.get('city', employee.city)
-            employee.core_skill = request.form.get('core_skill', employee.core_skill)
-            employee.skill_details = request.form.get('skill_details', employee.skill_details)
-
-            prev_exp = request.form.get('prev_experience')
-            if prev_exp is not None:
-                try:
-                    employee.prev_total_exp = float(prev_exp)
-                except ValueError:
-                    flash('Previous experience must be a valid number', 'error')
-
-            if is_admin:
-                # 🏢 Department & Admin fields
-                is_new_dept = request.form.get('is_new_dept') == 'true'
-                dept_value = request.form.get('dept_id')
-
-                if is_new_dept and dept_value:
-                    existing_dept = Department.query.filter_by(dept_name=dept_value.strip()).first()
-                    if existing_dept:
-                        employee.dept_id = existing_dept.id
-                    else:
-                        new_dept = Department(dept_name=dept_value.strip())
-                        db.session.add(new_dept)
-                        db.session.flush()
-                        employee.dept_id = new_dept.id
-                else:
-                    if dept_value and dept_value.isdigit():
-                        employee.dept_id = int(dept_value)
-
-                employee.designation = request.form.get('designation', employee.designation)
-                employee.employee_type = request.form.get('employee_type', employee.employee_type)
-                employee.location = request.form.get('location', employee.location)
-                employee.company = request.form.get('company', employee.company)
-                employee.approver_id = request.form.get('approver_id', employee.approver_id)
-
-                doj = request.form.get('doj')
-                lwd = request.form.get('lwd')
-
-                if doj and doj.strip():
-                    employee.doj = datetime.strptime(doj, '%Y-%m-%d').date()
-                if lwd and lwd.strip():
-                    employee.lwd = datetime.strptime(lwd, '%Y-%m-%d').date()
-                else:
-                    employee.lwd = None
-
-                # 📋 Client Assignments
-                assignment_ids = request.form.getlist('assignment_ids[]')
-                client_ids = request.form.getlist('client_ids[]')
-                start_dates = request.form.getlist('start_dates[]')
-                end_dates = request.form.getlist('end_dates[]')
-
-                print("Assignment IDs:", assignment_ids)
-                print("Client IDs:", client_ids)
-                print("Start Dates:", start_dates)
-                print("End Dates:", end_dates)
-                
-                # 1️⃣ Existing assignment IDs in DB
-                existing_assignments = Client_Employee.query.filter_by(empid=empid.upper()).all()
-                existing_ids = {str(a.id) for a in existing_assignments}
-
-                # 2️⃣ Submitted assignment IDs (ignore blanks for new rows)
-                submitted_ids = {aid for aid in assignment_ids if aid.strip()}
-
-                # 3️⃣ Delete ones removed from form
-                to_delete = existing_ids - submitted_ids
-                for del_id in to_delete:
-                    assignment = Client_Employee.query.get(int(del_id))
-                    if assignment:
-                        db.session.delete(assignment)
-
-                for i in range(len(client_ids)):
-                    try:
-                        aid = assignment_ids[i] if i < len(assignment_ids) else ""
-                        cid = int(client_ids[i])
-                        start_date = datetime.strptime(start_dates[i], '%Y-%m-%d').date() if start_dates[i] else None
-                        end_date = datetime.strptime(end_dates[i], '%Y-%m-%d').date() if end_dates[i] else None
-
-                        if not aid.strip():
-                            # New assignment
-                            new_assignment = Client_Employee(
-                                empid=empid.upper(),
-                                clientID=cid,
-                                start_date=start_date,
-                                end_date=end_date
-                            )
-                            db.session.add(new_assignment)
-                        else:
-                            # Update existing
-                            existing = Client_Employee.query.get(int(aid))
-                            if existing:
-                                existing.clientID = cid
-                                existing.start_date = start_date
-                                existing.end_date = end_date
-                    except Exception as e:
-                        print(f"⚠ Error processing client assignment {i}: {e}")
-
-                # ✅ Commit after loop
-                db.session.commit()
-                print("✅ Employee & client assignments saved")
-                flash('Employee information updated successfully', 'success')
-                return redirect(url_for('view_employee', empid=empid) if is_admin else url_for('dashboard'))
-
-        except Exception as e:
-            db.session.rollback()
-            print(f" Commit failed: {e}")
-            import traceback
-            traceback.print_exc()
-            flash(f'Error updating employee information: {str(e)}', 'error')
-
-    # Render page
-    available_clients = Client_Info.query.all() if is_admin else []
-    available_clients_js = [
-        {"clientID": c.clientID, "client_name": c.client_name}
-        for c in available_clients
-    ] if is_admin else []
-    print("User is admin:", is_admin)
-    print("🔁 available_clients_js:", available_clients_js)
-
-    all_departments = Department.query.order_by(Department.dept_name).all()
-    assigned_client_ids = [int(ca.clientID) for ca in client_assignments]
-
-    return render_template(
-        'edit_employee.html',
-        employee=employee,
-        is_admin=is_admin,
-        client_assignments=client_assignments,
-        available_clients=available_clients,
-        available_clients_js=available_clients_js,
-        assigned_client_ids=assigned_client_ids,
-        assignment_dict=assignment_dict,
-        all_departments=all_departments,
-        total_experience=total_experience
-    )
 
 
-@app.route('/admin/add_client', methods=['GET', 'POST'])
+# add new client details 
+@app.route('/admin/add_client', methods=['POST'])
 def add_client():
-    if request.method == 'POST':
+    # ---------- JSON POST (React / Postman) ----------
+    if request.method == 'POST' and request.is_json:
+        data = request.get_json()
+
         try:
-            # Get form data
-            client_name = request.form['client_name'].strip()  # Trim whitespace
-            start_date = datetime.strptime(request.form['start_date'], '%Y-%m-%d').date() if request.form['start_date'] else None
-            end_date = datetime.strptime(request.form['end_date'], '%Y-%m-%d').date() if request.form['end_date'] else None
-            
-            # Get daily hours value - handle empty input and convert to float
-            daily_hours = None
-            if request.form.get('daily_hours'):
-                daily_hours = float(request.form['daily_hours'])
-            
-            # Check if client already exists
-            existing_client = Client_Info.query.filter_by(client_name=client_name).first()
-            if existing_client:
-                flash(f"Client '{client_name}' already exists!", "error")
-                return redirect(url_for('add_client'))  # Redirect back to the form
-            
-            # Create new client if not found
+            client_name = data.get('client_name', '').strip()
+            start_date = datetime.strptime(data['start_date'], "%Y-%m-%d").date() if data.get('start_date') else None
+            end_date = datetime.strptime(data['end_date'], "%Y-%m-%d").date() if data.get('end_date') else None
+
+            daily_hours = float(data['daily_hours']) if data.get('daily_hours') else None
+
+            if not client_name:
+                return jsonify({"error": "client_name is required"}), 400
+
+            # Check duplicate client
+            if Client_Info.query.filter_by(client_name=client_name).first():
+                return jsonify({"error": f"Client '{client_name}' already exists!"}), 400
+
+            # Create client
             new_client = Client_Info(
                 client_name=client_name,
                 start_date=start_date,
                 end_date=end_date,
-                daily_hours=daily_hours  # Added the daily_hours field
+                daily_hours=daily_hours
             )
-            
-            # Add to database
+
             db.session.add(new_client)
             db.session.commit()
-            
-            flash('Client added successfully!', 'success')
-            return redirect(url_for('add_client'))
-        
+
+            return jsonify({"message": "Client added successfully"}), 201
+
         except Exception as e:
             db.session.rollback()
-            flash(f'Error adding client: {str(e)}', 'error')
-            return redirect(url_for('add_client'))
-    
-    return render_template('add_client.html')
+            return jsonify({"error": str(e)}), 500
 
-@app.route('/admin/view_clients')
+
+
+@app.route('/admin/view_clients', methods=['GET'])
 def view_clients():
     try:
-        # Get search query from URL parameters
+        # Get search query from URL parameters (for Postman & React)
         search_query = request.args.get('search', '').strip()
 
-        # If search query is provided, filter clients
+        # Filter clients based on search text
         if search_query:
-            clients = Client_Info.query.filter(Client_Info.client_name.ilike(f'%{search_query}%')).all()
+            clients = Client_Info.query.filter(
+                Client_Info.client_name.ilike(f"%{search_query}%")
+            ).all()
         else:
-            # If no search query, fetch all clients
             clients = Client_Info.query.all()
 
-        return render_template('view_clients.html', clients=clients, search_query=search_query)
-    
+        # Convert to JSON format
+        client_list = [
+            {
+                "clientID": c.clientID,
+                "client_name": c.client_name,
+                "start_date": c.start_date.strftime('%Y-%m-%d') if c.start_date else None,
+                "end_date": c.end_date.strftime('%Y-%m-%d') if c.end_date else None,
+                "daily_hours": c.daily_hours
+            }
+            for c in clients
+        ]
+
+        return jsonify({
+            "total": len(client_list),
+            "search_query": search_query,
+            "clients": client_list
+        }), 200
+
     except Exception as e:
-        flash(f'Error loading clients: {str(e)}', 'error')
-        return render_template('view_clients.html', clients=[], search_query='')
+        return jsonify({"error": str(e)}), 500
 
 
+# Need to check
 @app.route('/get_approvers_by_department')
 def get_approvers_by_department():
     dept = request.args.get('dept')
@@ -1635,48 +1609,39 @@ def get_approvers_by_department():
     return jsonify(result)
 
 
-@app.route('/admin/update_client/<int:id>', methods=['POST'])
+
+@app.route('/admin/update_client/<int:id>', methods=['POST', 'PATCH'])
 def update_client(id):
     try:
-        # Get JSON data from request
         data = request.get_json()
-        
-        # Find the client
+        if not data:
+            return jsonify({"error": "JSON body required"}), 400
+
         client = Client_Info.query.get_or_404(id)
-        
-        # Update client information
-        client.client_name = data.get('client_name')
-        
-        # Handle dates
+
+        # Update fields
+        client.client_name = data.get('client_name', client.client_name)
+
         start_date = data.get('start_date')
         end_date = data.get('end_date')
-        
-        if start_date:
-            client.start_date = datetime.strptime(start_date, '%Y-%m-%d')
-        else:
-            client.start_date = None
-            
-        if end_date:
-            client.end_date = datetime.strptime(end_date, '%Y-%m-%d')
-        else:
-            client.end_date = None
-        
-        # Handle daily hours (this was missing in your original code)
-        daily_hours = data.get('daily_hours')
-        if daily_hours:
-            client.daily_hours = float(daily_hours)
-        else:
-            client.daily_hours = None
-        
-        # Save to database
-        db.session.commit()
-        
-        return jsonify({'success': True})
-    except Exception as e:
-        # If there's an error, return error response
-        return jsonify({'success': False, 'error': str(e)}), 400
 
-@app.route('/admin/delete_client/<int:id>', methods=['POST'])
+        client.start_date = datetime.strptime(start_date, '%Y-%m-%d').date() if start_date else None
+        client.end_date = datetime.strptime(end_date, '%Y-%m-%d').date() if end_date else None
+
+        daily_hours = data.get('daily_hours')
+        client.daily_hours = float(daily_hours) if daily_hours else None
+
+        db.session.commit()
+
+        return jsonify({"success": True, "message": "Client updated successfully"}), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"success": False, "error": str(e)}), 400
+
+
+
+@app.route('/admin/delete_client/<int:id>', methods=['DELETE'])
 def delete_client(id):
     try:
         # Find the client
@@ -1686,296 +1651,235 @@ def delete_client(id):
         db.session.delete(client)
         db.session.commit()
         
-        return jsonify({'success': True})
+        return jsonify({'success': True,"message": "Client deleted successfully"}), 200
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 400
     
+
+# Add new holiday with details
 @app.route('/admin/manage_holidays', methods=['GET', 'POST'])
 def manage_holidays():
     if 'user_id' not in session:
         return redirect(url_for('login'))
-    
-    # Hardcoded admin check
+
     if session['user_id'] != 'N0482':
         flash('You do not have permission to access the admin dashboard', 'error')
         return redirect(url_for('login'))
 
-
     if request.method == 'POST':
-        start_date = request.form.get('start_date')
-        end_date = request.form.get('end_date')
-        holiday_type = request.form.get('holiday_type')
-        dc = request.form.get('dc') or None
-        holiday_desc = request.form.get('holiday_desc')
+        holiday = Holidays(
+            start_date=request.form.get('start_date'),
+            end_date=request.form.get('end_date'),
+            holiday_type=request.form.get('holiday_type'),
+            dc=request.form.get('dc') or None,
+            holiday_desc=request.form.get('holiday_desc')
+        )
 
-        insert_sql = text("""
-            INSERT INTO holidays (start_date, end_date, holiday_type, dc, holiday_desc)
-            VALUES (:start_date, :end_date, :holiday_type, :dc, :holiday_desc)
-        """)
-        db.session.execute(insert_sql, {
-            "start_date": start_date,
-            "end_date": end_date,
-            "holiday_type": holiday_type,
-            "dc": dc,
-            "holiday_desc": holiday_desc
-        })
+        db.session.add(holiday)
         db.session.commit()
 
         flash('Holiday added successfully!', 'success')
         return redirect(url_for('manage_holidays'))
 
-    # Fetch all holidays
-    fetch_sql = text("SELECT * FROM holidays ORDER BY start_date")
-    holidays = db.session.execute(fetch_sql).fetchall()
-
+    holidays = Holidays.query.order_by(Holidays.start_date).all()
     return render_template('manage_holidays.html', holidays=holidays)
 
-@app.route('/admin/delete_holiday/<int:holiday_id>', methods=['POST'])
+
+
+# Delete holiday by holiday_id
+@app.route('/admin/delete_holiday/<int:holiday_id>', methods=['DELETE'])
 def delete_holiday(holiday_id):
     if 'user_id' not in session:
         return redirect(url_for('login'))
-    
-    # Hardcoded admin check
+
     if session['user_id'] != 'N0482':
         flash('You do not have permission to access the admin dashboard', 'error')
         return redirect(url_for('login'))
 
-    delete_sql = text("DELETE FROM holidays WHERE id = :holiday_id")
-    db.session.execute(delete_sql, {"holiday_id": holiday_id})
+    holiday = Holidays.query.get_or_404(holiday_id)
+
+    db.session.delete(holiday)
     db.session.commit()
 
     flash('Holiday deleted successfully!', 'success')
     return redirect(url_for('manage_holidays'))
 
 
-@app.route('/add_project', methods=['GET', 'POST'])
-def add_project():
-    clients = Client_Info.query.all()
-    existing_projects = Project_Info.query.all()
-
-    if request.method == 'POST':
-        # Get and clean form data
-        client_id = request.form['client_id']
-        project_name = request.form['project_name'].strip()
-        project_code = request.form['project_code'].strip()  # optional
-        project_type = request.form['project_type']
-        project_billability = request.form['project_billability']
-        start_date = request.form.get('start_date')
-        end_date = request.form.get('end_date')
-
-        # ✅ Validate required fields
-        if not project_name:
-            flash("Project name cannot be empty.", "danger")
-            return render_template('add_project.html', clients=clients, existing_projects=existing_projects)
-
-        if not project_type:
-            flash("Please select a project type.", "danger")
-            return render_template('add_project.html', clients=clients, existing_projects=existing_projects)
-
-        if not project_billability:
-            flash("Please select project billability.", "danger")
-            return render_template('add_project.html', clients=clients, existing_projects=existing_projects)
-
-        # ✅ Check if project name already exists
-        existing_project_name = Project_Info.query.filter_by(project_name=project_name).first()
-        if existing_project_name:
-            flash(f"Project name '{project_name}' already exists. Please use a different name.", "danger")
-            return render_template('add_project.html', clients=clients, existing_projects=existing_projects)
-
-        # ✅ Check if project code already exists (only if entered)
-        if project_code:
-            existing_project_code = Project_Info.query.filter_by(project_code=project_code).first()
-            if existing_project_code:
-                flash(f"Project code '{project_code}' already exists. Please use a different code.", "danger")
-                return render_template('add_project.html', clients=clients, existing_projects=existing_projects)
-
-        # 🗓️ Convert dates
-        start_date = datetime.strptime(start_date, '%Y-%m-%d').date() if start_date else date.today()
-        if end_date and end_date.strip():
-            end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
-            if end_date < start_date:
-                flash("End date cannot be earlier than start date.", "danger")
-                return render_template('add_project.html', clients=clients, existing_projects=existing_projects)
-        else:
-            end_date = None
-
-        try:
-            # ✅ Create and commit new project
-            new_project = Project_Info(
-                client_id=client_id,
-                project_name=project_name,
-                project_code=project_code if project_code else None,  # store None if empty
-                project_type=project_type,
-                project_billability=project_billability,
-                start_date=start_date,
-                end_date=end_date
-            )
-            db.session.add(new_project)
-            db.session.commit()
-
-            client = Client_Info.query.get(client_id)
-            flash(f"Project '{project_name}' added for client '{client.client_name}' successfully!", "success")
-            return redirect(url_for('list_projects'))
-
-        except Exception as e:
-            db.session.rollback()
-            flash(f"Error adding project: {str(e)}", "danger")
-            return render_template('add_project.html', clients=clients, existing_projects=existing_projects)
-
-    return render_template('add_project.html', clients=clients, existing_projects=existing_projects)
 
 
-@app.route('/list_projects', methods=['GET'])
+@app.route('/add_project', methods=['POST'])
+def create_project():
+    data = request.get_json()
+
+    project_name = data.get('project_name', '').strip()
+    project_code = data.get('project_code', '').strip()
+    project_type = data.get('project_type')
+    project_billability = data.get('project_billability')
+    client_id = data.get('client_id')
+    start_date = data.get('start_date')
+    end_date = data.get('end_date')
+
+    # Validate
+    if not project_name:
+        return jsonify({"error": "Project name is required"}), 400
+
+    if not project_type:
+        return jsonify({"error": "Project type is required"}), 400
+
+    # Unique validations
+    if Project_Info.query.filter_by(project_name=project_name).first():
+        return jsonify({"error": "Project name already exists"}), 409
+
+    if project_code and Project_Info.query.filter_by(project_code=project_code).first():
+        return jsonify({"error": "Project code already exists"}), 409
+
+    start_date = datetime.strptime(start_date, "%Y-%m-%d").date() if start_date else date.today()
+    end_date = datetime.strptime(end_date, "%Y-%m-%d").date() if end_date else None
+
+    project = Project_Info(
+        client_id=client_id,
+        project_name=project_name,
+        project_code=project_code or None,
+        project_type=project_type,
+        project_billability=project_billability,
+        start_date=start_date,
+        end_date=end_date
+    )
+
+    db.session.add(project)
+    db.session.commit()
+
+    return jsonify({"message": "Project created successfully"}), 201
+
+
+# List projects with filters
+# client_id in client info is PK and client_id in project info is FK
+# join on clientID(client info) and client_id(project info) and only show those project whose client_id matches
+@app.route('/list_project', methods=['GET'])
 def list_projects():
-    print("List projects route hit")  # Debug print
+    print("🔍 Route hit!")
 
-    # Start query and join Client_Info for access to client_name
-    query = db.session.query(Project_Info, Client_Info.client_name).join(Client_Info)
+    # Print all query params
+    print("Query Params:", dict(request.args))
+
+    # Debug: print row counts BEFORE filters
+    total_before_filter = Project_Info.query.count()
+    print("Total projects in DB:", total_before_filter)
+
+    # Correct JOIN
+    query = Project_Info.query.join(
+        Client_Info, Client_Info.clientID == Project_Info.client_id
+    )
 
     # Filters
-    client_filter = request.args.get('client', '')
-    billability_filter = request.args.get('billability', '')
-    project_type_filter = request.args.get('project_type', '')
-    start_date_from = request.args.get('start_date_from', '')
-    start_date_to = request.args.get('start_date_to', '')
-    status_filter = request.args.get('status', '')
+    client = request.args.get('client')
+    project_type = request.args.get('project_type')
+    billability = request.args.get('billability')
+    start_from = request.args.get('start_from')
+    start_to = request.args.get('start_to')
+    status = request.args.get('status')
+
+    print("Filters:", client, project_type, billability, start_from, start_to, status)
 
     # Apply filters
-    if client_filter:
-        try:
-            client_id = int(client_filter)
-            query = query.filter(Project_Info.client_id == client_id)
-        except ValueError:
-            flash('Invalid client filter value.', 'error')
+    if client:
+        print("→ Applying client filter:", client)
+        query = query.filter(Project_Info.client_id == client)
 
-    if billability_filter:
-        query = query.filter(Project_Info.project_billability == billability_filter)
+    if project_type:
+        print("→ Applying project_type filter:", project_type)
+        query = query.filter(Project_Info.project_type == project_type)
 
-    if project_type_filter:
-        query = query.filter(Project_Info.project_type == project_type_filter)
+    if billability:
+        print("→ Applying billability filter:", billability)
+        query = query.filter(Project_Info.project_billability == billability)
 
-    if start_date_from:
-        try:
-            from_date = datetime.strptime(start_date_from, '%Y-%m-%d').date()
-            query = query.filter(Project_Info.start_date >= from_date)
-        except ValueError as e:
-            flash(f'Invalid start date format: {str(e)}', 'error')
+    if start_from:
+        from_date = datetime.strptime(start_from, "%Y-%m-%d").date()
+        print("→ Applying start_from:", from_date)
+        query = query.filter(Project_Info.start_date >= from_date)
 
-    if start_date_to:
-        try:
-            to_date = datetime.strptime(start_date_to, '%Y-%m-%d').date()
-            query = query.filter(Project_Info.start_date <= to_date)
-        except ValueError as e:
-            flash(f'Invalid end date format: {str(e)}', 'error')
+    if start_to:
+        to_date = datetime.strptime(start_to, "%Y-%m-%d").date()
+        print("→ Applying start_to:", to_date)
+        query = query.filter(Project_Info.start_date <= to_date)
 
-    if status_filter == 'ongoing':
-        query = query.filter(Project_Info.end_date == None)
-    elif status_filter == 'completed':
-        query = query.filter(Project_Info.end_date != None)
+    if status == "ongoing":
+        print("→ Applying status filter: ongoing")
+        query = query.filter(Project_Info.end_date.is_(None))
+    elif status == "completed":
+        print("→ Applying status filter: completed")
+        query = query.filter(Project_Info.end_date.is_not(None))
 
-    projects = query.all()
-    print(f"Found {len(projects)} projects")
+    # Show FINAL SQL
+    print("FINAL SQL:", str(query))
 
-    # For dropdowns
-    unique_clients = db.session.query(Client_Info.clientID, Client_Info.client_name).distinct().all()
-    clients = Client_Info.query.all()
-    
-    project_types = (
-        db.session.query(Project_Info.project_type)
-        .filter(Project_Info.project_type.isnot(None))
-        .distinct()
-        .all()
-    )
-    project_types = [ptype[0] for ptype in project_types]
+    rows = query.add_columns(Client_Info.client_name).all()
 
-    return render_template(
-        'list_projects.html',
-        projects=projects,
-        unique_clients=unique_clients,
-        clients=clients,
-        project_types=project_types,
-        selected_project_type=project_type_filter
-    )
+    print("Rows found:", len(rows))
+
+    # Return empty response check
+    if len(rows) == 0:
+        return jsonify({"error": "No projects found", "filters": dict(request.args)})
+
+    # Convert to JSON
+    projects = []
+    for p, client_name in rows:
+        projects.append({
+            "id": p.id,
+            "project_name": p.project_name,
+            "project_code": p.project_code,
+            "project_type": p.project_type,
+            "project_billability": p.project_billability,
+            "start_date": str(p.start_date),
+            "end_date": str(p.end_date) if p.end_date else None,
+            "client_name": client_name
+        })
+
+    return jsonify(projects)
 
 
-@app.route('/update_project', methods=['POST','GET'])
-def update_project():
-    # Add extra debug logging
-    print("****** Update project route hit ******")
-    print(f"Form data: {request.form}")
-    
-    project_id = request.form.get('id')
-    if not project_id:
-        flash('Error: No project ID provided', 'error')
-        return redirect(url_for('list_projects'))
-    
-    project = Project_Info.query.get_or_404(project_id)
-    
-    # Update project details
-    project.client_name = request.form.get('client_name')
-    project.project_name = request.form.get('project_name')
-    project.project_code = request.form.get('project_code')
-    
-    # Update billability and project type fields
-    project.project_billability = request.form.get('project_billability', 'Billable')
-    project.project_type = request.form.get('project_type', '')
-    
-    # Handle start date
-    start_date_str = request.form.get('start_date')
-    if start_date_str:
-        try:
-            project.start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
-        except ValueError as e:
-            flash(f'Invalid start date format: {str(e)}', 'error')
-            return redirect(url_for('list_projects'))
-    
-    # Handle optional end date
-    end_date_str = request.form.get('end_date')
-    if end_date_str and end_date_str.strip():
-        try:
-            project.end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
-        except ValueError as e:
-            flash(f'Invalid end date format: {str(e)}', 'error')
-            return redirect(url_for('list_projects'))
+
+@app.route('/update_project/<int:id>', methods=['PUT', 'PATCH'])
+def update_project(id):
+    data = request.get_json()
+    project = Project_Info.query.get_or_404(id)
+
+    project.project_name = data.get("project_name", project.project_name)
+    project.project_code = data.get("project_code", project.project_code)
+    project.project_billability = data.get("project_billability", project.project_billability)
+    project.project_type = data.get("project_type", project.project_type)
+
+    start_date = data.get("start_date")
+    end_date = data.get("end_date")
+
+    if start_date:
+        project.start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
+
+    if end_date:
+        project.end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
     else:
         project.end_date = None
-    
-    # Save changes
-    try:
-        db.session.commit()
-        flash('Project updated successfully!', 'success')
-    except Exception as e:
-        db.session.rollback()
-        flash(f'Error updating project: {str(e)}', 'error')
-    
-    return redirect(url_for('list_projects'))
+
+    db.session.commit()
+
+    return jsonify({"message": "Project updated successfully"})
 
 
 
-@app.route('/delete_projects', methods=['POST'])
-def delete_projects():
-    # Add extra debug logging
-    print("****** Delete projects route hit ******")
-    print(f"Form data: {request.form}")
-    
-    project_id = request.form.get('id')
-    if not project_id:
-        flash('Error: No project ID provided', 'error')
-        return redirect(url_for('list_projects'))
-    
-    project = Project_Info.query.get_or_404(project_id)
-    
-    try:
-        db.session.delete(project)
-        db.session.commit()
-        flash('Project deleted successfully!', 'success')
-    except Exception as e:
-        db.session.rollback()
-        flash(f'Error deleting project: {str(e)}', 'error')
-    
-    return redirect(url_for('list_projects'))
-    # Removed redundant redirect
-    
+@app.route('/delete_project/<int:id>', methods=['DELETE'])
+def delete_project(id):
+    project = Project_Info.query.get_or_404(id)
+
+    db.session.delete(project)
+    db.session.commit()
+
+    return jsonify({"message": "Project deleted successfully"})
+
+
+
+
+
 @app.route('/reports')
 def reports():
     return render_template('reports.html')
@@ -2063,11 +1967,81 @@ def reports():
 #     )
 
 
+# @app.route('/admin/leave_reports', methods=["GET"])
+# def leave_reports_admin():
+#     if "user_id" not in session:
+#         flash("Please log in to continue", "error")
+#         return redirect(url_for("login"))
+
+#     # Fetch all leave requests
+#     leave_requests = Leave_Request.query.all()
+#     history_leaves_data = []
+#     departments_set = set()
+#     employee_names_set = set()
+#     leave_types_set = set()
+
+#     for lr in leave_requests:
+#         employee = Employee_Info.query.filter_by(empid=lr.empid).first()
+#         dept_name = employee.department.dept_name if employee and employee.department else "Unknown"
+#         emp_name = f"{employee.fname} {employee.lname}" if employee else "Unknown"
+#         leave_type = lr.leave_type
+
+#         departments_set.add(dept_name)
+#         employee_names_set.add(emp_name)
+#         leave_types_set.add(leave_type)
+
+#         history_leaves_data.append({
+#             "id": lr.id,
+#             "empid": lr.empid,
+#             "employee_name": emp_name,
+#             "dept": dept_name,
+#             "leave_type": leave_type,
+#             "st_dt": lr.start_date.strftime("%Y-%m-%d") if lr.start_date else "",
+#             "ed_dt": lr.end_date.strftime("%Y-%m-%d") if lr.end_date else "",
+#             "total_days": float(lr.total_days),
+#             "reason": lr.reason,
+#             "status": lr.status,
+#             "comments": lr.comments,
+#             "applied_on": lr.applied_on.strftime("%Y-%m-%d %H:%M:%S") if lr.applied_on else "",
+#             "approved_by": lr.approver_id if lr.approver_id else ""
+#         })
+
+#     # Fetch all employees and their approver details using a self-join
+#     employees_query = db.session.query(
+#         Employee_Info.empid,
+#         Employee_Info.fname,
+#         Employee_Info.lname,
+#         Department.dept_name.label('dept_name'),
+#         Employee_Info.approver_id,
+#         db.func.coalesce(db.session.query(Employee_Info.fname + " " + Employee_Info.lname)
+#                          .filter(Employee_Info.empid == Employee_Info.approver_id)
+#                          .scalar_subquery(), "N/A").label("approver_name")
+#     ).join(Department, Employee_Info.dept_id == Department.id).all()
+
+#     # List of Employees with Approvers
+#     approvers = [{
+#         "empid": emp.empid,
+#         "employee_name": f"{emp.fname} {emp.lname}",
+#         "dept": emp.dept_name,
+#         "approver_id": emp.approver_id if emp.approver_id else "N/A",
+#         "approver_name": emp.approver_name
+#     } for emp in employees_query]
+
+#     return render_template(
+#         "leave_reports_admin.html",
+#         history_leaves=history_leaves_data,
+#         departments=sorted(departments_set),
+#         employee_names=sorted(employee_names_set),
+#         leave_types=sorted(leave_types_set),
+#         approvers=approvers
+#     )
+
+
+
 @app.route('/admin/leave_reports', methods=["GET"])
 def leave_reports_admin():
     if "user_id" not in session:
-        flash("Please log in to continue", "error")
-        return redirect(url_for("login"))
+        return jsonify({"error": "Unauthorized"}), 401
 
     # Fetch all leave requests
     leave_requests = Leave_Request.query.all()
@@ -2102,19 +2076,21 @@ def leave_reports_admin():
             "approved_by": lr.approver_id if lr.approver_id else ""
         })
 
-    # Fetch all employees and their approver details using a self-join
+    # Fetch all employees and approvers
     employees_query = db.session.query(
         Employee_Info.empid,
         Employee_Info.fname,
         Employee_Info.lname,
         Department.dept_name.label('dept_name'),
         Employee_Info.approver_id,
-        db.func.coalesce(db.session.query(Employee_Info.fname + " " + Employee_Info.lname)
-                         .filter(Employee_Info.empid == Employee_Info.approver_id)
-                         .scalar_subquery(), "N/A").label("approver_name")
+        db.func.coalesce(
+            db.session.query(Employee_Info.fname + " " + Employee_Info.lname)
+            .filter(Employee_Info.empid == Employee_Info.approver_id)
+            .scalar_subquery(),
+            "N/A"
+        ).label("approver_name")
     ).join(Department, Employee_Info.dept_id == Department.id).all()
 
-    # List of Employees with Approvers
     approvers = [{
         "empid": emp.empid,
         "employee_name": f"{emp.fname} {emp.lname}",
@@ -2123,17 +2099,19 @@ def leave_reports_admin():
         "approver_name": emp.approver_name
     } for emp in employees_query]
 
-    return render_template(
-        "leave_reports_admin.html",
-        history_leaves=history_leaves_data,
-        departments=sorted(departments_set),
-        employee_names=sorted(employee_names_set),
-        leave_types=sorted(leave_types_set),
-        approvers=approvers
-    )
+    # Build final JSON response
+    response = {
+        "history_leaves": history_leaves_data,
+        "departments": sorted(departments_set),
+        "employee_names": sorted(employee_names_set),
+        "leave_types": sorted(leave_types_set),
+        "approvers": approvers
+    }
+
+    return jsonify(response), 200
 
 
-#########################Admin-END###################
+######################### Admin-END ###################
 
 @app.route('/admin/client_reports', methods=['GET'])
 def client_reports():
@@ -2250,6 +2228,7 @@ def department_billability():
         end_date=end_date_str
     )
 
+
 @app.route('/admin/client_department_distribution', methods=['GET'])
 def client_department_distribution():
     start_date_str = request.args.get('start_date')
@@ -2325,6 +2304,7 @@ def client_department_distribution():
                            client_list=client_list,
                            start_date=start_date_str,
                            end_date=end_date_str)
+
 
 
 @app.route('/export_department_billability', methods=['GET'])
@@ -2481,7 +2461,7 @@ def export_client_department():
     response.headers['Content-Disposition'] = 'attachment; filename=client_department_distribution.csv'
     response.headers['Content-Type'] = 'text/csv'
     return response
- 
+
 # @app.route('/admin/location_reports', methods=['GET'])
 # def location_reports():
 #     # Get counts by work_location
@@ -4658,8 +4638,8 @@ def dashboard_submit_timesheet():
 
     return redirect(url_for("my_timesheets"))
 
-@app.route("/delete_project", methods=["POST"])
-def delete_project():
+@app.route("/deletee_project", methods=["POST"])
+def deletee_project():
     print("HIi")
     project_code = request.json.get("project_code")
     start_of_week_str = request.json.get("start_of_week")
