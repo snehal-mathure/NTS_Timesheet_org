@@ -1,223 +1,379 @@
-// File: src/components/AdminDashboard.jsx
-import React, { useEffect, useRef, useState } from 'react';
-// import Sidebar from './Sidebar';
+// src/components/AdminDashboard.jsx
+import React, { useEffect, useState } from "react";
+import Sidebar from "./Sidebar";
 import {
-  fetchDashboardTotals,
-  fetchClientAllocations,
-  fetchClients,
-  fetchProjects,
-  fetchChartCounts,
-} from '../services/AdminDashboard/admindashboard';
-import Chart from 'chart.js/auto';
+  getAdminDashboard,
+  exportClientAllocationsCSV,
+} from "../services/AdminDashboard/admindashboard";
+
+import { Pie, Doughnut } from "react-chartjs-2";
+import {
+  Chart as ChartJS,
+  ArcElement,
+  Tooltip,
+  Legend,
+} from "chart.js";
+
+import {
+  FiMenu,
+  FiLogOut,
+  FiUsers,
+  FiBriefcase,
+  FiLayers,
+  FiPieChart,
+  FiDownload,
+  FiX,
+} from "react-icons/fi";
+
+ChartJS.register(ArcElement, Tooltip, Legend);
 
 export default function AdminDashboard() {
-  const [totals, setTotals] = useState({ employees: 0, clients: 0, projects: 0 });
+  const [stats, setStats] = useState({
+    totalEmployees: 0,
+    totalClients: 0,
+    totalProjects: 0,
+  });
+
   const [clientAllocations, setClientAllocations] = useState([]);
-  const [clients, setClients] = useState([]);
-  const [projects, setProjects] = useState([]);
+  const [departmentAllocations, setDepartmentAllocations] = useState([]);
+  const [billability, setBillability] = useState({
+    billable: 0,
+    nonBillable: 0,
+  });
 
-  const [clientNames, setClientNames] = useState([]);
-  const [employeeCounts, setEmployeeCounts] = useState([]);
-  const [departmentNames, setDepartmentNames] = useState([]);
-  const [departmentCounts, setDepartmentCounts] = useState([]);
-  const [billableCount, setBillableCount] = useState(0);
-  const [nonBillableCount, setNonBillableCount] = useState(0);
-
-  const employeeChartRef = useRef(null);
-  const departmentChartRef = useRef(null);
-  const billableChartRef = useRef(null);
-  const charts = useRef({});
-
-  const [activeSection, setActiveSection] = useState('dashboard');
-  const [openMenuKey, setOpenMenuKey] = useState(null);
-  const [clientSearch, setClientSearch] = useState('');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    let mounted = true;
-    async function load() {
-      try {
-        const t = await fetchDashboardTotals();
-        if (!mounted) return;
-        setTotals({ employees: t.total_employees || 0, clients: t.total_clients || 0, projects: t.total_projects || 0 });
-
-        const allocs = await fetchClientAllocations(); if (!mounted) return; setClientAllocations(allocs || []);
-        const cl = await fetchClients(); if (!mounted) return; setClients(cl || []);
-        const pr = await fetchProjects(); if (!mounted) return; setProjects(pr || []);
-        const chartData = await fetchChartCounts(); if (!mounted) return;
-
-        setClientNames(chartData.client_names || []);
-        setEmployeeCounts(chartData.employee_counts || []);
-        setDepartmentNames(chartData.department_names || []);
-        setDepartmentCounts(chartData.department_counts || []);
-        setBillableCount(chartData.billable_count || 0);
-        setNonBillableCount(chartData.non_billable_count || 0);
-      } catch (err) {
-        console.error(err);
-      }
-    }
-    load();
-    return () => { mounted = false; };
+    loadDashboard();
   }, []);
 
-  useEffect(() => {
-    Object.values(charts.current).forEach(c => c && c.destroy());
-    charts.current = {};
-
+  const loadDashboard = async () => {
     try {
-      if (employeeChartRef.current) {
-        charts.current.employee = new Chart(employeeChartRef.current.getContext('2d'), {
-          type: 'pie',
-          data: { labels: clientNames, datasets: [{ data: employeeCounts, backgroundColor: ['#FB7185','#34D399','#60A5FA','#FBBF24','#A78BFA'], hoverOffset: 4 }] },
-          options: { responsive: true, plugins: { legend: { position: 'right' } } }
-        });
+      setLoading(true);
+      const data = await getAdminDashboard();
+      console.log("getAdminDashboard response:", data);
+
+      if (data) {
+        setStats((prev) => ({ ...prev, ...(data.stats || {}) }));
+        setClientAllocations(
+          Array.isArray(data.clientAllocations)
+            ? data.clientAllocations
+            : []
+        );
+        setDepartmentAllocations(
+          Array.isArray(data.departmentAllocations)
+            ? data.departmentAllocations
+            : []
+        );
+        setBillability((prev) => ({
+          ...prev,
+          ...(data.billability || {}),
+        }));
       }
+    } catch (error) {
+      console.error("Error loading dashboard:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-      if (departmentChartRef.current) {
-        charts.current.department = new Chart(departmentChartRef.current.getContext('2d'), {
-          type: 'pie',
-          data: { labels: departmentNames, datasets: [{ data: departmentCounts, backgroundColor: ['#7DD3FC','#FB7185','#34D399','#FDE68A','#C4B5FD'], hoverOffset: 4 }] },
-          options: { responsive: true, plugins: { legend: { position: 'right' } } }
-        });
-      }
+  const totalEmployees = stats?.totalEmployees ?? 0;
+  const totalClients = stats?.totalClients ?? 0;
+  const totalProjects = stats?.totalProjects ?? 0;
 
-      if (billableChartRef.current) {
-        charts.current.billable = new Chart(billableChartRef.current.getContext('2d'), {
-          type: 'doughnut',
-          data: { labels: ['Billable','Non-Billable'], datasets: [{ data: [billableCount, nonBillableCount], backgroundColor: ['#FB7185','#34D399'] }] },
-          options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
-        });
-      }
-    } catch (err) { console.error('chart init', err); }
+  const handleExportClientAllocations = async () => {
+    try {
+      await exportClientAllocationsCSV();
+    } catch (err) {
+      console.error("Export CSV error:", err);
+      alert("Failed to export CSV");
+    }
+  };
 
-    return () => { Object.values(charts.current).forEach(c => c && c.destroy()); };
-  }, [clientNames, employeeCounts, departmentNames, departmentCounts, billableCount, nonBillableCount]);
+  // Chart data
+  const clientPieData = {
+    labels: clientAllocations.map((c) => c.client_name || "Unknown"),
+    datasets: [
+      {
+        data: clientAllocations.map(
+          (c) => Number(c.employee_count) || 0
+        ),
+        backgroundColor: ["#4C6FFF", "#22C55E", "#F97316", "#EC4899", "#6366F1"],
+      },
+    ],
+  };
 
-  const toggleMenu = (key) => setOpenMenuKey(prev => prev === key ? null : key);
+  const deptPieData = {
+    labels: departmentAllocations.map(
+      (d) => d.dept_name || "Unknown"
+    ),
+    datasets: [
+      {
+        data: departmentAllocations.map(
+          (d) => Number(d.employee_count) || 0
+        ),
+        backgroundColor: ["#0EA5E9", "#14B8A6", "#F59E0B", "#A855F7", "#10B981"],
+      },
+    ],
+  };
 
-  const filteredClients = clients.filter(c => c.client_name?.toLowerCase().includes(clientSearch.toLowerCase()));
-  const filteredAllocations = clientAllocations.filter(a => a.client_name?.toLowerCase().includes(clientSearch.toLowerCase()));
+  const billabilityData = {
+    labels: ["Billable", "Non-Billable"],
+    datasets: [
+      {
+        data: [
+          Number(billability?.billable) || 0,
+          Number(billability?.nonBillable) || 0,
+        ],
+        backgroundColor: ["#22C55E", "#EF4444"],
+      },
+    ],
+  };
 
   return (
-    <div className="min-h-screen flex bg-gray-50">
-      {/* <Sidebar openMenuKey={openMenuKey} setOpenMenuKey={setOpenMenuKey} setActiveSection={setActiveSection} /> */}
+    <div className="min-h-screen bg-[#EEF2FF] flex">
+      {/* Desktop Sidebar */}
+      <div className="hidden lg:block">
+        <Sidebar />
+      </div>
 
-      <main className="flex-1 p-6">
-        <header className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-semibold text-sky-800">Dashboard</h1>
-          <a href="/logout" className="inline-flex items-center bg-sky-700 text-white px-3 py-2 rounded-md"> <i className="fas fa-power-off mr-2"/> Logout</a>
-        </header>
+      {/* Mobile Sidebar */}
+      {sidebarOpen && (
+        <div className="fixed inset-0 z-40 lg:hidden">
+          <div
+            className="absolute inset-0 bg-black/30"
+            onClick={() => setSidebarOpen(false)}
+          />
+          <div className="absolute left-0 top-0 bottom-0 w-72 bg-white shadow-xl">
+            <div className="flex items-center justify-between px-4 py-3 border-b">
+              <span className="font-semibold text-slate-800 text-sm">
+                Menu
+              </span>
+              <button
+                onClick={() => setSidebarOpen(false)}
+                className="w-7 h-7 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50"
+              >
+                <FiX size={14} />
+              </button>
+            </div>
+            <div className="p-3 overflow-y-auto h-full">
+              <Sidebar />
+            </div>
+          </div>
+        </div>
+      )}
 
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div className="bg-white p-4 rounded-lg shadow-sm flex items-center gap-4">
-            <div className="bg-sky-50 text-sky-700 p-3 rounded-md"><i className="fas fa-users"/></div>
-            <div>
-              <h3 className="text-xs text-gray-500">Total Employees</h3>
-              <p className="text-xl font-semibold">{totals.employees}</p>
+      {/* MAIN */}
+      <div className="flex-1 flex flex-col">
+        {/* Mobile top bar */}
+        <div className="lg:hidden flex items-center justify-between px-4 py-3 bg-white shadow-sm">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="p-2 rounded-xl border border-slate-200 hover:bg-slate-50"
+            >
+              <FiMenu />
+            </button>
+            <span className="font-semibold text-slate-800 text-sm">
+              Admin Dashboard
+            </span>
+          </div>
+          <a
+            href="/logout"
+            className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-rose-50 text-rose-600 border border-rose-100"
+          >
+            <FiLogOut size={14} />
+          </a>
+        </div>
+
+        <main className="px-4 md:px-8 py-6 md:py-8 max-w-6xl w-full mx-auto space-y-6">
+          {/* Gradient Header Card */}
+          <div className="bg-gradient-to-r from-[#4C6FFF] via-[#6C5CE7] to-[#8B5CF6] rounded-3xl p-[1px] shadow-[0_18px_45px_rgba(15,23,42,0.35)]">
+            <div className="bg-white rounded-[22px] px-5 py-4 md:px-6 md:py-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-slate-900/5 flex items-center justify-center">
+                  <FiPieChart className="text-slate-900" size={18} />
+                </div>
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+                    Overview
+                  </p>
+                  <h1 className="text-lg md:text-xl font-semibold text-slate-900">
+                    Admin Dashboard
+                  </h1>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    High-level snapshot of employees, clients, projects and
+                    billability.
+                  </p>
+                </div>
+              </div>
+
+              <div className="hidden md:flex items-center gap-3">
+                <button
+                  onClick={handleExportClientAllocations}
+                  type="button"
+                  className="inline-flex items-center gap-1.5 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100"
+                >
+                  <FiDownload className="text-[13px]" />
+                  Client Allocation CSV
+                </button>
+                <a
+                  href="/logout"
+                  className="inline-flex items-center gap-1.5 rounded-2xl bg-rose-600 text-white px-3.5 py-1.5 text-xs font-medium hover:bg-rose-700"
+                >
+                  <FiLogOut className="text-[13px]" />
+                  Logout
+                </a>
+              </div>
             </div>
           </div>
 
-          <div className="bg-white p-4 rounded-lg shadow-sm flex items-center gap-4">
-            <div className="bg-sky-50 text-sky-700 p-3 rounded-md"><i className="fas fa-briefcase"/></div>
-            <div>
-              <h3 className="text-xs text-gray-500">Active Clients</h3>
-              <p className="text-xl font-semibold">{totals.clients}</p>
-            </div>
-          </div>
-
-          <div className="bg-white p-4 rounded-lg shadow-sm flex items-center gap-4">
-            <div className="bg-sky-50 text-sky-700 p-3 rounded-md"><i className="fas fa-project-diagram"/></div>
-            <div>
-              <h3 className="text-xs text-gray-500">Active Projects</h3>
-              <p className="text-xl font-semibold">{totals.projects}</p>
-            </div>
-          </div>
-        </section>
-
-        {activeSection === 'employees' && (
-          <section className="bg-white rounded-lg p-4 shadow-sm">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-medium">Client Employee Allocation</h2>
-              <div className="flex gap-2">
-                <input value={clientSearch} onChange={e => setClientSearch(e.target.value)} className="px-3 py-2 border rounded-md" placeholder="Search clients..." />
-                <a href="/export-client-allocations" className="px-3 py-2 bg-green-600 text-white rounded-md">Export CSV</a>
+          {/* Quick Stats */}
+          <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {/* Employees */}
+            <div className="bg-white rounded-3xl border border-slate-100 shadow-[0_14px_35px_rgba(15,23,42,0.06)] p-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-sky-50 flex items-center justify-center text-sky-600">
+                <FiUsers size={18} />
+              </div>
+              <div>
+                <p className="text-[11px] font-medium text-slate-500">
+                  Total Employees
+                </p>
+                <p className="text-xl font-semibold text-slate-900">
+                  {totalEmployees}
+                </p>
+                <p className="text-[11px] text-slate-400 mt-0.5">
+                  Company-wide headcount
+                </p>
               </div>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="text-left text-gray-500">
-                  <tr><th className="py-2">Client Name</th><th className="py-2">Number of Employees</th></tr>
-                </thead>
-                <tbody>
-                  {filteredAllocations.map((a, i) => (
-                    <tr key={i} className="border-t"><td className="py-2">{a.client_name}</td><td className="py-2">{a.employee_count}</td></tr>
-                  ))}
-                </tbody>
-              </table>
+            {/* Clients */}
+            <div className="bg-white rounded-3xl border border-slate-100 shadow-[0_14px_35px_rgba(15,23,42,0.06)] p-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600">
+                <FiBriefcase size={18} />
+              </div>
+              <div>
+                <p className="text-[11px] font-medium text-slate-500">
+                  Active Clients
+                </p>
+                <p className="text-xl font-semibold text-slate-900">
+                  {totalClients}
+                </p>
+                <p className="text-[11px] text-slate-400 mt-0.5">
+                  With current allocations
+                </p>
+              </div>
+            </div>
+
+            {/* Projects */}
+            <div className="bg-white rounded-3xl border border-slate-100 shadow-[0_14px_35px_rgba(15,23,42,0.06)] p-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-violet-50 flex items-center justify-center text-violet-600">
+                <FiLayers size={18} />
+              </div>
+              <div>
+                <p className="text-[11px] font-medium text-slate-500">
+                  Active Projects
+                </p>
+                <p className="text-xl font-semibold text-slate-900">
+                  {totalProjects}
+                </p>
+                <p className="text-[11px] text-slate-400 mt-0.5">
+                  Ongoing client engagements
+                </p>
+              </div>
             </div>
           </section>
-        )}
 
-        {activeSection === 'clients' && (
-          <section className="bg-white rounded-lg p-4 shadow-sm">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-medium">Client List</h2>
-              <input value={clientSearch} onChange={e => setClientSearch(e.target.value)} className="px-3 py-2 border rounded-md" placeholder="Search clients..." />
+          {/* Charts Section */}
+          <section className="bg-white rounded-3xl border border-slate-100 shadow-[0_14px_35px_rgba(15,23,42,0.06)] px-4 py-5 md:px-5 md:py-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <p className="text-xs font-semibold text-slate-700">
+                  Allocation & Billability
+                </p>
+                <p className="text-[11px] text-slate-400">
+                  Visual overview of how employees are distributed.
+                </p>
+              </div>
+              <button
+                onClick={loadDashboard}
+                type="button"
+                className="text-[11px] px-3 py-1.5 rounded-2xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600"
+              >
+                {loading ? "Refreshing..." : "Refresh"}
+              </button>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="text-left text-gray-500"><tr><th className="py-2">Client ID</th><th>Name</th><th>Start Date</th><th>End Date</th><th>Actions</th></tr></thead>
-                <tbody>
-                  {filteredClients.map(c => (
-                    <tr key={c.clientID} className="border-t"><td className="py-2">{c.clientID}</td><td className="py-2">{c.client_name}</td><td className="py-2">{c.start_date}</td><td className="py-2">{c.end_date}</td>
-                      <td className="py-2"><button className="mr-2"><i className="fas fa-edit"/></button><button><i className="fas fa-trash"/></button></td></tr>
-                  ))}
-                </tbody>
-              </table>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-5">
+              {/* Employees Per Client */}
+              <div className="bg-slate-50/80 rounded-3xl p-4 border border-slate-100 flex flex-col">
+                <div className="flex items-center justify-between mb-2">
+                  <h2 className="text-xs font-semibold text-slate-700">
+                    Employees Per Client
+                  </h2>
+                  <button
+                    onClick={handleExportClientAllocations}
+                    type="button"
+                    className="inline-flex items-center gap-1 text-[10px] px-2 py-1 rounded-full border border-slate-200 bg-white hover:bg-slate-50 text-slate-600"
+                  >
+                    <FiDownload className="text-[11px]" />
+                    CSV
+                  </button>
+                </div>
+                {clientAllocations && clientAllocations.length > 0 ? (
+                  <div className="h-56 flex items-center justify-center">
+                    <Pie data={clientPieData} />
+                  </div>
+                ) : (
+                  <p className="text-center text-xs text-slate-500 mt-6">
+                    No client allocation data.
+                  </p>
+                )}
+              </div>
+
+              {/* Employees Per Department */}
+              <div className="bg-slate-50/80 rounded-3xl p-4 border border-slate-100 flex flex-col">
+                <h2 className="text-xs font-semibold text-slate-700 mb-2 text-center">
+                  Employees Per Department
+                </h2>
+                {departmentAllocations &&
+                departmentAllocations.length > 0 ? (
+                  <div className="h-56 flex items-center justify-center">
+                    <Pie data={deptPieData} />
+                  </div>
+                ) : (
+                  <p className="text-center text-xs text-slate-500 mt-6">
+                    No department allocation data.
+                  </p>
+                )}
+              </div>
+
+              {/* Billability */}
+              <div className="bg-slate-50/80 rounded-3xl p-4 border border-slate-100 flex flex-col">
+                <h2 className="text-xs font-semibold text-slate-700 mb-2 text-center">
+                  Billable vs Non-Billable
+                </h2>
+                <div className="h-56 flex items-center justify-center">
+                  <Doughnut data={billabilityData} />
+                </div>
+
+                <div className="mt-3 flex justify-around text-[11px] text-slate-600">
+                  <div className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-[#22C55E]" />
+                    Billable: {billability?.billable ?? 0}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-[#EF4444]" />
+                    Non-Billable: {billability?.nonBillable ?? 0}
+                  </div>
+                </div>
+              </div>
             </div>
           </section>
-        )}
-
-        {activeSection === 'projects' && (
-          <section className="bg-white rounded-lg p-4 shadow-sm">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-medium">Project List</h2>
-              <input className="px-3 py-2 border rounded-md" placeholder="Search projects..." />
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="text-left text-gray-500"><tr><th>ID</th><th>Client</th><th>Project Name</th><th>Project Code</th><th>Start</th><th>End</th><th>Actions</th></tr></thead>
-                <tbody>
-                  {projects.map(p => (
-                    <tr key={p.id} className="border-t"><td className="py-2">{p.id}</td><td className="py-2">{p.client_name}</td><td className="py-2">{p.project_name}</td><td className="py-2">{p.project_code}</td><td className="py-2">{p.start_date}</td><td className="py-2">{p.end_date}</td>
-                      <td className="py-2"><button className="mr-2"><i className="fas fa-edit"/></button><button><i className="fas fa-trash"/></button></td></tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </section>
-        )}
-
-        {activeSection === 'dashboard' && (
-          <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-white rounded-lg p-4 shadow-sm">
-              <h3 className="text-center text-sky-700 font-medium mb-3">Employees Per Client</h3>
-              <canvas ref={employeeChartRef} className="w-full h-64" />
-            </div>
-
-            <div className="bg-white rounded-lg p-4 shadow-sm">
-              <h3 className="text-center text-sky-700 font-medium mb-3">Employees Per Department</h3>
-              <canvas ref={departmentChartRef} className="w-full h-64" />
-            </div>
-
-            <div className="bg-white rounded-lg p-4 shadow-sm">
-              <h3 className="text-center text-sky-700 font-medium mb-3">Billable vs Non-Billable</h3>
-              <div className="h-64"><canvas ref={billableChartRef} className="w-full h-full" /></div>
-            </div>
-          </section>
-        )}
-      </main>
+        </main>
+      </div>
     </div>
   );
 }
-

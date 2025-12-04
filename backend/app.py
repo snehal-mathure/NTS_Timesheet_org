@@ -1,4 +1,5 @@
 # app.py
+from chromadb import Client
 from flask import (
     Flask,
     render_template,
@@ -61,14 +62,16 @@ from reportlab.platypus import Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import inch
 from flask_cors import CORS
+from flask import Flask
 
 
 db = SQLAlchemy() 
 
 app = Flask(__name__)
+CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 
 
-db_path = os.path.join(app.root_path, 'mydatabase.db') #this is for local
+db_path = os.path.join(app.root_path, 'mydatabase1.db') #this is for local
 # db_path = '/home/nts_sqlite_db/mydatabase.db'          #this for server
 app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -162,6 +165,8 @@ CORS(app, supports_credentials=True)  # Allow requests from React frontend
 #     return render_template("register.html", departments=departments)
 
 
+
+
 @app.route("/register", methods=["POST"])
 def register():
     # Get JSON data from frontend
@@ -212,6 +217,7 @@ def register():
     db.session.commit()
 
     return jsonify({"message": "success"}), 201
+ 
 
 
 
@@ -284,11 +290,12 @@ def login():
         session["user_email"] = user.email
 
         # Check role
-        is_admin = 1 if user.empid == '1' else 0
+        # is_admin = 1 if user.empid == '1' else 0
+        is_admin = 1 if user.empid == 'N0482' else 0
 
         # ✅ Return JSON response instead of redirect
         return jsonify({
-            "message": "Login successful",
+            "message": "successful",
             "user": {
                 "empid": user.empid,
                 "fname": user.fname,
@@ -622,65 +629,141 @@ def forgot_password():
                               employees=[])
 
 
+# @app.route('/admin')
+# def admin_dashboard():
+#     if 'user_id' not in session:
+#         return redirect(url_for('login'))
+   
+#     if session['user_id'] != 'N0482':
+#         flash('You do not have permission to access the admin dashboard', 'error')
+#         return redirect(url_for('login'))
+   
+#     try:
+#         # Get counts for the dashboard
+#         total_employees = Employee_Info.query.count()
+#         total_clients = Client_Info.query.count()
+#         total_projects = Project_Info.query.count()
+       
+#         # Get client allocations (client name vs. number of employees allocated)
+#         client_allocations = db.session.query(
+#             Client_Info.client_name,
+#             func.count(Client_Employee.empid).label('employee_count')
+#         ).join(
+#             Client_Employee, Client_Info.clientID == Client_Employee.clientID
+#         ).group_by(Client_Info.client_name).all()
+ 
+#         client_names = [client.client_name for client in client_allocations]
+#         employee_counts = [client.employee_count for client in client_allocations]
+ 
+#         # Get department-wise employee count
+#         department_allocations = db.session.query(
+#             Department.dept_name,
+#             func.count(Employee_Info.empid).label('employee_count')
+#         ).join(Employee_Info, Employee_Info.dept_id == Department.id)\
+#         .group_by(Department.dept_name).all()
+
+#         department_names = [row.dept_name for row in department_allocations]
+#         department_counts = [row.employee_count for row in department_allocations]
+
+ 
+#         # Get Billable & Non-Billable Project Count
+#         billable_count = db.session.query(func.count()).filter(Project_Info.project_billability == 'Billable').scalar()
+#         non_billable_count = db.session.query(func.count()).filter(Project_Info.project_billability == 'Non-Billable').scalar()
+ 
+#         return render_template('admin_dashboard.html',
+#                                session=session,
+#                                total_employees=total_employees,
+#                                total_clients=total_clients,
+#                                total_projects=total_projects,
+#                                client_names=client_names,
+#                                employee_counts=employee_counts,
+#                                department_names=department_names,
+#                                department_counts=department_counts,
+#                                billable_count=billable_count,
+#                                non_billable_count=non_billable_count)
+#     except Exception as e:
+#         print(f"Error in admin dashboard: {str(e)}")
+#         return render_template('admin_dashboard.html',
+#                                session=session,
+#                                total_employees=total_employees,
+#                                total_clients=total_clients,
+#                                total_projects=total_projects)
+
+from flask import jsonify
+# Show client allocations, department allocations, billable vs non-billable counts
 @app.route('/admin')
 def admin_dashboard():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
+    # if 'user_id' not in session:
+    #     return jsonify({"error": "Unauthorized", "message": "User not logged in"}), 401
    
-    if session['user_id'] != 'N0482':
-        flash('You do not have permission to access the admin dashboard', 'error')
-        return redirect(url_for('login'))
-   
+    # if session['user_id'] != 'N0482':
+    #     return jsonify({"error": "Forbidden", "message": "You do not have permission to access the admin dashboard"}), 403
+
     try:
-        # Get counts for the dashboard
+        # Counts
         total_employees = Employee_Info.query.count()
         total_clients = Client_Info.query.count()
         total_projects = Project_Info.query.count()
-       
-        # Get client allocations (client name vs. number of employees allocated)
+
+        # Client allocations
         client_allocations = db.session.query(
             Client_Info.client_name,
             func.count(Client_Employee.empid).label('employee_count')
         ).join(
             Client_Employee, Client_Info.clientID == Client_Employee.clientID
         ).group_by(Client_Info.client_name).all()
- 
-        client_names = [client.client_name for client in client_allocations]
-        employee_counts = [client.employee_count for client in client_allocations]
- 
-        # Get department-wise employee count
+
+        client_data = [
+            {"client_name": c.client_name, "employee_count": c.employee_count}
+            for c in client_allocations
+        ]
+
+        # Department allocations
         department_allocations = db.session.query(
             Department.dept_name,
             func.count(Employee_Info.empid).label('employee_count')
         ).join(Employee_Info, Employee_Info.dept_id == Department.id)\
         .group_by(Department.dept_name).all()
 
-        department_names = [row.dept_name for row in department_allocations]
-        department_counts = [row.employee_count for row in department_allocations]
+        department_data = [
+            {"department_name": d.dept_name, "employee_count": d.employee_count}
+            for d in department_allocations
+        ]
+
+        # Billable vs Non-Billable
+        billable_count = db.session.query(func.count()).filter(
+            Project_Info.project_billability == 'Billable'
+        ).scalar()
+
+        non_billable_count = db.session.query(func.count()).filter(
+            Project_Info.project_billability == 'Non-Billable'
+        ).scalar()
+
+        # --- RETURN JSON FOR REACT ---
+        return jsonify({
+            "status": "success",
+            "data": {
+                "total_employees": total_employees,
+                "total_clients": total_clients,
+                "total_projects": total_projects,
+
+                "client_allocations": client_data,
+                "department_allocations": department_data,
+
+                "billable_count": billable_count,
+                "non_billable_count": non_billable_count
+            }
+        }), 200
+
+    except Exception as e:
+        print("Error:", str(e))
+        return jsonify({
+            "status": "error",
+            "message": "Failed to load dashboard data",
+            "error": str(e)
+        }), 500
 
  
-        # Get Billable & Non-Billable Project Count
-        billable_count = db.session.query(func.count()).filter(Project_Info.project_billability == 'Billable').scalar()
-        non_billable_count = db.session.query(func.count()).filter(Project_Info.project_billability == 'Non-Billable').scalar()
- 
-        return render_template('admin_dashboard.html',
-                               session=session,
-                               total_employees=total_employees,
-                               total_clients=total_clients,
-                               total_projects=total_projects,
-                               client_names=client_names,
-                               employee_counts=employee_counts,
-                               department_names=department_names,
-                               department_counts=department_counts,
-                               billable_count=billable_count,
-                               non_billable_count=non_billable_count)
-    except Exception as e:
-        print(f"Error in admin dashboard: {str(e)}")
-        return render_template('admin_dashboard.html',
-                               session=session,
-                               total_employees=total_employees,
-                               total_clients=total_clients,
-                               total_projects=total_projects)
       
 @app.route('/admin/export_client_allocations')
 def export_client_allocations():
@@ -728,504 +811,1152 @@ def export_client_allocations():
         flash('Error exporting client allocations', 'error')
         return redirect(url_for('admin_dashboard'))
 
-@app.route('/admin/add_employee', methods=['GET', 'POST'])
-def add_employee():
-    if 'user_id' not in session:
-        flash('Please login to continue', 'error')
-        return redirect(url_for('login'))
+# @app.route('/admin/add_employee', methods=['GET', 'POST'])
+# def add_employee():
+#     if 'user_id' not in session:
+#         flash('Please login to continue', 'error')
+#         return redirect(url_for('login'))
 
-    clients = Client_Info.query.all()
-    departments = Department.query.all()# Fetch departments for dropdown
-    selected_leave_names = ["Sick leave", "Paid Time Off", "Restricted Holiday"]
-    leave_types = LeaveType.query.filter(LeaveType.leave_type.in_(selected_leave_names)).all()
-    print("Leave Types:", [lt.leave_type for lt in leave_types])
+#     clients = Client_Info.query.all()
+#     departments = Department.query.all()# Fetch departments for dropdown
+#     selected_leave_names = ["Sick leave", "Paid Time Off", "Restricted Holiday"]
+#     leave_types = LeaveType.query.filter(LeaveType.leave_type.in_(selected_leave_names)).all()
+#     print("Leave Types:", [lt.leave_type for lt in leave_types])
 
 
-    if request.method == 'POST':
-        try:
-            dept_id = request.form.get('dept_id')
+#     if request.method == 'POST':
+#         try:
+#             dept_id = request.form.get('dept_id')
 
-            # Add New Department
-            if dept_id == 'custom':
-                custom_dept = request.form.get('custom_dept', '').strip()
-                if not custom_dept:
-                    flash('New department name is required', 'error')
-                    return render_template('add_employee.html',
-                                        clients=clients,
-                                        departments=departments,
-                                        leave_types=leave_types,
-                                        today=datetime.now().strftime('%Y-%m-%d'))
+#             # Add New Department
+#             if dept_id == 'custom':
+#                 custom_dept = request.form.get('custom_dept', '').strip()
+#                 if not custom_dept:
+#                     flash('New department name is required', 'error')
+#                     return render_template('add_employee.html',
+#                                         clients=clients,
+#                                         departments=departments,
+#                                         leave_types=leave_types,
+#                                         today=datetime.now().strftime('%Y-%m-%d'))
 
-                existing_dept = Department.query.filter_by(dept_name=custom_dept).first()
-                if existing_dept:
-                    dept_id = existing_dept.id
-                else:
-                    new_dept = Department(dept_name=custom_dept)
-                    db.session.add(new_dept)
-                    db.session.flush()
-                    dept_id = new_dept.id
+#                 existing_dept = Department.query.filter_by(dept_name=custom_dept).first()
+#                 if existing_dept:
+#                     dept_id = existing_dept.id
+#                 else:
+#                     new_dept = Department(dept_name=custom_dept)
+#                     db.session.add(new_dept)
+#                     db.session.flush()
+#                     dept_id = new_dept.id
 
-            # Edit Existing Department
-            elif dept_id == 'edit':
-                edit_dept_id = request.form.get('edit_dept_id')
-                new_dept_name = request.form.get('new_dept_name', '').strip()
+#             # Edit Existing Department
+#             elif dept_id == 'edit':
+#                 edit_dept_id = request.form.get('edit_dept_id')
+#                 new_dept_name = request.form.get('new_dept_name', '').strip()
 
-                if not edit_dept_id or not new_dept_name:
-                    flash('Please select a department and provide a new name to edit', 'error')
-                    return render_template('add_employee.html',
-                                        clients=clients,
-                                        departments=departments,
-                                        leave_types=leave_types,
-                                        today=datetime.now().strftime('%Y-%m-%d'))
+#                 if not edit_dept_id or not new_dept_name:
+#                     flash('Please select a department and provide a new name to edit', 'error')
+#                     return render_template('add_employee.html',
+#                                         clients=clients,
+#                                         departments=departments,
+#                                         leave_types=leave_types,
+#                                         today=datetime.now().strftime('%Y-%m-%d'))
 
-                existing = Department.query.filter_by(dept_name=new_dept_name).first()
-                if existing:
-                    flash('A department with the new name already exists', 'error')
-                    return render_template('add_employee.html',
-                                        clients=clients,
-                                        departments=departments,
-                                        leave_types=leave_types,
-                                        today=datetime.now().strftime('%Y-%m-%d'))
+#                 existing = Department.query.filter_by(dept_name=new_dept_name).first()
+#                 if existing:
+#                     flash('A department with the new name already exists', 'error')
+#                     return render_template('add_employee.html',
+#                                         clients=clients,
+#                                         departments=departments,
+#                                         leave_types=leave_types,
+#                                         today=datetime.now().strftime('%Y-%m-%d'))
 
-                dept_to_edit = Department.query.get(edit_dept_id)
-                if dept_to_edit:
-                    dept_to_edit.dept_name = new_dept_name
-                    db.session.flush()
+#                 dept_to_edit = Department.query.get(edit_dept_id)
+#                 if dept_to_edit:
+#                     dept_to_edit.dept_name = new_dept_name
+#                     db.session.flush()
 
-                dept_id = edit_dept_id
+#                 dept_id = edit_dept_id
 
-            required_fields = ['empid', 'fname', 'lname', 'email', 'designation',
-                               'mobile', 'gender', 'employee_type', 'location',
-                               'company', 'doj', 'approver_id', 'password']
+#             required_fields = ['empid', 'fname', 'lname', 'email', 'designation',
+#                                'mobile', 'gender', 'employee_type', 'location',
+#                                'company', 'doj', 'approver_id', 'password']
 
-            has_error = False
-            for field in required_fields:
-                if not request.form.get(field):
-                    flash(f'{field.replace("_", " ").title()} is required', 'error')
-                    has_error = True
+#             has_error = False
+#             for field in required_fields:
+#                 if not request.form.get(field):
+#                     flash(f'{field.replace("_", " ").title()} is required', 'error')
+#                     has_error = True
 
-            email = request.form.get('email', '')
-            if email and not re.match(r"[^@]+@[^@]+\.[^@]+", email):
-                flash('Invalid email format', 'error')
-                has_error = True
+#             email = request.form.get('email', '')
+#             if email and not re.match(r"[^@]+@[^@]+\.[^@]+", email):
+#                 flash('Invalid email format', 'error')
+#                 has_error = True
 
-            mobile = request.form.get('mobile', '')
-            if mobile and not re.match(r"^\d{10}$", mobile):
-                flash('Mobile number must be 10 digits', 'error')
-                has_error = True
+#             mobile = request.form.get('mobile', '')
+#             if mobile and not re.match(r"^\d{10}$", mobile):
+#                 flash('Mobile number must be 10 digits', 'error')
+#                 has_error = True
 
-            empid = request.form.get('empid', '')
-            if empid:
-                existing_employee = Employee_Info.query.filter_by(empid=empid).first()
-                if existing_employee:
-                    flash('Employee ID already exists', 'error')
-                    has_error = True
+#             empid = request.form.get('empid', '')
+#             if empid:
+#                 existing_employee = Employee_Info.query.filter_by(empid=empid).first()
+#                 if existing_employee:
+#                     flash('Employee ID already exists', 'error')
+#                     has_error = True
 
-            if email:
-                existing_email = Employee_Info.query.filter_by(email=email).first()
-                if existing_email:
-                    flash('Email already registered', 'error')
-                    has_error = True
+#             if email:
+#                 existing_email = Employee_Info.query.filter_by(email=email).first()
+#                 if existing_email:
+#                     flash('Email already registered', 'error')
+#                     has_error = True
 
-            doj, lwd = None, None
-            if request.form.get('doj'):
-                try:
-                    doj = datetime.strptime(request.form['doj'], '%Y-%m-%d').date()
-                except ValueError:
-                    flash('Invalid date format for Date of Joining', 'error')
-                    has_error = True
+#             doj, lwd = None, None
+#             if request.form.get('doj'):
+#                 try:
+#                     doj = datetime.strptime(request.form['doj'], '%Y-%m-%d').date()
+#                 except ValueError:
+#                     flash('Invalid date format for Date of Joining', 'error')
+#                     has_error = True
 
-            if request.form.get('lwd'):
-                try:
-                    lwd = datetime.strptime(request.form['lwd'], '%Y-%m-%d').date()
-                    if doj and lwd <= doj:
-                        flash('Last working day must be after date of joining', 'error')
-                        has_error = True
-                except ValueError:
-                    flash('Invalid date format for Last Working Day', 'error')
-                    has_error = True
+#             if request.form.get('lwd'):
+#                 try:
+#                     lwd = datetime.strptime(request.form['lwd'], '%Y-%m-%d').date()
+#                     if doj and lwd <= doj:
+#                         flash('Last working day must be after date of joining', 'error')
+#                         has_error = True
+#                 except ValueError:
+#                     flash('Invalid date format for Last Working Day', 'error')
+#                     has_error = True
 
-            selected_clients = request.form.getlist('clients')
-            for client_id in selected_clients:
-                start_date = request.form.get(f'start_date_{client_id}')
-                end_date = request.form.get(f'end_date_{client_id}')
+#             selected_clients = request.form.getlist('clients')
+#             for client_id in selected_clients:
+#                 start_date = request.form.get(f'start_date_{client_id}')
+#                 end_date = request.form.get(f'end_date_{client_id}')
 
-                if not start_date:
-                    flash('Start date is required for selected clients', 'error')
-                    has_error = True
-                    continue
+#                 if not start_date:
+#                     flash('Start date is required for selected clients', 'error')
+#                     has_error = True
+#                     continue
 
-                try:
-                    start_date_obj = datetime.strptime(start_date, '%Y-%m-%d').date()
-                    if doj and start_date_obj < doj:
-                        flash('Client start date cannot be before date of joining', 'error')
-                        has_error = True
-                except ValueError:
-                    flash(f'Invalid start date format for client {client_id}', 'error')
-                    has_error = True
+#                 try:
+#                     start_date_obj = datetime.strptime(start_date, '%Y-%m-%d').date()
+#                     if doj and start_date_obj < doj:
+#                         flash('Client start date cannot be before date of joining', 'error')
+#                         has_error = True
+#                 except ValueError:
+#                     flash(f'Invalid start date format for client {client_id}', 'error')
+#                     has_error = True
 
-                if end_date:
-                    try:
-                        end_date_obj = datetime.strptime(end_date, '%Y-%m-%d').date()
-                        if end_date_obj <= start_date_obj:
-                            flash('Client end date must be after start date', 'error')
-                            has_error = True
-                    except ValueError:
-                        flash(f'Invalid end date format for client {client_id}', 'error')
-                        has_error = True
+#                 if end_date:
+#                     try:
+#                         end_date_obj = datetime.strptime(end_date, '%Y-%m-%d').date()
+#                         if end_date_obj <= start_date_obj:
+#                             flash('Client end date must be after start date', 'error')
+#                             has_error = True
+#                     except ValueError:
+#                         flash(f'Invalid end date format for client {client_id}', 'error')
+#                         has_error = True
 
-            if has_error:
-                return render_template('add_employee.html',
-                                       clients=clients,
-                                       departments=departments,
-                                       leave_types=leave_types,
-                                       today=datetime.now().strftime('%Y-%m-%d'))
+#             if has_error:
+#                 return render_template('add_employee.html',
+#                                        clients=clients,
+#                                        departments=departments,
+#                                        leave_types=leave_types,
+#                                        today=datetime.now().strftime('%Y-%m-%d'))
 
-            new_employee = Employee_Info(
-                empid=request.form['empid'].upper(),
-                fname=request.form['fname'].strip(),
-                lname=request.form['lname'].strip(),
-                email=email.lower(),
-                dept_id=dept_id,  # Now using dept_id FK
-                designation=request.form['designation'].strip(),
-                mobile=mobile,
-                gender=request.form['gender'],
-                employee_type=request.form['employee_type'],
-                location=request.form['location'],
-                company=request.form['company'],
-                work_location=request.form.get('work_location', '').strip(),
-                payroll=request.form['company'],
-                country=request.form['company'],
-                city=request.form.get('city', '').strip(),
-                core_skill=request.form.get('core_skill', '').strip(),
-                skill_details=request.form.get('skill_details', '').strip(),
-                doj=doj,
-                lwd=lwd,
-                approver_id=request.form['approver_id'].upper(),
-                password=generate_password_hash(request.form['password']),
-                prev_total_exp=float(request.form.get('prev_total_exp')) if request.form.get('prev_total_exp') else None
-            )
+#             new_employee = Employee_Info(
+#                 empid=request.form['empid'].upper(),
+#                 fname=request.form['fname'].strip(),
+#                 lname=request.form['lname'].strip(),
+#                 email=email.lower(),
+#                 dept_id=dept_id,  # Now using dept_id FK
+#                 designation=request.form['designation'].strip(),
+#                 mobile=mobile,
+#                 gender=request.form['gender'],
+#                 employee_type=request.form['employee_type'],
+#                 location=request.form['location'],
+#                 company=request.form['company'],
+#                 work_location=request.form.get('work_location', '').strip(),
+#                 payroll=request.form['company'],
+#                 country=request.form['company'],
+#                 city=request.form.get('city', '').strip(),
+#                 core_skill=request.form.get('core_skill', '').strip(),
+#                 skill_details=request.form.get('skill_details', '').strip(),
+#                 doj=doj,
+#                 lwd=lwd,
+#                 approver_id=request.form['approver_id'].upper(),
+#                 password=generate_password_hash(request.form['password']),
+#                 prev_total_exp=float(request.form.get('prev_total_exp')) if request.form.get('prev_total_exp') else None
+#             )
 
-            db.session.add(new_employee)
-            db.session.flush()
+#             db.session.add(new_employee)
+#             db.session.flush()
             
-            try:
-                leave_balances = {
-                    int(key.split("[")[1].rstrip("]")): float(value) if value else 0.0
-                    for key, value in request.form.items()
-                    if key.startswith("leave_balances[")
-                }
+#             try:
+#                 leave_balances = {
+#                     int(key.split("[")[1].rstrip("]")): float(value) if value else 0.0
+#                     for key, value in request.form.items()
+#                     if key.startswith("leave_balances[")
+#                 }
 
-                for leave_id, balance in leave_balances.items():
-                    leave_entry = Leave_Balance(
-                        empid=new_employee.empid,
-                        leave_id=leave_id,
-                        balance=balance
-                    )
-                    db.session.add(leave_entry)
+#                 for leave_id, balance in leave_balances.items():
+#                     leave_entry = Leave_Balance(
+#                         empid=new_employee.empid,
+#                         leave_id=leave_id,
+#                         balance=balance
+#                     )
+#                     db.session.add(leave_entry)
 
-                db.session.commit()
+#                 db.session.commit()
 
-            except Exception as e:
-                db.session.rollback()
-                flash(f'Error saving leave balances: {str(e)}', 'error')
-                return render_template(
-                    'add_employee.html',
-                    clients=clients,
-                    departments=departments,
-                    leave_types=leave_types,
-                    today=datetime.now().strftime('%Y-%m-%d')
-                )
+#             except Exception as e:
+#                 db.session.rollback()
+#                 flash(f'Error saving leave balances: {str(e)}', 'error')
+#                 return render_template(
+#                     'add_employee.html',
+#                     clients=clients,
+#                     departments=departments,
+#                     leave_types=leave_types,
+#                     today=datetime.now().strftime('%Y-%m-%d')
+#                 )
 
-            for client_id in selected_clients:
-                start_date = request.form.get(f'start_date_{client_id}')
-                end_date = request.form.get(f'end_date_{client_id}')
+#             for client_id in selected_clients:
+#                 start_date = request.form.get(f'start_date_{client_id}')
+#                 end_date = request.form.get(f'end_date_{client_id}')
 
-                start_date_obj = datetime.strptime(start_date, '%Y-%m-%d').date()
-                end_date_obj = datetime.strptime(end_date, '%Y-%m-%d').date() if end_date else None
+#                 start_date_obj = datetime.strptime(start_date, '%Y-%m-%d').date()
+#                 end_date_obj = datetime.strptime(end_date, '%Y-%m-%d').date() if end_date else None
 
-                client_employee_entry = Client_Employee(
-                    empid=new_employee.empid,
-                    clientID=client_id,
-                    start_date=start_date_obj,
-                    end_date=end_date_obj
-                )
-                db.session.add(client_employee_entry)
+#                 client_employee_entry = Client_Employee(
+#                     empid=new_employee.empid,
+#                     clientID=client_id,
+#                     start_date=start_date_obj,
+#                     end_date=end_date_obj
+#                 )
+#                 db.session.add(client_employee_entry)
 
-            db.session.commit()
-            flash('Employee added successfully!', 'success')
-            return redirect(url_for('admin_dashboard'))
+#             db.session.commit()
+#             flash('Employee added successfully!', 'success')
+#             return redirect(url_for('admin_dashboard'))
 
-        except IntegrityError:
-            db.session.rollback()
-            flash('Database error: Duplicate entry or invalid data', 'error')
-        except ValueError as e:
-            db.session.rollback()
-            flash(f'Invalid data format: {str(e)}', 'error')
-        except Exception as e:
-            db.session.rollback()
-            flash(f'Unexpected error: {str(e)}', 'error')
+#         except IntegrityError:
+#             db.session.rollback()
+#             flash('Database error: Duplicate entry or invalid data', 'error')
+#         except ValueError as e:
+#             db.session.rollback()
+#             flash(f'Invalid data format: {str(e)}', 'error')
+#         except Exception as e:
+#             db.session.rollback()
+#             flash(f'Unexpected error: {str(e)}', 'error')
 
-    return render_template('add_employee.html', 
-                           clients=clients,
-                           departments=departments,
-                           leave_types=leave_types,
-                           today=datetime.now().strftime('%Y-%m-%d'))
+#     return render_template('add_employee.html', 
+#                            clients=clients,
+#                            departments=departments,
+#                            leave_types=leave_types,
+#                            today=datetime.now().strftime('%Y-%m-%d'))
 
- 
-@app.route('/admin/employees', methods=['GET'])
-@app.route('/admin/employees/view', methods=['GET'])
-def view_employees():
-    if 'user_id' not in session:
-        flash('Please login to continue', 'error')
-        return redirect(url_for('login'))
+# @app.route("/api/departments", methods=["GET"])
+# def api_get_departments():
+#     depts = Department.query.order_by(Department.dept_name).all()
+#     return jsonify([
+#         {"id": d.id, "dept_name": d.dept_name}
+#         for d in depts
+#     ])
 
-    # If viewing a specific employee
-    if 'view_empid' in session:
-        empid = session['view_empid']
-        employee = Employee_Info.query.filter_by(empid=empid.upper()).first_or_404()
-        client_assignments = Client_Employee.query.filter_by(empid=empid.upper()).all()
+# ✅ LIST EMPLOYEES
+@app.route('/api/employees', methods=['GET'])
+def list_employees():
+    dept = request.args.get("dept", "")
+    approver_id = request.args.get("approver_id", "")
+    start_date = request.args.get("start_date", "")
+    end_date = request.args.get("end_date", "")
 
-        client_details = []
-        for assignment in client_assignments:
-            client = Client_Info.query.filter_by(clientID=assignment.clientID).first()
-            if client:
-                client_details.append({
-                    'client': client,
-                    'assignment': assignment
-                })
-
-        session.pop('view_empid', None)
-
-        return render_template('view_employee.html',
-                               employee=employee,
-                               client_details=client_details)
-
-    # Get filter values from request
-    department_id = request.args.get('dept', '')  # dept is dept_id
-    approver_id = request.args.get('approver_id', '')
-    start_date = request.args.get('start_date', '')
-    end_date = request.args.get('end_date', '')
-
-    # Base query
     query = Employee_Info.query.options(joinedload(Employee_Info.department))
 
+    if dept:
+        query = query.filter(Employee_Info.dept_id == int(dept))
 
-    # Filter by dept_id
-    if department_id:
-        query = query.filter(Employee_Info.dept_id == int(department_id))
-
-    # Filter by approver_id
     if approver_id:
         query = query.filter(Employee_Info.approver_id == approver_id)
 
-    # Filter by date range (doj)
     if start_date and end_date:
         try:
-            start_date_obj = datetime.strptime(start_date, '%Y-%m-%d').date()
-            end_date_obj = datetime.strptime(end_date, '%Y-%m-%d').date()
-            query = query.filter(Employee_Info.doj.between(start_date_obj, end_date_obj))
-        except ValueError:
-            flash('Invalid date format. Please use YYYY-MM-DD.', 'error')
+            s = datetime.strptime(start_date, "%Y-%m-%d").date()
+            e = datetime.strptime(end_date, "%Y-%m-%d").date()
+            query = query.filter(Employee_Info.doj.between(s, e))
+        except:
+            pass
 
     employees = query.all()
 
-    # Get list of all departments (id + name)
-    departments = Department.query.order_by(Department.dept_name).all()
+    def serialize(emp):
+        return {
+            "empid": emp.empid,
+            "fname": emp.fname,
+            "lname": emp.lname,
+            "designation": emp.designation,
+            "email": emp.email,
+            "mobile": emp.mobile,
+            "gender": emp.gender,
+            "approver_id": emp.approver_id,
+            "doj": emp.doj.strftime("%Y-%m-%d") if emp.doj else None,
+            "lwd": emp.lwd.strftime("%Y-%m-%d") if emp.lwd else None,
+            "department": {
+                "id": emp.department.id,
+                "dept_name": emp.department.dept_name
+            } if emp.department else None
+        }
 
-    # Get list of distinct approver IDs
-    approvers = db.session.query(Employee_Info.approver_id).filter(
-        Employee_Info.approver_id.isnot(None)
-    ).distinct().all()
+    return jsonify({"employees": [serialize(e) for e in employees]}), 200
 
-    current_date = datetime.now().date()
 
-    return render_template('employee_list.html',
-                           employees=employees,
-                           current_date=current_date,
-                           departments=departments,
-                           approvers=approvers,
-                           selected_department=department_id,
-                           selected_approver=approver_id,
-                           start_date=start_date,
-                           end_date=end_date)
+
+
+# @app.route('/api/employees/form-data', methods=['GET'])
+# def get_employee_form_data():
+#     clients = Client_Info.query.all()
+#     departments = Department.query.all()
+#     leave_types = LeaveType.query.all()
+ 
+#     return jsonify({
+#         "clients": [
+#             {"clientID": c.clientID, "client_name": c.client_name}
+#             for c in clients
+#         ],
+#         "departments": [
+#             {"id": d.id, "dept_name": d.dept_name}
+#             for d in departments
+#         ],
+#         "leave_types": [
+#             {"leave_id": l.leave_id, "leave_type": l.leave_type}
+#             for l in leave_types
+#         ]
+#     }), 200
+
+
+
+
+
+# @app.route('/admin/add_employee', methods=['POST'])
+# def add_employee():
+#     data = request.json
+
+#     try:
+#         # ---------------------
+#         # Validate required fields
+#         # ---------------------
+#         required_fields = [
+#             "empid", "fname", "lname", "email", "designation",
+#             "mobile", "gender", "employee_type", "location",
+#             "company", "doj", "approver_id", "password"
+#         ]
+
+#         for field in required_fields:
+#             if not data.get(field):
+#                 return jsonify({"status": "error", "message": f"{field} is required"}), 400
+
+#         # Email validation
+#         if not re.match(r"[^@]+@[^@]+\.[^@]+", data["email"]):
+#             return jsonify({"status": "error", "message": "Invalid email format"}), 400
+
+#         # Mobile validation
+#         if not re.match(r"^\d{10}$", data["mobile"]):
+#             return jsonify({"status": "error", "message": "Mobile number must be 10 digits"}), 400
+
+#         # Duplicate employee
+#         if Employee_Info.query.filter_by(empid=data["empid"]).first():
+#             return jsonify({"status": "error", "message": "Employee ID already exists"}), 400
+
+#         if Employee_Info.query.filter_by(email=data["email"]).first():
+#             return jsonify({"status": "error", "message": "Email already exists"}), 400
+
+#         # ---------------------
+#         # Department Logic
+#         # ---------------------
+#         dept_id = data.get("dept_id")
+
+#         if dept_id == "custom":
+#             custom_name = data.get("custom_dept", "").strip()
+#             if not custom_name:
+#                 return jsonify({"status": "error", "message": "New department name required"}), 400
+
+#             existing = Department.query.filter_by(dept_name=custom_name).first()
+#             if existing:
+#                 dept_id = existing.id
+#             else:
+#                 new_dept = Department(dept_name=custom_name)
+#                 db.session.add(new_dept)
+#                 db.session.flush()
+#                 dept_id = new_dept.id
+
+#         elif dept_id == "edit":
+#             edit_dept_id = data.get("edit_dept_id")
+#             new_dept_name = data.get("new_dept_name", "").strip()
+
+#             if not edit_dept_id or not new_dept_name:
+#                 return jsonify({"status": "error", "message": "Department edit details missing"}), 400
+
+#             existing = Department.query.filter_by(dept_name=new_dept_name).first()
+#             if existing:
+#                 return jsonify({"status": "error", "message": "Department name already exists"}), 400
+
+#             dept_obj = Department.query.get(edit_dept_id)
+#             dept_obj.dept_name = new_dept_name
+#             dept_id = edit_dept_id
+
+#         # ---------------------
+#         # Dates
+#         # ---------------------
+#         doj = datetime.strptime(data["doj"], "%Y-%m-%d").date()
+#         lwd = None
+
+#         if data.get("lwd"):
+#             lwd = datetime.strptime(data["lwd"], "%Y-%m-%d").date()
+#             if lwd <= doj:
+#                 return jsonify({"status": "error", "message": "Last working day must be later than DOJ"}), 400
+
+#         # ---------------------
+#         # Fix prev_total_exp (IMPORTANT)
+#         # "" → None, "0", "1.5", etc. → float
+#         # ---------------------
+#         prev_exp = data.get("prev_total_exp")
+
+#         try:
+#             prev_exp = float(prev_exp) if prev_exp not in (None, "", " ") else None
+#         except:
+#             prev_exp = None  # fallback
+
+#         # ---------------------
+#         # Create Employee
+#         # ---------------------
+#         new_emp = Employee_Info(
+#             empid=data["empid"].upper(),
+#             fname=data["fname"],
+#             lname=data["lname"],
+#             email=data["email"].lower(),
+#             dept_id=dept_id,
+#             designation=data["designation"],
+#             mobile=data["mobile"],
+#             gender=data["gender"],
+#             employee_type=data["employee_type"],
+#             location=data["location"],
+#             company=data["company"],
+#             work_location=data.get("work_location", ""),
+#             city=data.get("city", ""),
+#             core_skill=data.get("core_skill", ""),
+#             skill_details=data.get("skill_details", ""),
+#             doj=doj,
+#             lwd=lwd,
+#             approver_id=data["approver_id"].upper(),
+#             password=generate_password_hash(data["password"]),
+#             prev_total_exp=prev_exp
+#         )
+
+#         db.session.add(new_emp)
+#         db.session.flush()
+
+#         # ---------------------
+#         # Leave Balances
+#         # ---------------------
+#         leave_balances = data.get("leave_balances", {})
+
+#         for leave_id, balance in leave_balances.items():
+#             try:
+#                 bal = float(balance) if balance not in ("", None) else 0.0
+#             except:
+#                 bal = 0.0
+
+#             db.session.add(Leave_Balance(
+#                 empid=new_emp.empid,
+#                 leave_id=int(leave_id),
+#                 balance=bal
+#             ))
+
+#         # ---------------------
+#         # Client Assignments
+#         # ---------------------
+#         client_assignments = data.get("client_assignments", {})
+
+#         for client_id, entry in client_assignments.items():
+#             start = entry.get("start_date")
+#             end = entry.get("end_date")
+
+#             if not start:
+#                 return jsonify({"status": "error", "message": "Client start date required"}), 400
+
+#             sd = datetime.strptime(start, "%Y-%m-%d").date()
+
+#             if end:
+#                 ed = datetime.strptime(end, "%Y-%m-%d").date()
+#                 if ed <= sd:
+#                     return jsonify({"status": "error", "message": "Client end date must be after start date"}), 400
+#             else:
+#                 ed = None
+
+#             db.session.add(Client_Employee(
+#                 empid=new_emp.empid,
+#                 clientID=int(client_id),
+#                 start_date=sd,
+#                 end_date=ed
+#             ))
+
+#         db.session.commit()
+
+#         return jsonify({"status": "success", "message": "Employee Added Successfully!"}), 200
+
+#     except Exception as e:
+#         db.session.rollback()
+#         return jsonify({"status": "error", "message": str(e)}), 500
+
+ 
+# @app.route('/admin/employees', methods=['GET'])
+# @app.route('/admin/employees/view', methods=['GET'])
+# def view_employees():
+#     if 'user_id' not in session:
+#         flash('Please login to continue', 'error')
+#         return redirect(url_for('login'))
+
+#     # If viewing a specific employee
+#     if 'view_empid' in session:
+#         empid = session['view_empid']
+#         employee = Employee_Info.query.filter_by(empid=empid.upper()).first_or_404()
+#         client_assignments = Client_Employee.query.filter_by(empid=empid.upper()).all()
+
+#         client_details = []
+#         for assignment in client_assignments:
+#             client = Client_Info.query.filter_by(clientID=assignment.clientID).first()
+#             if client:
+#                 client_details.append({
+#                     'client': client,
+#                     'assignment': assignment
+#                 })
+
+#         session.pop('view_empid', None)
+
+#         return render_template('view_employee.html',
+#                                employee=employee,
+#                                client_details=client_details)
+
+#     # Get filter values from request
+#     department_id = request.args.get('dept', '')  # dept is dept_id
+#     approver_id = request.args.get('approver_id', '')
+#     start_date = request.args.get('start_date', '')
+#     end_date = request.args.get('end_date', '')
+
+#     # Base query
+#     query = Employee_Info.query.options(joinedload(Employee_Info.department))
+
+
+#     # Filter by dept_id
+#     if department_id:
+#         query = query.filter(Employee_Info.dept_id == int(department_id))
+
+#     # Filter by approver_id
+#     if approver_id:
+#         query = query.filter(Employee_Info.approver_id == approver_id)
+
+#     # Filter by date range (doj)
+#     if start_date and end_date:
+#         try:
+#             start_date_obj = datetime.strptime(start_date, '%Y-%m-%d').date()
+#             end_date_obj = datetime.strptime(end_date, '%Y-%m-%d').date()
+#             query = query.filter(Employee_Info.doj.between(start_date_obj, end_date_obj))
+#         except ValueError:
+#             flash('Invalid date format. Please use YYYY-MM-DD.', 'error')
+
+#     employees = query.all()
+
+#     # Get list of all departments (id + name)
+#     departments = Department.query.order_by(Department.dept_name).all()
+
+#     # Get list of distinct approver IDs
+#     approvers = db.session.query(Employee_Info.approver_id).filter(
+#         Employee_Info.approver_id.isnot(None)
+#     ).distinct().all()
+
+#     current_date = datetime.now().date()
+
+#     return render_template('employee_list.html',
+#                            employees=employees,
+#                            current_date=current_date,
+#                            departments=departments,
+#                            approvers=approvers,
+#                            selected_department=department_id,
+#                            selected_approver=approver_id,
+#                            start_date=start_date,
+#                            end_date=end_date)
 
     
-@app.route('/admin/export_employees')
+# @app.route('/api/employees/form-data', methods=['GET'])
+# def employee_form_data():
+#     try:
+#         # Load clients
+#         clients = Client.query.all()
+#         clients_data = [
+#             {"clientID": c.clientID, "client_name": c.client_name}
+#             for c in clients
+#         ]
+
+#         # Load departments
+#         departments = Department.query.all()
+#         departments_data = [
+#             {"id": d.id, "dept_name": d.dept_name}
+#             for d in departments
+#         ]
+
+#         # Load leave types
+#         leave_types = LeaveType.query.all()
+#         leave_types_data = [
+#             {"leave_id": lt.leave_id, "leave_type": lt.leave_type}
+#             for lt in leave_types
+#         ]
+
+#         return jsonify({
+#             "clients": clients_data,
+#             "departments": departments_data,
+#             "leave_types": leave_types_data
+#         }), 200
+
+#     except Exception as e:
+#         return jsonify({"message": "Failed to load form data", "error": str(e)}), 500
+
+
+
+
+# ===================================
+
+
+
+# 🚀 1. FETCH FORM DATA (clients, departments, leave types)
+# -------------------------------------------
+@app.route('/api/employees/form-data', methods=['GET'])
+def get_employee_form_data():
+    clients = Client_Info.query.all()
+    departments = Department.query.all()
+    leave_types = LeaveType.query.all()
+
+    return jsonify({
+        "clients": [
+            {"clientID": c.clientID, "client_name": c.client_name}
+            for c in clients
+        ],
+        "departments": [
+            {"id": d.id, "dept_name": d.dept_name}
+            for d in departments
+        ],
+        "leave_types": [
+            {"leave_id": l.leave_id, "leave_type": l.leave_type}
+            for l in leave_types
+        ]
+    }), 200
+
+
+# -------------------------------------------
+# 🚀 2. ADD EMPLOYEE (FULL)
+# -------------------------------------------
+@app.route('/admin/add_employee', methods=['POST'])
+def add_employee():
+    data = request.json
+
+    try:
+        # ---------------------
+        # Validate required fields
+        # ---------------------
+        required_fields = [
+            "empid", "fname", "lname", "email", "designation",
+            "mobile", "gender", "employee_type", "location",
+            "company", "doj", "approver_id", "password"
+        ]
+
+        for field in required_fields:
+            if not data.get(field):
+                return jsonify({"status": "error", "message": f"{field} is required"}), 400
+
+        # Email validation
+        if not re.match(r"[^@]+@[^@]+\.[^@]+", data["email"]):
+            return jsonify({"status": "error", "message": "Invalid email format"}), 400
+
+        # Mobile validation
+        if not re.match(r"^\d{10}$", data["mobile"]):
+            return jsonify({"status": "error", "message": "Mobile number must be 10 digits"}), 400
+
+        # Duplicate employee
+        if Employee_Info.query.filter_by(empid=data["empid"]).first():
+            return jsonify({"status": "error", "message": "Employee ID already exists"}), 400
+
+        if Employee_Info.query.filter_by(email=data["email"]).first():
+            return jsonify({"status": "error", "message": "Email already exists"}), 400
+
+        # ---------------------
+        # Department Logic
+        # ---------------------
+        dept_id = data.get("dept_id")
+
+        if dept_id == "custom":
+            custom_name = data.get("custom_dept", "").strip()
+            if not custom_name:
+                return jsonify({"status": "error", "message": "New department name required"}), 400
+
+            existing = Department.query.filter_by(dept_name=custom_name).first()
+            if existing:
+                dept_id = existing.id
+            else:
+                new_dept = Department(dept_name=custom_name)
+                db.session.add(new_dept)
+                db.session.flush()
+                dept_id = new_dept.id
+
+        elif dept_id == "edit":
+            edit_dept_id = data.get("edit_dept_id")
+            new_dept_name = data.get("new_dept_name", "").strip()
+
+            if not edit_dept_id or not new_dept_name:
+                return jsonify({"status": "error", "message": "Department edit details missing"}), 400
+
+            existing = Department.query.filter_by(dept_name=new_dept_name).first()
+            if existing:
+                return jsonify({"status": "error", "message": "Department name already exists"}), 400
+
+            dept_obj = Department.query.get(edit_dept_id)
+            dept_obj.dept_name = new_dept_name
+            dept_id = edit_dept_id
+
+        # ---------------------
+        # Dates
+        # ---------------------
+        doj = datetime.strptime(data["doj"], "%Y-%m-%d").date()
+        lwd = None
+
+        if data.get("lwd"):
+            lwd = datetime.strptime(data["lwd"], "%Y-%m-%d").date()
+            if lwd <= doj:
+                return jsonify({"status": "error", "message": "Last working day must be later than DOJ"}), 400
+
+        # ---------------------
+        # Fix prev_total_exp (IMPORTANT)
+        # "" → None, "0", "1.5", etc. → float
+        # ---------------------
+        prev_exp = data.get("prev_total_exp")
+
+        try:
+            prev_exp = float(prev_exp) if prev_exp not in (None, "", " ") else None
+        except:
+            prev_exp = None  # fallback
+
+        # ---------------------
+        # Create Employee
+        # ---------------------
+        new_emp = Employee_Info(
+            empid=data["empid"].upper(),
+            fname=data["fname"],
+            lname=data["lname"],
+            email=data["email"].lower(),
+            dept_id=dept_id,
+            designation=data["designation"],
+            mobile=data["mobile"],
+            gender=data["gender"],
+            employee_type=data["employee_type"],
+            location=data["location"],
+            company=data["company"],
+            work_location=data.get("work_location", ""),
+            city=data.get("city", ""),
+            core_skill=data.get("core_skill", ""),
+            skill_details=data.get("skill_details", ""),
+            doj=doj,
+            lwd=lwd,
+            approver_id=data["approver_id"].upper(),
+            password=generate_password_hash(data["password"]),
+            prev_total_exp=prev_exp
+        )
+
+        db.session.add(new_emp)
+        db.session.flush()
+
+        # ---------------------
+        # Leave Balances
+        # ---------------------
+        leave_balances = data.get("leave_balances", {})
+
+        for leave_id, balance in leave_balances.items():
+            try:
+                bal = float(balance) if balance not in ("", None) else 0.0
+            except:
+                bal = 0.0
+
+            db.session.add(Leave_Balance(
+                empid=new_emp.empid,
+                leave_id=int(leave_id),
+                balance=bal
+            ))
+
+        # ---------------------
+        # Client Assignments
+        # ---------------------
+        client_assignments = data.get("client_assignments", {})
+
+        for client_id, entry in client_assignments.items():
+            start = entry.get("start_date")
+            end = entry.get("end_date")
+
+            if not start:
+                return jsonify({"status": "error", "message": "Client start date required"}), 400
+
+            sd = datetime.strptime(start, "%Y-%m-%d").date()
+
+            if end:
+                ed = datetime.strptime(end, "%Y-%m-%d").date()
+                if ed <= sd:
+                    return jsonify({"status": "error", "message": "Client end date must be after start date"}), 400
+            else:
+                ed = None
+
+            db.session.add(Client_Employee(
+                empid=new_emp.empid,
+                clientID=int(client_id),
+                start_date=sd,
+                end_date=ed
+            ))
+
+        db.session.commit()
+
+        return jsonify({"status": "success", "message": "Employee Added Successfully!"}), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+
+
+
+
+@app.route("/api/departments", methods=["GET"])
+def api_get_departments():
+    depts = Department.query.order_by(Department.dept_name).all()
+    return jsonify([
+        {"id": d.id, "dept_name": d.dept_name}
+        for d in depts
+    ])
+
+
+# ===========================================
+
+
+
+@app.route("/api/employees/export", methods=["GET"])
 def export_employees():
     if 'user_id' not in session:
-        flash('Please login to continue', 'error')
-        return redirect(url_for('login'))
+        return jsonify({"error": "Unauthorized"}), 401
 
-    # Get filter parameters
-    department_name = request.args.get('dept', '')
-    approver_id = request.args.get('approver_id', '')
-    start_date = request.args.get('start_date', '')
-    end_date = request.args.get('end_date', '')
+    dept = request.args.get("dept", "")
+    approver_id = request.args.get("approver_id", "")
+    start_date = request.args.get("start_date", "")
+    end_date = request.args.get("end_date", "")
 
-    # Base query (join Department for filtering)
     query = Employee_Info.query.outerjoin(Department, Employee_Info.dept_id == Department.id)
 
-    # Department filter
-    if department_name:
-        query = query.filter(Department.dept_name == department_name)
+    if dept:
+        query = query.filter(Employee_Info.dept_id == int(dept))
 
-    # Approver filter
     if approver_id:
         query = query.filter(Employee_Info.approver_id == approver_id)
 
-    # DOJ range filter
     if start_date and end_date:
-        try:
-            start_date_obj = datetime.strptime(start_date, '%Y-%m-%d').date()
-            end_date_obj = datetime.strptime(end_date, '%Y-%m-%d').date()
-            query = query.filter(Employee_Info.doj.between(start_date_obj, end_date_obj))
-        except ValueError:
-            flash('Invalid date format. Please use YYYY-MM-DD format.', 'error')
+        s = datetime.strptime(start_date, "%Y-%m-%d").date()
+        e = datetime.strptime(end_date, "%Y-%m-%d").date()
+        query = query.filter(Employee_Info.doj.between(s, e))
 
     employees = query.all()
 
-    # Prepare CSV
-    si = StringIO()
-    writer = csv.writer(si)
+    # ---- CSV as BYTES ----
+    output = BytesIO()
+    writer = csv.writer(output)
 
-    # Header
-    writer.writerow([
-        'Emp ID', 'Emp Name', 'Gender', 'Emp Type', 'Location', 'Company', 'Work location',
-        'Country', 'City', 'Mobile', 'Email', 'Designation', 'Reporting Manager',
-        'Core Skill', 'Skills details', 'Experience on DOJ', 'Total experience as on date',
-        'NTS Emp DOJ', 'NTS Emp LWD', 'Department', 'Full name of client',
-        'Client Start Date', 'Client End Date', 'Project Name', 'Project Type',
-        'Project Billability', 'Daily Hours'
-    ])
-
-    current_date = date.today()
+    writer.writerow(["Emp ID", "Name", "Email", "Department", "Designation", "DOJ", "LWD"])
 
     for emp in employees:
-        dept_name = emp.department.dept_name if emp.department else ""
-
-        # Experience calculations
-        exp_on_doj = "N/A"
-        total_exp = "N/A"
-        if emp.doj:
-            years_since_joining = (current_date - emp.doj).days / 365.25
-            total_exp = f"{years_since_joining:.1f}"
-            exp_on_doj = "0"  # Placeholder; adjust if you track prior exp
-
-        # Common emp data
-        employee_data = [
+        writer.writerow([
             emp.empid,
             f"{emp.fname} {emp.lname}",
-            emp.gender or "",
-            emp.employee_type or "",
-            emp.location or "",
-            emp.company or "",
-            emp.work_location or "",
-            emp.country or "",
-            emp.city or "",
-            emp.mobile or "",
             emp.email,
-            emp.designation or "",
-            emp.approver_id or "",
-            emp.core_skill or "",
-            emp.skill_details or "",
-            exp_on_doj,
-            total_exp,
-            emp.doj.strftime('%d-%m-%Y') if emp.doj else "",
-            emp.lwd.strftime('%d-%m-%Y') if emp.lwd else "",
-            dept_name
-        ]
+            emp.department.dept_name if emp.department else "",
+            emp.designation,
+            emp.doj.strftime('%d %b %Y') if emp.doj else "",
+            emp.lwd.strftime('%d %b %Y') if emp.lwd else "",
+        ])
 
-        # Client assignments
-        client_assignments = Client_Employee.query.filter_by(empid=emp.empid).all()
+    output.seek(0)
 
-        if client_assignments:
-            for assignment in client_assignments:
-                client_name, daily_hours = "", ""
-                project_name, project_type, project_billability = "", "", ""
-
-                if assignment.clientID:
-                    client_info = Client_Info.query.get(int(assignment.clientID))
-                    if client_info:
-                        client_name = client_info.client_name
-                        daily_hours = str(client_info.daily_hours or "")
-
-                        # Get projects linked to this client
-                        project = (
-                            db.session.query(Project_Info)
-                            .join(Employee_Project, Employee_Project.project_id == Project_Info.id)
-                            .join(Client_Info, Project_Info.client_id == Client_Info.clientID)
-                            .filter(Employee_Project.empid == emp.empid)
-                            .filter(Client_Info.client_name == client_name)
-                            .first()
-                        )
-
-                        if project:
-                            project_name = project.project_name or ""
-                            project_type = project.project_type or ""
-                            project_billability = project.project_billability or ""
-
-                client_data = [
-                    client_name,
-                    assignment.start_date.strftime('%d-%m-%Y') if assignment.start_date else "",
-                    assignment.end_date.strftime('%d-%m-%Y') if assignment.end_date else "",
-                    project_name,
-                    project_type,
-                    project_billability,
-                    daily_hours
-                ]
-
-                writer.writerow(employee_data + client_data)
-        else:
-            writer.writerow(employee_data + ["", "", "", "", "", "", ""])
-
-    output = make_response(si.getvalue())
-    output.headers["Content-Disposition"] = "attachment; filename=employees_export.csv"
-    output.headers["Content-type"] = "text/csv"
-    return output
-
-@app.route('/admin/employees/<empid>', methods=['GET'])
-def view_employee(empid):
-    if 'user_id' not in session:
-        flash('Please login to continue', 'error')
-        return redirect(url_for('login'))
-
-    # Fetch employee details
-    employee = Employee_Info.query.filter_by(empid=empid.upper()).first_or_404()
-
-    # Calculate end_date as LWD if exists and <= today, else today
-    today = date.today()
-    end_date = employee.lwd if employee.lwd and employee.lwd <= today else today
-
-    # Calculate years in the company
-    years_in_company = 0
-    if employee.doj:
-        delta = end_date - employee.doj
-        years_in_company = delta.days / 365.25
-
-    # Add previous experience from prev_total_exp field
-    total_experience = years_in_company
-    if hasattr(employee, 'prev_total_exp') and employee.prev_total_exp:
-        try:
-            total_experience += float(employee.prev_total_exp)
-        except ValueError:
-            pass  # In case of bad data, skip adding
-
-    total_experience = round(total_experience, 1)
-
-    # Fetch client assignments
-    client_assignments = Client_Employee.query.filter_by(empid=empid.upper()).all()
-    client_details = [
-        {'client': a.client, 'assignment': a}
-        for a in client_assignments if a.client
-    ]
-
-    return render_template(
-        'employee_list.html',
-        employee=employee,
-        client_details=client_details,
-        total_experience=total_experience
+    return send_file(
+        output,
+        mimetype="text/csv",
+        as_attachment=True,
+        download_name="employees_export.csv"
     )
+
+# @app.route('/admin/export_employees')
+# def export_employees():
+#     if 'user_id' not in session:
+#         flash('Please login to continue', 'error')
+#         return redirect(url_for('login'))
+
+#     # Get filter parameters
+#     department_name = request.args.get('dept', '')
+#     approver_id = request.args.get('approver_id', '')
+#     start_date = request.args.get('start_date', '')
+#     end_date = request.args.get('end_date', '')
+
+#     # Base query (join Department for filtering)
+#     query = Employee_Info.query.outerjoin(Department, Employee_Info.dept_id == Department.id)
+
+#     # Department filter
+#     if department_name:
+#         query = query.filter(Department.dept_name == department_name)
+
+#     # Approver filter
+#     if approver_id:
+#         query = query.filter(Employee_Info.approver_id == approver_id)
+
+#     # DOJ range filter
+#     if start_date and end_date:
+#         try:
+#             start_date_obj = datetime.strptime(start_date, '%Y-%m-%d').date()
+#             end_date_obj = datetime.strptime(end_date, '%Y-%m-%d').date()
+#             query = query.filter(Employee_Info.doj.between(start_date_obj, end_date_obj))
+#         except ValueError:
+#             flash('Invalid date format. Please use YYYY-MM-DD format.', 'error')
+
+#     employees = query.all()
+
+#     # Prepare CSV
+#     si = StringIO()
+#     writer = csv.writer(si)
+
+#     # Header
+#     writer.writerow([
+#         'Emp ID', 'Emp Name', 'Gender', 'Emp Type', 'Location', 'Company', 'Work location',
+#         'Country', 'City', 'Mobile', 'Email', 'Designation', 'Reporting Manager',
+#         'Core Skill', 'Skills details', 'Experience on DOJ', 'Total experience as on date',
+#         'NTS Emp DOJ', 'NTS Emp LWD', 'Department', 'Full name of client',
+#         'Client Start Date', 'Client End Date', 'Project Name', 'Project Type',
+#         'Project Billability', 'Daily Hours'
+#     ])
+
+#     current_date = date.today()
+
+#     for emp in employees:
+#         dept_name = emp.department.dept_name if emp.department else ""
+
+#         # Experience calculations
+#         exp_on_doj = "N/A"
+#         total_exp = "N/A"
+#         if emp.doj:
+#             years_since_joining = (current_date - emp.doj).days / 365.25
+#             total_exp = f"{years_since_joining:.1f}"
+#             exp_on_doj = "0"  # Placeholder; adjust if you track prior exp
+
+#         # Common emp data
+#         employee_data = [
+#             emp.empid,
+#             f"{emp.fname} {emp.lname}",
+#             emp.gender or "",
+#             emp.employee_type or "",
+#             emp.location or "",
+#             emp.company or "",
+#             emp.work_location or "",
+#             emp.country or "",
+#             emp.city or "",
+#             emp.mobile or "",
+#             emp.email,
+#             emp.designation or "",
+#             emp.approver_id or "",
+#             emp.core_skill or "",
+#             emp.skill_details or "",
+#             exp_on_doj,
+#             total_exp,
+#             emp.doj.strftime('%d-%m-%Y') if emp.doj else "",
+#             emp.lwd.strftime('%d-%m-%Y') if emp.lwd else "",
+#             dept_name
+#         ]
+
+#         # Client assignments
+#         client_assignments = Client_Employee.query.filter_by(empid=emp.empid).all()
+
+#         if client_assignments:
+#             for assignment in client_assignments:
+#                 client_name, daily_hours = "", ""
+#                 project_name, project_type, project_billability = "", "", ""
+
+#                 if assignment.clientID:
+#                     client_info = Client_Info.query.get(int(assignment.clientID))
+#                     if client_info:
+#                         client_name = client_info.client_name
+#                         daily_hours = str(client_info.daily_hours or "")
+
+#                         # Get projects linked to this client
+#                         project = (
+#                             db.session.query(Project_Info)
+#                             .join(Employee_Project, Employee_Project.project_id == Project_Info.id)
+#                             .join(Client_Info, Project_Info.client_id == Client_Info.clientID)
+#                             .filter(Employee_Project.empid == emp.empid)
+#                             .filter(Client_Info.client_name == client_name)
+#                             .first()
+#                         )
+
+#                         if project:
+#                             project_name = project.project_name or ""
+#                             project_type = project.project_type or ""
+#                             project_billability = project.project_billability or ""
+
+#                 client_data = [
+#                     client_name,
+#                     assignment.start_date.strftime('%d-%m-%Y') if assignment.start_date else "",
+#                     assignment.end_date.strftime('%d-%m-%Y') if assignment.end_date else "",
+#                     project_name,
+#                     project_type,
+#                     project_billability,
+#                     daily_hours
+#                 ]
+
+#                 writer.writerow(employee_data + client_data)
+#         else:
+#             writer.writerow(employee_data + ["", "", "", "", "", "", ""])
+
+#     output = make_response(si.getvalue())
+#     output.headers["Content-Disposition"] = "attachment; filename=employees_export.csv"
+#     output.headers["Content-type"] = "text/csv"
+#     return output
+
+# @app.route('/admin/employees/<empid>', methods=['GET'])
+# def view_employee(empid):
+#     if 'user_id' not in session:
+#         flash('Please login to continue', 'error')
+#         return redirect(url_for('login'))
+
+#     # Fetch employee details
+#     employee = Employee_Info.query.filter_by(empid=empid.upper()).first_or_404()
+
+#     # Calculate end_date as LWD if exists and <= today, else today
+#     today = date.today()
+#     end_date = employee.lwd if employee.lwd and employee.lwd <= today else today
+
+#     # Calculate years in the company
+#     years_in_company = 0
+#     if employee.doj:
+#         delta = end_date - employee.doj
+#         years_in_company = delta.days / 365.25
+
+#     # Add previous experience from prev_total_exp field
+#     total_experience = years_in_company
+#     if hasattr(employee, 'prev_total_exp') and employee.prev_total_exp:
+#         try:
+#             total_experience += float(employee.prev_total_exp)
+#         except ValueError:
+#             pass  # In case of bad data, skip adding
+
+#     total_experience = round(total_experience, 1)
+
+#     # Fetch client assignments
+#     client_assignments = Client_Employee.query.filter_by(empid=empid.upper()).all()
+#     client_details = [
+#         {'client': a.client, 'assignment': a}
+#         for a in client_assignments if a.client
+#     ]
+
+#     return render_template(
+#         'employee_list.html',
+#         employee=employee,
+#         client_details=client_details,
+#         total_experience=total_experience
+#     )
+
+@app.route("/api/employees/<empid>", methods=["GET"])
+def employee_details(empid):
+    emp = Employee_Info.query.options(joinedload(Employee_Info.department)).filter_by(empid=empid.upper()).first()
+    if not emp:
+        return jsonify({"message": "Employee not found"}), 404
+
+    # Calculate company experience
+    today = date.today()
+    end_date = emp.lwd if emp.lwd and emp.lwd <= today else today
+
+    years_in_company = 0
+    if emp.doj:
+        years_in_company = (end_date - emp.doj).days / 365.25
+
+    total_experience = round(years_in_company + float(emp.prev_total_exp or 0), 1)
+
+    # Get client assignments
+    assignments = Client_Employee.query.filter_by(empid=empid.upper()).all()
+
+    client_details = []
+    for a in assignments:
+        client = Client_Info.query.filter_by(clientID=a.clientID).first()
+        if client:
+            client_details.append({
+                "client": {
+                    "clientID": client.clientID,
+                    "client_name": client.client_name
+                },
+                "assignment": {
+                    "start_date": a.start_date.strftime("%Y-%m-%d") if a.start_date else None,
+                    "end_date": a.end_date.strftime("%Y-%m-%d") if a.end_date else None
+                }
+            })
+
+    # Serialize employee for React
+    employee_data = {
+        "empid": emp.empid,
+        "fname": emp.fname,
+        "lname": emp.lname,
+        "email": emp.email,
+        "mobile": emp.mobile,
+        "gender": emp.gender,
+        "designation": emp.designation,
+        "employee_type": emp.employee_type,
+        "prev_total_exp": emp.prev_total_exp,
+        "total_experience": total_experience,
+        "location": emp.location,
+        "company": emp.company,
+        "work_location": emp.work_location,
+        "country": emp.country,
+        "city": emp.city,
+        "core_skill": emp.core_skill,
+        "skill_details": emp.skill_details,
+        "approver_id": emp.approver_id,
+        "doj": emp.doj.strftime("%Y-%m-%d") if emp.doj else None,
+        "lwd": emp.lwd.strftime("%Y-%m-%d") if emp.lwd else None,
+        "department": {
+            "id": emp.department.id,
+            "dept_name": emp.department.dept_name
+        } if emp.department else None
+    }
+
+    return jsonify({
+        "employee": employee_data,
+        "client_details": client_details
+    }), 200
+
+@app.route("/api/approvers_by_department", methods=["GET"])
+def approvers_by_department():
+    dept_id = request.args.get("dept_id")
+    if not dept_id:
+        return jsonify([]), 200
+
+    approvers = Employee_Info.query.filter(
+        Employee_Info.dept_id == int(dept_id),
+        Employee_Info.approver_id.isnot(None)
+    ).all()
+
+    return jsonify([
+        {
+            "approver_id": a.approver_id,
+            "fname": a.fname,
+            "lname": a.lname
+        }
+        for a in approvers
+    ]), 200
+
 
 
 @app.route('/dashboard/edit_employee/<empid>', methods=['GET', 'POST'])
@@ -1540,68 +2271,183 @@ def edit_employee(empid):
     )
 
 
-@app.route('/admin/add_client', methods=['GET', 'POST'])
-def add_client():
-    if request.method == 'POST':
-        try:
-            # Get form data
-            client_name = request.form['client_name'].strip()  # Trim whitespace
-            start_date = datetime.strptime(request.form['start_date'], '%Y-%m-%d').date() if request.form['start_date'] else None
-            end_date = datetime.strptime(request.form['end_date'], '%Y-%m-%d').date() if request.form['end_date'] else None
+# @app.route('/admin/add_client', methods=['GET', 'POST'])
+# def add_client():
+#     if request.method == 'POST':
+#         try:
+#             # Get form data
+#             client_name = request.form['client_name'].strip()  # Trim whitespace
+#             start_date = datetime.strptime(request.form['start_date'], '%Y-%m-%d').date() if request.form['start_date'] else None
+#             end_date = datetime.strptime(request.form['end_date'], '%Y-%m-%d').date() if request.form['end_date'] else None
             
-            # Get daily hours value - handle empty input and convert to float
-            daily_hours = None
-            if request.form.get('daily_hours'):
-                daily_hours = float(request.form['daily_hours'])
+#             # Get daily hours value - handle empty input and convert to float
+#             daily_hours = None
+#             if request.form.get('daily_hours'):
+#                 daily_hours = float(request.form['daily_hours'])
             
-            # Check if client already exists
-            existing_client = Client_Info.query.filter_by(client_name=client_name).first()
-            if existing_client:
-                flash(f"Client '{client_name}' already exists!", "error")
-                return redirect(url_for('add_client'))  # Redirect back to the form
+#             # Check if client already exists
+#             existing_client = Client_Info.query.filter_by(client_name=client_name).first()
+#             if existing_client:
+#                 flash(f"Client '{client_name}' already exists!", "error")
+#                 return redirect(url_for('add_client'))  # Redirect back to the form
             
-            # Create new client if not found
-            new_client = Client_Info(
-                client_name=client_name,
-                start_date=start_date,
-                end_date=end_date,
-                daily_hours=daily_hours  # Added the daily_hours field
-            )
+#             # Create new client if not found
+#             new_client = Client_Info(
+#                 client_name=client_name,
+#                 start_date=start_date,
+#                 end_date=end_date,
+#                 daily_hours=daily_hours  # Added the daily_hours field
+#             )
             
-            # Add to database
-            db.session.add(new_client)
-            db.session.commit()
+#             # Add to database
+#             db.session.add(new_client)
+#             db.session.commit()
             
-            flash('Client added successfully!', 'success')
-            return redirect(url_for('add_client'))
+#             flash('Client added successfully!', 'success')
+#             return redirect(url_for('add_client'))
         
-        except Exception as e:
-            db.session.rollback()
-            flash(f'Error adding client: {str(e)}', 'error')
-            return redirect(url_for('add_client'))
+#         except Exception as e:
+#             db.session.rollback()
+#             flash(f'Error adding client: {str(e)}', 'error')
+#             return redirect(url_for('add_client'))
     
-    return render_template('add_client.html')
+#     return render_template('add_client.html')
 
-@app.route('/admin/view_clients')
-def view_clients():
-    try:
-        # Get search query from URL parameters
-        search_query = request.args.get('search', '').strip()
 
-        # If search query is provided, filter clients
-        if search_query:
-            clients = Client_Info.query.filter(Client_Info.client_name.ilike(f'%{search_query}%')).all()
-        else:
-            # If no search query, fetch all clients
-            clients = Client_Info.query.all()
 
-        return render_template('view_clients.html', clients=clients, search_query=search_query)
+# @app.route('/admin/add_client', methods=['POST'])
+# def add_client():
+#     try:
+#         data = request.get_json()
+ 
+#         client_name = data.get("client_name", "").strip()
+#         start_date = datetime.strptime(data["start_date"], '%Y-%m-%d').date()
+#         end_date = (
+#             datetime.strptime(data["end_date"], '%Y-%m-%d').date()
+#             if data.get("end_date")
+#             else None
+#         )
+#         daily_hours = float(data.get("daily_hours")) if data.get("daily_hours") else None
+ 
+#         # Duplicate check
+#         existing_client = Client_Info.query.filter_by(client_name=client_name).first()
+#         if existing_client:
+#             return jsonify({"message": "Client already exists!", "success": False}), 400
+ 
+#         new_client = Client_Info(
+#             client_name=client_name,
+#             start_date=start_date,
+#             end_date=end_date,
+#             daily_hours=daily_hours
+#         )
+ 
+#         db.session.add(new_client)
+#         db.session.commit()
+ 
+#         return jsonify({"message": "Client added successfully!", "success": True}), 201
+#     except Exception as e:
+#         db.session.rollback()
+#         return jsonify({"message": str(e), "success": False}), 500
     
-    except Exception as e:
-        flash(f'Error loading clients: {str(e)}', 'error')
-        return render_template('view_clients.html', clients=[], search_query='')
+
+# @app.route('/admin/view_clients')
+# def view_clients():
+#     try:
+#         # Get search query from URL parameters
+#         search_query = request.args.get('search', '').strip()
+
+#         # If search query is provided, filter clients
+#         if search_query:
+#             clients = Client_Info.query.filter(
+#                 Client_Info.client_name.ilike(f'%{search_query}%')
+#             ).all()
+#         else:
+#             # If no search query, fetch all clients
+#             clients = Client_Info.query.all()
+
+#         # Convert SQLAlchemy objects to dictionaries
+#         client_list = []
+#         for c in clients:
+#             client_list.append({
+#                 "clientID": c.clientID,
+#                 "client_name": c.client_name,
+#                 "start_date": c.start_date.strftime('%Y-%m-%d') if c.start_date else None,
+#                 "end_date": c.end_date.strftime('%Y-%m-%d') if c.end_date else None,
+#             })
+
+#         # Return JSON instead of HTML
+#         return jsonify({
+#             "success": True,
+#             "clients": client_list,
+#             "search_query": search_query
+#         })
+
+#     except Exception as e:
+#         return jsonify({
+#             "success": False,
+#             "error": f"Error loading clients: {str(e)}",
+#             "clients": [],
+#             "search_query": ""
+#         }), 500
 
 
+
+
+
+# @app.route('/admin/view_clients')
+# def view_clients():
+#     try:
+#         search_query = request.args.get('search', '').strip()
+
+#         if search_query:
+#             clients = Client_Info.query.filter(
+#                 Client_Info.client_name.ilike(f'%{search_query}%')
+#             ).all()
+#         else:
+#             clients = Client_Info.query.all()
+
+#         client_list = []
+#         for c in clients:
+#             client_list.append({
+#                 "clientID": c.clientID,
+#                 "client_name": c.client_name,
+#                 "start_date": c.start_date.strftime('%Y-%m-%d') if c.start_date else None,
+#                 "end_date": c.end_date.strftime('%Y-%m-%d') if c.end_date else None,
+#                 "daily_hours": c.daily_hours
+#             })
+
+#         return jsonify({
+#             "success": True,
+#             "clients": client_list,
+#             "search_query": search_query
+#         })
+
+#     except Exception as e:
+#         return jsonify({
+#             "success": False,
+#             "error": f"Error loading clients: {str(e)}",
+#             "clients": [],
+#             "search_query": ""
+#         }), 500
+
+
+
+
+
+# @app.route('/api/clients', methods=['GET'])
+# def get_clients():
+#     try:
+#         clients = Client_Info.query.all()
+#         result = [
+#             {
+#                 "clientID": c.clientID,
+#                 "client_name": c.client_name
+#             }
+#             for c in clients
+#         ]
+#         return jsonify(result), 200
+#     except Exception as e:
+#         return jsonify({"status": "error", "message": str(e)}), 500
 @app.route('/get_approvers_by_department')
 def get_approvers_by_department():
     dept = request.args.get('dept')
@@ -1635,48 +2481,182 @@ def get_approvers_by_department():
     return jsonify(result)
 
 
-@app.route('/admin/update_client/<int:id>', methods=['POST'])
+# @app.route('/admin/update_client/<int:id>', methods=['POST'])
+# def update_client(id):
+#     try:
+#         # Get JSON data from request
+#         data = request.get_json()
+        
+#         # Find the client
+#         client = Client_Info.query.get_or_404(id)
+        
+#         # Update client information
+#         client.client_name = data.get('client_name')
+        
+#         # Handle dates
+#         start_date = data.get('start_date')
+#         end_date = data.get('end_date')
+        
+#         if start_date:
+#             client.start_date = datetime.strptime(start_date, '%Y-%m-%d')
+#         else:
+#             client.start_date = None
+            
+#         if end_date:
+#             client.end_date = datetime.strptime(end_date, '%Y-%m-%d')
+#         else:
+#             client.end_date = None
+        
+#         # Handle daily hours (this was missing in your original code)
+#         daily_hours = data.get('daily_hours')
+#         if daily_hours:
+#             client.daily_hours = float(daily_hours)
+#         else:
+#             client.daily_hours = None
+        
+#         # Save to database
+#         db.session.commit()
+        
+#         return jsonify({'success': True})
+#     except Exception as e:
+#         # If there's an error, return error response
+#         return jsonify({'success': False, 'error': str(e)}), 400
+
+
+
+
+# @app.route('/admin/delete_client/<int:id>', methods=['POST'])
+# def delete_client(id):
+#     try:
+#         # Find the client
+#         client = Client_Info.query.get_or_404(id)
+        
+#         # Delete from database
+#         db.session.delete(client)
+#         db.session.commit()
+        
+#         return jsonify({'success': True})
+#     except Exception as e:
+#         return jsonify({'success': False, 'error': str(e)}), 400
+
+
+
+
+# # ============================
+
+
+
+# add new client details 
+@app.route('/admin/add_client', methods=['POST'])
+def add_client():
+    # ---------- JSON POST (React / Postman) ----------
+    if request.method == 'POST' and request.is_json:
+        data = request.get_json()
+
+        try:
+            client_name = data.get('client_name', '').strip()
+            start_date = datetime.strptime(data['start_date'], "%Y-%m-%d").date() if data.get('start_date') else None
+            end_date = datetime.strptime(data['end_date'], "%Y-%m-%d").date() if data.get('end_date') else None
+
+            daily_hours = float(data['daily_hours']) if data.get('daily_hours') else None
+
+            if not client_name:
+                return jsonify({"error": "client_name is required"}), 400
+
+            # Check duplicate client
+            if Client_Info.query.filter_by(client_name=client_name).first():
+                return jsonify({"error": f"Client '{client_name}' already exists!"}), 400
+
+            # Create client
+            new_client = Client_Info(
+                client_name=client_name,
+                start_date=start_date,
+                end_date=end_date,
+                daily_hours=daily_hours
+            )
+
+            db.session.add(new_client)
+            db.session.commit()
+
+            return jsonify({"message": "Client added successfully"}), 201
+
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({"error": str(e)}), 500
+
+
+
+@app.route('/admin/view_clients', methods=['GET'])
+def view_clients():
+    try:
+        # Get search query from URL parameters (for Postman & React)
+        search_query = request.args.get('search', '').strip()
+
+        # Filter clients based on search text
+        if search_query:
+            clients = Client_Info.query.filter(
+                Client_Info.client_name.ilike(f"%{search_query}%")
+            ).all()
+        else:
+            clients = Client_Info.query.all()
+
+        # Convert to JSON format
+        client_list = [
+            {
+                "clientID": c.clientID,
+                "client_name": c.client_name,
+                "start_date": c.start_date.strftime('%Y-%m-%d') if c.start_date else None,
+                "end_date": c.end_date.strftime('%Y-%m-%d') if c.end_date else None,
+                "daily_hours": c.daily_hours
+            }
+            for c in clients
+        ]
+
+        return jsonify({
+            "total": len(client_list),
+            "search_query": search_query,
+            "clients": client_list
+        }), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+
+
+@app.route('/admin/update_client/<int:id>', methods=['POST', 'PATCH'])
 def update_client(id):
     try:
-        # Get JSON data from request
         data = request.get_json()
-        
-        # Find the client
+        if not data:
+            return jsonify({"error": "JSON body required"}), 400
+
         client = Client_Info.query.get_or_404(id)
-        
-        # Update client information
-        client.client_name = data.get('client_name')
-        
-        # Handle dates
+
+        # Update fields
+        client.client_name = data.get('client_name', client.client_name)
+
         start_date = data.get('start_date')
         end_date = data.get('end_date')
-        
-        if start_date:
-            client.start_date = datetime.strptime(start_date, '%Y-%m-%d')
-        else:
-            client.start_date = None
-            
-        if end_date:
-            client.end_date = datetime.strptime(end_date, '%Y-%m-%d')
-        else:
-            client.end_date = None
-        
-        # Handle daily hours (this was missing in your original code)
-        daily_hours = data.get('daily_hours')
-        if daily_hours:
-            client.daily_hours = float(daily_hours)
-        else:
-            client.daily_hours = None
-        
-        # Save to database
-        db.session.commit()
-        
-        return jsonify({'success': True})
-    except Exception as e:
-        # If there's an error, return error response
-        return jsonify({'success': False, 'error': str(e)}), 400
 
-@app.route('/admin/delete_client/<int:id>', methods=['POST'])
+        client.start_date = datetime.strptime(start_date, '%Y-%m-%d').date() if start_date else None
+        client.end_date = datetime.strptime(end_date, '%Y-%m-%d').date() if end_date else None
+
+        daily_hours = data.get('daily_hours')
+        client.daily_hours = float(daily_hours) if daily_hours else None
+
+        db.session.commit()
+
+        return jsonify({"success": True, "message": "Client updated successfully"}), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"success": False, "error": str(e)}), 400
+
+
+
+
+@app.route('/admin/delete_client/<int:id>', methods=['DELETE'])
 def delete_client(id):
     try:
         # Find the client
@@ -1686,27 +2666,96 @@ def delete_client(id):
         db.session.delete(client)
         db.session.commit()
         
-        return jsonify({'success': True})
+        return jsonify({'success': True,"message": "Client deleted successfully"}), 200
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 400
     
+
+
+# ============================
+
+
+
+# @app.route('/admin/manage_holidays', methods=['GET', 'POST'])
+# def manage_holidays():
+#     if 'user_id' not in session:
+#         return redirect(url_for('login'))
+    
+#     # Hardcoded admin check
+#     if session['user_id'] != 'N0482':
+#         flash('You do not have permission to access the admin dashboard', 'error')
+#         return redirect(url_for('login'))
+
+
+#     if request.method == 'POST':
+#         start_date = request.form.get('start_date')
+#         end_date = request.form.get('end_date')
+#         holiday_type = request.form.get('holiday_type')
+#         dc = request.form.get('dc') or None
+#         holiday_desc = request.form.get('holiday_desc')
+
+#         insert_sql = text("""
+#             INSERT INTO holidays (start_date, end_date, holiday_type, dc, holiday_desc)
+#             VALUES (:start_date, :end_date, :holiday_type, :dc, :holiday_desc)
+#         """)
+#         db.session.execute(insert_sql, {
+#             "start_date": start_date,
+#             "end_date": end_date,
+#             "holiday_type": holiday_type,
+#             "dc": dc,
+#             "holiday_desc": holiday_desc
+#         })
+#         db.session.commit()
+
+#         flash('Holiday added successfully!', 'success')
+#         return redirect(url_for('manage_holidays'))
+
+#     # Fetch all holidays
+#     fetch_sql = text("SELECT * FROM holidays ORDER BY start_date")
+#     holidays = db.session.execute(fetch_sql).fetchall()
+
+#     return render_template('manage_holidays.html', holidays=holidays)
+
+# @app.route('/admin/delete_holiday/<int:holiday_id>', methods=['POST'])
+# def delete_holiday(holiday_id):
+#     if 'user_id' not in session:
+#         return redirect(url_for('login'))
+    
+#     # Hardcoded admin check
+#     if session['user_id'] != 'N0482':
+#         flash('You do not have permission to access the admin dashboard', 'error')
+#         return redirect(url_for('login'))
+
+#     delete_sql = text("DELETE FROM holidays WHERE id = :holiday_id")
+#     db.session.execute(delete_sql, {"holiday_id": holiday_id})
+#     db.session.commit()
+
+#     flash('Holiday deleted successfully!', 'success')
+#     return redirect(url_for('manage_holidays'))
+
 @app.route('/admin/manage_holidays', methods=['GET', 'POST'])
 def manage_holidays():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
+    # Login check (same logic)
+    # if 'user_id' not in session:
+    #     return jsonify({"error": "You must log in first."}), 401
     
-    # Hardcoded admin check
-    if session['user_id'] != 'N0482':
-        flash('You do not have permission to access the admin dashboard', 'error')
-        return redirect(url_for('login'))
+    # # Admin check (same logic)
+    # if session['user_id'] != 'N0482':
+    #     return jsonify({"error": "You do not have permission to access the admin dashboard"}), 403
 
-
+    # --------------------- POST → Add Holiday ---------------------
     if request.method == 'POST':
-        start_date = request.form.get('start_date')
-        end_date = request.form.get('end_date')
-        holiday_type = request.form.get('holiday_type')
-        dc = request.form.get('dc') or None
-        holiday_desc = request.form.get('holiday_desc')
+        data = request.get_json()
+
+        start_date = data.get('start_date')
+        end_date = data.get('end_date')
+        holiday_type = data.get('holiday_type')
+        dc = data.get('dc') or None
+        holiday_desc = data.get('holiday_desc')
+
+        # Validation
+        if not start_date or not end_date or not holiday_type:
+            return jsonify({"error": "start_date, end_date, and holiday_type are required"}), 400
 
         insert_sql = text("""
             INSERT INTO holidays (start_date, end_date, holiday_type, dc, holiday_desc)
@@ -1721,181 +2770,345 @@ def manage_holidays():
         })
         db.session.commit()
 
-        flash('Holiday added successfully!', 'success')
-        return redirect(url_for('manage_holidays'))
+        return jsonify({"status":"success","message": "Holiday added successfully!"}), 201
 
-    # Fetch all holidays
+    # --------------------- GET → List Holidays ---------------------
     fetch_sql = text("SELECT * FROM holidays ORDER BY start_date")
-    holidays = db.session.execute(fetch_sql).fetchall()
+    rows = db.session.execute(fetch_sql).fetchall()
 
-    return render_template('manage_holidays.html', holidays=holidays)
+    holidays_list = []
+    for row in rows:
+        holidays_list.append({
+            "id": row.id,
+            "start_date": row.start_date,
+            "end_date": row.end_date,
+            "holiday_type": row.holiday_type,
+            "dc": row.dc,
+            "holiday_desc": row.holiday_desc
+        })
+
+    return jsonify({
+        "holidays": holidays_list,
+        "count": len(holidays_list)
+    }), 200
+
+# ============================
+# POST /admin/delete_holiday/<int:holiday_id> (keeps method POST as original)
+# Handles OPTIONS preflight first to avoid CORS blocks
+# ============================
+# @app.route('/admin/delete_holiday/<int:holiday_id>', methods=['POST', 'OPTIONS'])
+# def delete_holiday(holiday_id):
+#     # OPTIONS preflight
+#     if request.method == 'OPTIONS':
+#         origin = request.headers.get('Origin', '*')
+#         resp = make_response()
+#         resp.headers['Access-Control-Allow-Origin'] = origin
+#         resp.headers['Access-Control-Allow-Credentials'] = 'true'
+#         # allow POST here because your original used POST
+#         resp.headers['Access-Control-Allow-Methods'] = 'POST,OPTIONS'
+#         resp.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+#         return resp, 200
+
+#     # Auth checks same as original
+#     if 'user_id' not in session:
+#         return jsonify({"status": "error", "message": "Not authenticated"}), 401
+
+#     if session['user_id'] != 'N0482':
+#         return jsonify({"status": "error", "message": "You do not have permission to access the admin dashboard"}), 403
+
+#     try:
+#         delete_sql = text("DELETE FROM holidays WHERE id = :holiday_id")
+#         db.session.execute(delete_sql, {"holiday_id": holiday_id})
+#         db.session.commit()
+#         return jsonify({"status": "success", "message": "Holiday deleted successfully!"}), 200
+#     except Exception:
+#         db.session.rollback()
+#         app.logger.exception("Error deleting holiday")
+#         return jsonify({"status": "error", "message": "DB error while deleting holiday"}), 500
 
 @app.route('/admin/delete_holiday/<int:holiday_id>', methods=['POST'])
 def delete_holiday(holiday_id):
     if 'user_id' not in session:
-        return redirect(url_for('login'))
-    
-    # Hardcoded admin check
+        return jsonify({"error": "You must log in first."}), 401
+
     if session['user_id'] != 'N0482':
-        flash('You do not have permission to access the admin dashboard', 'error')
-        return redirect(url_for('login'))
+        return jsonify({"error": "You do not have permission to access the admin dashboard"}), 403
 
     delete_sql = text("DELETE FROM holidays WHERE id = :holiday_id")
     db.session.execute(delete_sql, {"holiday_id": holiday_id})
     db.session.commit()
 
-    flash('Holiday deleted successfully!', 'success')
-    return redirect(url_for('manage_holidays'))
+    return jsonify({
+        "message": "Holiday deleted successfully!",
+        "deleted_id": holiday_id
+    }), 200
+
+# @app.route('/add_project', methods=['GET', 'POST'])
+# def add_project():
+#     clients = Client_Info.query.all()
+#     existing_projects = Project_Info.query.all()
+
+#     if request.method == 'POST':
+#         # Get and clean form data
+#         client_id = request.form['client_id']
+#         project_name = request.form['project_name'].strip()
+#         project_code = request.form['project_code'].strip()  # optional
+#         project_type = request.form['project_type']
+#         project_billability = request.form['project_billability']
+#         start_date = request.form.get('start_date')
+#         end_date = request.form.get('end_date')
+
+#         # ✅ Validate required fields
+#         if not project_name:
+#             flash("Project name cannot be empty.", "danger")
+#             return render_template('add_project.html', clients=clients, existing_projects=existing_projects)
+
+#         if not project_type:
+#             flash("Please select a project type.", "danger")
+#             return render_template('add_project.html', clients=clients, existing_projects=existing_projects)
+
+#         if not project_billability:
+#             flash("Please select project billability.", "danger")
+#             return render_template('add_project.html', clients=clients, existing_projects=existing_projects)
+
+#         # ✅ Check if project name already exists
+#         existing_project_name = Project_Info.query.filter_by(project_name=project_name).first()
+#         if existing_project_name:
+#             flash(f"Project name '{project_name}' already exists. Please use a different name.", "danger")
+#             return render_template('add_project.html', clients=clients, existing_projects=existing_projects)
+
+#         # ✅ Check if project code already exists (only if entered)
+#         if project_code:
+#             existing_project_code = Project_Info.query.filter_by(project_code=project_code).first()
+#             if existing_project_code:
+#                 flash(f"Project code '{project_code}' already exists. Please use a different code.", "danger")
+#                 return render_template('add_project.html', clients=clients, existing_projects=existing_projects)
+
+#         # 🗓️ Convert dates
+#         start_date = datetime.strptime(start_date, '%Y-%m-%d').date() if start_date else date.today()
+#         if end_date and end_date.strip():
+#             end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+#             if end_date < start_date:
+#                 flash("End date cannot be earlier than start date.", "danger")
+#                 return render_template('add_project.html', clients=clients, existing_projects=existing_projects)
+#         else:
+#             end_date = None
+
+#         try:
+#             # ✅ Create and commit new project
+#             new_project = Project_Info(
+#                 client_id=client_id,
+#                 project_name=project_name,
+#                 project_code=project_code if project_code else None,  # store None if empty
+#                 project_type=project_type,
+#                 project_billability=project_billability,
+#                 start_date=start_date,
+#                 end_date=end_date
+#             )
+#             db.session.add(new_project)
+#             db.session.commit()
+
+#             client = Client_Info.query.get(client_id)
+#             flash(f"Project '{project_name}' added for client '{client.client_name}' successfully!", "success")
+#             return redirect(url_for('list_projects'))
+
+#         except Exception as e:
+#             db.session.rollback()
+#             flash(f"Error adding project: {str(e)}", "danger")
+#             return render_template('add_project.html', clients=clients, existing_projects=existing_projects)
+
+#     return render_template('add_project.html', clients=clients, existing_projects=existing_projects)
 
 
-@app.route('/add_project', methods=['GET', 'POST'])
+@app.route('/api/add_project', methods=['POST'])
 def add_project():
-    clients = Client_Info.query.all()
-    existing_projects = Project_Info.query.all()
+    try:
+        data = request.get_json()
 
-    if request.method == 'POST':
-        # Get and clean form data
-        client_id = request.form['client_id']
-        project_name = request.form['project_name'].strip()
-        project_code = request.form['project_code'].strip()  # optional
-        project_type = request.form['project_type']
-        project_billability = request.form['project_billability']
-        start_date = request.form.get('start_date')
-        end_date = request.form.get('end_date')
+        client_id = data.get('client_id')
+        project_name = data.get('project_name', '').strip()
+        project_code = data.get('project_code', '').strip()
+        project_type = data.get('project_type')
+        project_billability = data.get('project_billability')
+        start_date = data.get('start_date')
+        end_date = data.get('end_date')
 
-        # ✅ Validate required fields
+        # ---------- VALIDATIONS ----------
         if not project_name:
-            flash("Project name cannot be empty.", "danger")
-            return render_template('add_project.html', clients=clients, existing_projects=existing_projects)
-
+            return jsonify({"status": "error", "message": "Project name cannot be empty."}), 400
+        
         if not project_type:
-            flash("Please select a project type.", "danger")
-            return render_template('add_project.html', clients=clients, existing_projects=existing_projects)
+            return jsonify({"status": "error", "message": "Please select a project type."}), 400
 
         if not project_billability:
-            flash("Please select project billability.", "danger")
-            return render_template('add_project.html', clients=clients, existing_projects=existing_projects)
+            return jsonify({"status": "error", "message": "Please select project billability."}), 400
 
-        # ✅ Check if project name already exists
-        existing_project_name = Project_Info.query.filter_by(project_name=project_name).first()
-        if existing_project_name:
-            flash(f"Project name '{project_name}' already exists. Please use a different name.", "danger")
-            return render_template('add_project.html', clients=clients, existing_projects=existing_projects)
+        # NAME DUPLICATE CHECK
+        existing_name = Project_Info.query.filter_by(project_name=project_name).first()
+        if existing_name:
+            return jsonify({"status": "error", "message": f"Project name '{project_name}' already exists."}), 400
 
-        # ✅ Check if project code already exists (only if entered)
+        # CODE DUPLICATE CHECK
         if project_code:
-            existing_project_code = Project_Info.query.filter_by(project_code=project_code).first()
-            if existing_project_code:
-                flash(f"Project code '{project_code}' already exists. Please use a different code.", "danger")
-                return render_template('add_project.html', clients=clients, existing_projects=existing_projects)
+            existing_code = Project_Info.query.filter_by(project_code=project_code).first()
+            if existing_code:
+                return jsonify({"status": "error", "message": f"Project code '{project_code}' already exists."}), 400
 
-        # 🗓️ Convert dates
+        # DATE PARSE
         start_date = datetime.strptime(start_date, '%Y-%m-%d').date() if start_date else date.today()
-        if end_date and end_date.strip():
+
+        if end_date:
             end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
             if end_date < start_date:
-                flash("End date cannot be earlier than start date.", "danger")
-                return render_template('add_project.html', clients=clients, existing_projects=existing_projects)
+                return jsonify({"status": "error", "message": "End date cannot be earlier than start date."}), 400
         else:
             end_date = None
 
-        try:
-            # ✅ Create and commit new project
-            new_project = Project_Info(
-                client_id=client_id,
-                project_name=project_name,
-                project_code=project_code if project_code else None,  # store None if empty
-                project_type=project_type,
-                project_billability=project_billability,
-                start_date=start_date,
-                end_date=end_date
-            )
-            db.session.add(new_project)
-            db.session.commit()
+        # ---------- SAVE PROJECT ----------
+        new_project = Project_Info(
+            client_id=client_id,
+            project_name=project_name,
+            project_code=project_code if project_code else None,
+            project_type=project_type,
+            project_billability=project_billability,
+            start_date=start_date,
+            end_date=end_date
+        )
 
-            client = Client_Info.query.get(client_id)
-            flash(f"Project '{project_name}' added for client '{client.client_name}' successfully!", "success")
-            return redirect(url_for('list_projects'))
+        db.session.add(new_project)
+        db.session.commit()
 
-        except Exception as e:
-            db.session.rollback()
-            flash(f"Error adding project: {str(e)}", "danger")
-            return render_template('add_project.html', clients=clients, existing_projects=existing_projects)
+        client = Client_Info.query.get(client_id)
 
-    return render_template('add_project.html', clients=clients, existing_projects=existing_projects)
+        return jsonify({
+            "status": "success",
+            "message": f"Project '{project_name}' added for client '{client.client_name}' successfully!"
+        }), 200
 
-
-@app.route('/list_projects', methods=['GET'])
-def list_projects():
-    print("List projects route hit")  # Debug print
-
-    # Start query and join Client_Info for access to client_name
-    query = db.session.query(Project_Info, Client_Info.client_name).join(Client_Info)
-
-    # Filters
-    client_filter = request.args.get('client', '')
-    billability_filter = request.args.get('billability', '')
-    project_type_filter = request.args.get('project_type', '')
-    start_date_from = request.args.get('start_date_from', '')
-    start_date_to = request.args.get('start_date_to', '')
-    status_filter = request.args.get('status', '')
-
-    # Apply filters
-    if client_filter:
-        try:
-            client_id = int(client_filter)
-            query = query.filter(Project_Info.client_id == client_id)
-        except ValueError:
-            flash('Invalid client filter value.', 'error')
-
-    if billability_filter:
-        query = query.filter(Project_Info.project_billability == billability_filter)
-
-    if project_type_filter:
-        query = query.filter(Project_Info.project_type == project_type_filter)
-
-    if start_date_from:
-        try:
-            from_date = datetime.strptime(start_date_from, '%Y-%m-%d').date()
-            query = query.filter(Project_Info.start_date >= from_date)
-        except ValueError as e:
-            flash(f'Invalid start date format: {str(e)}', 'error')
-
-    if start_date_to:
-        try:
-            to_date = datetime.strptime(start_date_to, '%Y-%m-%d').date()
-            query = query.filter(Project_Info.start_date <= to_date)
-        except ValueError as e:
-            flash(f'Invalid end date format: {str(e)}', 'error')
-
-    if status_filter == 'ongoing':
-        query = query.filter(Project_Info.end_date == None)
-    elif status_filter == 'completed':
-        query = query.filter(Project_Info.end_date != None)
-
-    projects = query.all()
-    print(f"Found {len(projects)} projects")
-
-    # For dropdowns
-    unique_clients = db.session.query(Client_Info.clientID, Client_Info.client_name).distinct().all()
-    clients = Client_Info.query.all()
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"status": "error", "message": f"Server error: {str(e)}"}), 500
     
-    project_types = (
-        db.session.query(Project_Info.project_type)
-        .filter(Project_Info.project_type.isnot(None))
-        .distinct()
-        .all()
-    )
-    project_types = [ptype[0] for ptype in project_types]
 
-    return render_template(
-        'list_projects.html',
-        projects=projects,
-        unique_clients=unique_clients,
-        clients=clients,
-        project_types=project_types,
-        selected_project_type=project_type_filter
-    )
+    
+@app.route('/api/clients', methods=['GET'])
+def get_clients():
+    try:
+        clients = Client_Info.query.all()
+        result = [
+            {
+                "clientID": c.clientID,
+                "client_name": c.client_name
+            }
+            for c in clients
+        ]
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+# @app.route('/list_projects', methods=['GET'])
+# def list_projects():
+#     print("List projects route hit")  # Debug print
+
+#     # Start query and join Client_Info for access to client_name
+#     query = db.session.query(Project_Info, Client_Info.client_name).join(Client_Info)
+
+#     # Filters
+#     client_filter = request.args.get('client', '')
+#     billability_filter = request.args.get('billability', '')
+#     project_type_filter = request.args.get('project_type', '')
+#     start_date_from = request.args.get('start_date_from', '')
+#     start_date_to = request.args.get('start_date_to', '')
+#     status_filter = request.args.get('status', '')
+
+#     # Apply filters
+#     if client_filter:
+#         try:
+#             client_id = int(client_filter)
+#             query = query.filter(Project_Info.client_id == client_id)
+#         except ValueError:
+#             flash('Invalid client filter value.', 'error')
+
+#     if billability_filter:
+#         query = query.filter(Project_Info.project_billability == billability_filter)
+
+#     if project_type_filter:
+#         query = query.filter(Project_Info.project_type == project_type_filter)
+
+#     if start_date_from:
+#         try:
+#             from_date = datetime.strptime(start_date_from, '%Y-%m-%d').date()
+#             query = query.filter(Project_Info.start_date >= from_date)
+#         except ValueError as e:
+#             flash(f'Invalid start date format: {str(e)}', 'error')
+
+#     if start_date_to:
+#         try:
+#             to_date = datetime.strptime(start_date_to, '%Y-%m-%d').date()
+#             query = query.filter(Project_Info.start_date <= to_date)
+#         except ValueError as e:
+#             flash(f'Invalid end date format: {str(e)}', 'error')
+
+#     if status_filter == 'ongoing':
+#         query = query.filter(Project_Info.end_date == None)
+#     elif status_filter == 'completed':
+#         query = query.filter(Project_Info.end_date != None)
+
+#     projects = query.all()
+#     print(f"Found {len(projects)} projects")
+
+#     # For dropdowns
+#     unique_clients = db.session.query(Client_Info.clientID, Client_Info.client_name).distinct().all()
+#     clients = Client_Info.query.all()
+    
+#     project_types = (
+#         db.session.query(Project_Info.project_type)
+#         .filter(Project_Info.project_type.isnot(None))
+#         .distinct()
+#         .all()
+#     )
+#     project_types = [ptype[0] for ptype in project_types]
+
+#     return render_template(
+#         'list_projects.html',
+#         projects=projects,
+#         unique_clients=unique_clients,
+#         clients=clients,
+#         project_types=project_types,
+#         selected_project_type=project_type_filter
+#     )
+
+@app.route('/api/projects', methods=['GET'])
+def list_projects():
+    query = db.session.query(Project_Info, Client_Info.client_name)\
+        .join(Client_Info)
+
+    client = request.args.get("client")
+    project_type = request.args.get("project_type")
+    billability = request.args.get("billability")
+
+    if client:
+        query = query.filter(Project_Info.client_id == int(client))
+    if billability:
+        query = query.filter(Project_Info.project_billability == billability)
+    if project_type:
+        query = query.filter(Project_Info.project_type == project_type)
+
+    data = []
+    for project, cname in query.all():
+        data.append({
+            "id": project.id,
+            "client_name": cname,
+            "client_id": project.client_id,
+            "project_name": project.project_name,
+            "project_code": project.project_code,
+            "start_date": str(project.start_date),
+            "end_date": str(project.end_date) if project.end_date else None,
+            "project_billability": project.project_billability,
+            "project_type": project.project_type
+        })
+
+    return jsonify(data)
 
 
 @app.route('/update_project', methods=['POST','GET'])
@@ -2063,14 +3276,159 @@ def reports():
 #     )
 
 
-@app.route('/admin/leave_reports', methods=["GET"])
-def leave_reports_admin():
-    if "user_id" not in session:
-        flash("Please log in to continue", "error")
-        return redirect(url_for("login"))
+# @app.route('/admin/leave_reports', methods=["GET"])
+# def leave_reports_admin():
+#     if "user_id" not in session:
+#         flash("Please log in to continue", "error")
+#         return redirect(url_for("login"))
 
-    # Fetch all leave requests
+#     # Fetch all leave requests
+#     leave_requests = Leave_Request.query.all()
+#     history_leaves_data = []
+#     departments_set = set()
+#     employee_names_set = set()
+#     leave_types_set = set()
+
+#     for lr in leave_requests:
+#         employee = Employee_Info.query.filter_by(empid=lr.empid).first()
+#         dept_name = employee.department.dept_name if employee and employee.department else "Unknown"
+#         emp_name = f"{employee.fname} {employee.lname}" if employee else "Unknown"
+#         leave_type = lr.leave_type
+
+#         departments_set.add(dept_name)
+#         employee_names_set.add(emp_name)
+#         leave_types_set.add(leave_type)
+
+#         history_leaves_data.append({
+#             "id": lr.id,
+#             "empid": lr.empid,
+#             "employee_name": emp_name,
+#             "dept": dept_name,
+#             "leave_type": leave_type,
+#             "st_dt": lr.start_date.strftime("%Y-%m-%d") if lr.start_date else "",
+#             "ed_dt": lr.end_date.strftime("%Y-%m-%d") if lr.end_date else "",
+#             "total_days": float(lr.total_days),
+#             "reason": lr.reason,
+#             "status": lr.status,
+#             "comments": lr.comments,
+#             "applied_on": lr.applied_on.strftime("%Y-%m-%d %H:%M:%S") if lr.applied_on else "",
+#             "approved_by": lr.approver_id if lr.approver_id else ""
+#         })
+
+#     # Fetch all employees and their approver details using a self-join
+#     employees_query = db.session.query(
+#         Employee_Info.empid,
+#         Employee_Info.fname,
+#         Employee_Info.lname,
+#         Department.dept_name.label('dept_name'),
+#         Employee_Info.approver_id,
+#         db.func.coalesce(db.session.query(Employee_Info.fname + " " + Employee_Info.lname)
+#                          .filter(Employee_Info.empid == Employee_Info.approver_id)
+#                          .scalar_subquery(), "N/A").label("approver_name")
+#     ).join(Department, Employee_Info.dept_id == Department.id).all()
+
+#     # List of Employees with Approvers
+#     approvers = [{
+#         "empid": emp.empid,
+#         "employee_name": f"{emp.fname} {emp.lname}",
+#         "dept": emp.dept_name,
+#         "approver_id": emp.approver_id if emp.approver_id else "N/A",
+#         "approver_name": emp.approver_name
+#     } for emp in employees_query]
+
+#     return render_template(
+#         "leave_reports_admin.html",
+#         history_leaves=history_leaves_data,
+#         departments=sorted(departments_set),
+#         employee_names=sorted(employee_names_set),
+#         leave_types=sorted(leave_types_set),
+#         approvers=approvers
+#     )
+
+# @app.route('/admin/leave_reports', methods=['GET'])
+# def leave_reports_admin():
+#     if "user_id" not in session:
+#         return jsonify({"error": "Unauthorized"}), 401
+
+#     # ---- Fetch leave requests ----
+#     leave_requests = Leave_Request.query.all()
+#     history_leaves_data = []
+#     departments_set = set()
+#     employee_names_set = set()
+#     leave_types_set = set()
+
+#     for lr in leave_requests:
+#         employee = Employee_Info.query.filter_by(empid=lr.empid).first()
+#         dept_name = employee.department.dept_name if employee and employee.department else "Unknown"
+#         emp_name = f"{employee.fname} {employee.lname}" if employee else "Unknown"
+
+#         departments_set.add(dept_name)
+#         employee_names_set.add(emp_name)
+#         leave_types_set.add(lr.leave_type)
+
+#         history_leaves_data.append({
+#             "id": lr.id,
+#             "empid": lr.empid,
+#             "employee_name": emp_name,
+#             "dept": dept_name,
+#             "leave_type": lr.leave_type,
+#             "st_dt": lr.start_date.strftime("%Y-%m-%d") if lr.start_date else "",
+#             "ed_dt": lr.end_date.strftime("%Y-%m-%d") if lr.end_date else "",
+#             "total_days": float(lr.total_days),
+#             "reason": lr.reason,
+#             "status": lr.status,
+#             "comments": lr.comments,
+#             "applied_on": lr.applied_on.strftime("%Y-%m-%d %H:%M:%S") if lr.applied_on else "",
+#             "approved_by": lr.approver_id if lr.approver_id else ""
+#         })
+
+#     # ---- Fetch approvers list ----
+#     employees_query = db.session.query(
+#         Employee_Info.empid,
+#         Employee_Info.fname,
+#         Employee_Info.lname,
+#         Department.dept_name.label('dept_name'),
+#         Employee_Info.approver_id,
+#         db.func.coalesce(
+#             db.session.query(Employee_Info.fname + " " + Employee_Info.lname)
+#             .filter(Employee_Info.empid == Employee_Info.approver_id)
+#             .scalar_subquery(),
+#             "N/A"
+#         ).label("approver_name")
+#     ).join(Department, Employee_Info.dept_id == Department.id).all()
+
+#     approvers = [{
+#         "empid": emp.empid,
+#         "employee_name": f"{emp.fname} {emp.lname}",
+#         "dept": emp.dept_name,
+#         "approver_id": emp.approver_id if emp.approver_id else "N/A",
+#         "approver_name": emp.approver_name
+#     } for emp in employees_query]
+
+#     # ---- Always return JSON ----
+#     return jsonify({
+#         "history_leaves": history_leaves_data,
+#         "departments": sorted(list(departments_set)),
+#         "employee_names": sorted(list(employee_names_set)),
+#         "leave_types": sorted(list(leave_types_set)),
+#         "approvers": approvers
+#     })
+
+
+
+# =========================
+
+
+
+@app.route("/api/admin/leave_reports", methods=["GET"])
+def api_leave_reports():
+    # Authentication
+    if "user_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    # ------------------ Fetch Leave Requests ------------------
     leave_requests = Leave_Request.query.all()
+
     history_leaves_data = []
     departments_set = set()
     employee_names_set = set()
@@ -2080,7 +3438,7 @@ def leave_reports_admin():
         employee = Employee_Info.query.filter_by(empid=lr.empid).first()
         dept_name = employee.department.dept_name if employee and employee.department else "Unknown"
         emp_name = f"{employee.fname} {employee.lname}" if employee else "Unknown"
-        leave_type = lr.leave_type
+        leave_type = lr.leave_type if lr.leave_type else "Unknown"
 
         departments_set.add(dept_name)
         employee_names_set.add(emp_name)
@@ -2094,58 +3452,123 @@ def leave_reports_admin():
             "leave_type": leave_type,
             "st_dt": lr.start_date.strftime("%Y-%m-%d") if lr.start_date else "",
             "ed_dt": lr.end_date.strftime("%Y-%m-%d") if lr.end_date else "",
-            "total_days": float(lr.total_days),
+            "total_days": float(lr.total_days) if lr.total_days else 0,
             "reason": lr.reason,
             "status": lr.status,
-            "comments": lr.comments,
-            "applied_on": lr.applied_on.strftime("%Y-%m-%d %H:%M:%S") if lr.applied_on else "",
-            "approved_by": lr.approver_id if lr.approver_id else ""
+            "approved_by": lr.approver_id or ""
         })
 
-    # Fetch all employees and their approver details using a self-join
+    # ------------------ Fetch Approvers List (Self Join) ------------------
     employees_query = db.session.query(
         Employee_Info.empid,
         Employee_Info.fname,
         Employee_Info.lname,
         Department.dept_name.label('dept_name'),
-        Employee_Info.approver_id,
-        db.func.coalesce(db.session.query(Employee_Info.fname + " " + Employee_Info.lname)
-                         .filter(Employee_Info.empid == Employee_Info.approver_id)
-                         .scalar_subquery(), "N/A").label("approver_name")
+        Employee_Info.approver_id
     ).join(Department, Employee_Info.dept_id == Department.id).all()
 
-    # List of Employees with Approvers
-    approvers = [{
-        "empid": emp.empid,
-        "employee_name": f"{emp.fname} {emp.lname}",
-        "dept": emp.dept_name,
-        "approver_id": emp.approver_id if emp.approver_id else "N/A",
-        "approver_name": emp.approver_name
-    } for emp in employees_query]
+    approvers = []
 
-    return render_template(
-        "leave_reports_admin.html",
-        history_leaves=history_leaves_data,
-        departments=sorted(departments_set),
-        employee_names=sorted(employee_names_set),
-        leave_types=sorted(leave_types_set),
-        approvers=approvers
-    )
+    for emp in employees_query:
+        approver_emp = None
+        if emp.approver_id:
+            approver_emp = Employee_Info.query.filter_by(empid=emp.approver_id).first()
+
+        approvers.append({
+            "empid": emp.empid,
+            "employee_name": f"{emp.fname} {emp.lname}",
+            "dept": emp.dept_name,
+            "approver_id": emp.approver_id if emp.approver_id else "N/A",
+            "approver_name": f"{approver_emp.fname} {approver_emp.lname}" if approver_emp else "N/A"
+        })
+
+    # ------------------ Return JSON Response ------------------
+    return jsonify({
+        "history_leaves": history_leaves_data,
+        "departments": sorted(departments_set),
+        "employee_names": sorted(employee_names_set),
+        "leave_types": sorted(leave_types_set),
+        "approvers": approvers
+    })
+
+
 
 
 #########################Admin-END###################
 
+# @app.route('/admin/client_reports', methods=['GET'])
+# def client_reports():
+#     if 'user_id' not in session:
+#         return redirect(url_for('login'))
+
+#     if session['user_id'] != 'N0482':
+#         flash('You do not have permission to access the client reports page', 'error')
+#         return redirect(url_for('login'))
+
+#     try:
+#         # Join Department to access dept_name
+#         client_allocations = db.session.query(
+#             Client_Info.client_name,
+#             Department.dept_name,
+#             func.count(Employee_Info.empid).label('employee_count')
+#         ).join(
+#             Client_Employee, Client_Info.clientID == Client_Employee.clientID
+#         ).join(
+#             Employee_Info, Client_Employee.empid == Employee_Info.empid
+#         ).join(
+#             Department, Employee_Info.dept_id == Department.id
+#         ).group_by(
+#             Client_Info.client_name, Department.dept_name
+#         ).order_by(
+#             Client_Info.client_name, Department.dept_name
+#         ).all()
+
+#         export = request.args.get('export', '').lower() == 'true'
+
+#         if export:
+#             output = io.StringIO()
+#             writer = csv.writer(output)
+#             writer.writerow(['Client Name', 'Department', 'Number of Employees'])
+
+#             for allocation in client_allocations:
+#                 writer.writerow([allocation.client_name, allocation.dept_name, allocation.employee_count])
+
+#             output.seek(0)
+#             response = make_response(output.getvalue())
+#             response.headers["Content-Disposition"] = "attachment; filename=client_allocations.csv"
+#             response.headers["Content-type"] = "text/csv"
+#             return response
+
+#         return render_template(
+#             'client_reports.html',
+#             session=session,
+#             client_allocations=client_allocations
+#         )
+
+#     except Exception as e:
+#         print(f"Error in client reports: {str(e)}")
+#         flash('An error occurred while accessing client reports', 'error')
+#         return render_template(
+#             'client_reports.html',
+#             session=session,
+#             client_allocations=[]
+#         )
+
+
+# ==========================
+# client_reports 3rd option
+
 @app.route('/admin/client_reports', methods=['GET'])
 def client_reports():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
+    # test = request.args.get("test", "false").lower()
 
-    if session['user_id'] != 'N0482':
-        flash('You do not have permission to access the client reports page', 'error')
-        return redirect(url_for('login'))
+    # if test != "true":   # normal behavior
+    #     if 'user_id' not in session:
+    #         return jsonify({"error": "Unauthorized"}), 401
 
+    #     if session['user_id'] != 'N0482':
+    #         return jsonify({"error": "No permission"}), 403
     try:
-        # Join Department to access dept_name
         client_allocations = db.session.query(
             Client_Info.client_name,
             Department.dept_name,
@@ -2162,15 +3585,25 @@ def client_reports():
             Client_Info.client_name, Department.dept_name
         ).all()
 
-        export = request.args.get('export', '').lower() == 'true'
+        # ✅ Convert to list of dicts (JSON-serializable)
+        results = [
+            {
+                "client_name": r.client_name,
+                "dept_name": r.dept_name,
+                "employee_count": r.employee_count
+            }
+            for r in client_allocations
+        ]
 
+        # CSV export
+        export = request.args.get('export', '').lower() == 'true'
         if export:
             output = io.StringIO()
             writer = csv.writer(output)
             writer.writerow(['Client Name', 'Department', 'Number of Employees'])
 
-            for allocation in client_allocations:
-                writer.writerow([allocation.client_name, allocation.dept_name, allocation.employee_count])
+            for row in results:
+                writer.writerow([row['client_name'], row['dept_name'], row['employee_count']])
 
             output.seek(0)
             response = make_response(output.getvalue())
@@ -2178,23 +3611,22 @@ def client_reports():
             response.headers["Content-type"] = "text/csv"
             return response
 
-        return render_template(
-            'client_reports.html',
-            session=session,
-            client_allocations=client_allocations
-        )
+        # ✅ Return JSON directly (not nested in "data" key)
+        return jsonify(results)
 
     except Exception as e:
-        print(f"Error in client reports: {str(e)}")
-        flash('An error occurred while accessing client reports', 'error')
-        return render_template(
-            'client_reports.html',
-            session=session,
-            client_allocations=[]
-        )
-    
+        print("Error:", str(e))
+        return jsonify({"error": "Server error occurred"}), 500
+
+# ==========================
+
+ 
+ 
+# ============================
+# Department Billability
+
 @app.route('/admin/department_billability', methods=['GET'])
-def department_billability():
+def get_department_billability():
     start_date_str = request.args.get('start_date')
     end_date_str = request.args.get('end_date')
 
@@ -2202,10 +3634,8 @@ def department_billability():
         start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date() if start_date_str else None
         end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date() if end_date_str else None
     except ValueError:
-        flash('Invalid date format. Please use YYYY-MM-DD format.', 'error')
-        start_date = end_date = None
+        return jsonify({"error": "Invalid date format. Please use YYYY-MM-DD."}), 400
 
-    # Get all departments
     all_departments = Department.query.order_by(Department.dept_name).all()
     department_billability = []
 
@@ -2216,117 +3646,40 @@ def department_billability():
         non_billable_count = 0
 
         for empid in dept_empids:
-            # Get all distinct project billability statuses from timesheets
+
             project_query = db.session.query(Project_Info.project_billability).join(
                 TimesheetEntry, Project_Info.id == TimesheetEntry.project_id
             ).filter(TimesheetEntry.empid == empid)
 
-            # Apply date filter if provided
             if start_date:
                 project_query = project_query.filter(TimesheetEntry.date >= start_date)
             if end_date:
                 project_query = project_query.filter(TimesheetEntry.date <= end_date)
 
-            # Get unique billability statuses (Billable / Non-billable)
             project_billabilities = {row[0] for row in project_query.distinct().all()}
 
-            # Mark employee as billable if they have at least one billable project
             if "Billable" in project_billabilities:
                 billable_count += 1
             else:
-                non_billable_count += 1  # includes non-billable or no entries
-
-        department_billability.append({
-            'department': dept.dept_name,
-            'billable_count': billable_count,
-            'non_billable_count': non_billable_count,
-            'total_count': total_count
-        })
-
-    return render_template(
-        'department_billability.html',
-        department_billability=department_billability,
-        start_date=start_date_str,
-        end_date=end_date_str
-    )
-
-@app.route('/admin/client_department_distribution', methods=['GET'])
-def client_department_distribution():
-    start_date_str = request.args.get('start_date')
-    end_date_str = request.args.get('end_date')
-
-    try:
-        start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date() if start_date_str else None
-        end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date() if end_date_str else None
-    except ValueError:
-        flash('Invalid date format. Please use YYYY-MM-DD format.', 'error')
-        start_date = end_date = None
-
-    client_list = [client[0] for client in db.session.query(Client_Info.client_name).distinct().order_by(Client_Info.client_name).all()]
-    departments = db.session.query(Department).order_by(Department.dept_name).all()
-
-    client_department_counts = []
-
-    for dept in departments:
-        dept_empids = [emp.empid for emp in dept.employees]
-        total_count = len(dept_empids)
-
-        non_billable_count = 0
-        for empid in dept_empids:
-            employee_clients_query = db.session.query(Client_Info.client_name).join(
-                Client_Employee, Client_Info.clientID == Client_Employee.clientID
-            ).filter(Client_Employee.empid == empid)
-
-            if start_date:
-                employee_clients_query = employee_clients_query.filter(Client_Employee.start_date >= start_date)
-            if end_date:
-                employee_clients_query = employee_clients_query.filter(
-                    or_(Client_Employee.start_date <= end_date, Client_Employee.start_date == None)
-                )
-
-            client_names = [client[0] for client in employee_clients_query.all()]
-            if len(client_names) <= 1 and (not client_names or client_names[0] == 'Internal'):
                 non_billable_count += 1
 
-        client_counts_query = db.session.query(
-            Client_Info.client_name,
-            func.count(Employee_Info.empid).label('count')
-        ).join(
-            Client_Employee, Client_Info.clientID == Client_Employee.clientID
-        ).join(
-            Employee_Info, Client_Employee.empid == Employee_Info.empid
-        ).filter(
-            Employee_Info.dept_id == dept.id
-        )
+        department_billability.append({
+            "department": dept.dept_name,
+            "billable_count": billable_count,
+            "non_billable_count": non_billable_count,
+            "total_count": total_count
+        })
 
-        if start_date:
-            client_counts_query = client_counts_query.filter(Client_Employee.start_date >= start_date)
-        if end_date:
-            client_counts_query = client_counts_query.filter(
-                or_(Client_Employee.start_date <= end_date, Client_Employee.start_date == None)
-            )
-
-        client_counts = client_counts_query.group_by(Client_Info.client_name).all()
-        client_count_dict = {client.client_name: client.count for client in client_counts}
-
-        row_data = {
-            'department': dept.dept_name,
-            'non_billable_count': non_billable_count,
-            'total_count': total_count
-        }
-
-        for client in client_list:
-            row_data[client] = client_count_dict.get(client, 0)
-
-        client_department_counts.append(row_data)
-
-    return render_template('client_department_distribution.html',
-                           client_department_counts=client_department_counts,
-                           client_list=client_list,
-                           start_date=start_date_str,
-                           end_date=end_date_str)
+    return jsonify({
+        "start_date": start_date_str,
+        "end_date": end_date_str,
+        "data": department_billability
+    }), 200
 
 
+
+
+# //return csv file for department billability
 @app.route('/export_department_billability', methods=['GET'])
 def export_department_billability():
     start_date = request.args.get('start_date')
@@ -2403,6 +3756,88 @@ def export_department_billability():
         as_attachment=True,
         download_name=filename
     )
+
+# ============================
+
+
+
+
+# ============================
+# client_department_distribution
+
+@app.route('/admin/client_department_distribution', methods=['GET'])
+def client_department_distribution():
+    start_date_str = request.args.get('start_date')
+    end_date_str = request.args.get('end_date')
+
+    try:
+        start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date() if start_date_str else None
+        end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date() if end_date_str else None
+    except ValueError:
+        return jsonify({"error": "Invalid date format"}), 400
+
+    client_list = [client[0] for client in db.session.query(Client_Info.client_name)
+                   .distinct().order_by(Client_Info.client_name).all()]
+
+    departments = db.session.query(Department).order_by(Department.dept_name).all()
+
+    client_department_counts = []
+
+    for dept in departments:
+        dept_empids = [emp.empid for emp in dept.employees]
+        total_count = len(dept_empids)
+
+        non_billable_count = 0
+        for empid in dept_empids:
+            employee_clients_query = db.session.query(Client_Info.client_name).join(
+                Client_Employee, Client_Info.clientID == Client_Employee.clientID
+            ).filter(Client_Employee.empid == empid)
+
+            if start_date:
+                employee_clients_query = employee_clients_query.filter(Client_Employee.start_date >= start_date)
+            if end_date:
+                employee_clients_query = employee_clients_query.filter(
+                    or_(Client_Employee.start_date <= end_date, Client_Employee.start_date == None)
+                )
+
+            client_names = [client[0] for client in employee_clients_query.all()]
+            if len(client_names) <= 1 and (not client_names or client_names[0] == 'Internal'):
+                non_billable_count += 1
+
+        client_counts_query = db.session.query(
+            Client_Info.client_name,
+            func.count(Employee_Info.empid).label('count')
+        ).join(Client_Employee, Client_Info.clientID == Client_Employee.clientID) \
+         .join(Employee_Info, Client_Employee.empid == Employee_Info.empid) \
+         .filter(Employee_Info.dept_id == dept.id)
+
+        if start_date:
+            client_counts_query = client_counts_query.filter(Client_Employee.start_date >= start_date)
+        if end_date:
+            client_counts_query = client_counts_query.filter(
+                or_(Client_Employee.start_date <= end_date, Client_Employee.start_date == None)
+            )
+
+        client_counts = client_counts_query.group_by(Client_Info.client_name).all()
+        client_count_dict = {client.client_name: client.count for client in client_counts}
+
+        row_data = {
+            "department": dept.dept_name,
+            "non_billable_count": non_billable_count,
+            "total_count": total_count
+        }
+
+        for client in client_list:
+            row_data[client] = client_count_dict.get(client, 0)
+
+        client_department_counts.append(row_data)
+
+    return jsonify({
+        "client_list": client_list,
+        "client_department_counts": client_department_counts,
+        "start_date": start_date_str,
+        "end_date": end_date_str
+    })
 
 
 
@@ -2481,6 +3916,250 @@ def export_client_department():
     response.headers['Content-Disposition'] = 'attachment; filename=client_department_distribution.csv'
     response.headers['Content-Type'] = 'text/csv'
     return response
+
+
+# ===========================
+
+
+
+
+# ============================
+
+
+
+
+
+# @app.route('/admin/client_department_distribution', methods=['GET'])
+# def client_department_distribution():
+#     start_date_str = request.args.get('start_date')
+#     end_date_str = request.args.get('end_date')
+
+#     try:
+#         start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date() if start_date_str else None
+#         end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date() if end_date_str else None
+#     except ValueError:
+#         flash('Invalid date format. Please use YYYY-MM-DD format.', 'error')
+#         start_date = end_date = None
+
+#     client_list = [client[0] for client in db.session.query(Client_Info.client_name).distinct().order_by(Client_Info.client_name).all()]
+#     departments = db.session.query(Department).order_by(Department.dept_name).all()
+
+#     client_department_counts = []
+
+#     for dept in departments:
+#         dept_empids = [emp.empid for emp in dept.employees]
+#         total_count = len(dept_empids)
+
+#         non_billable_count = 0
+#         for empid in dept_empids:
+#             employee_clients_query = db.session.query(Client_Info.client_name).join(
+#                 Client_Employee, Client_Info.clientID == Client_Employee.clientID
+#             ).filter(Client_Employee.empid == empid)
+
+#             if start_date:
+#                 employee_clients_query = employee_clients_query.filter(Client_Employee.start_date >= start_date)
+#             if end_date:
+#                 employee_clients_query = employee_clients_query.filter(
+#                     or_(Client_Employee.start_date <= end_date, Client_Employee.start_date == None)
+#                 )
+
+#             client_names = [client[0] for client in employee_clients_query.all()]
+#             if len(client_names) <= 1 and (not client_names or client_names[0] == 'Internal'):
+#                 non_billable_count += 1
+
+#         client_counts_query = db.session.query(
+#             Client_Info.client_name,
+#             func.count(Employee_Info.empid).label('count')
+#         ).join(
+#             Client_Employee, Client_Info.clientID == Client_Employee.clientID
+#         ).join(
+#             Employee_Info, Client_Employee.empid == Employee_Info.empid
+#         ).filter(
+#             Employee_Info.dept_id == dept.id
+#         )
+
+#         if start_date:
+#             client_counts_query = client_counts_query.filter(Client_Employee.start_date >= start_date)
+#         if end_date:
+#             client_counts_query = client_counts_query.filter(
+#                 or_(Client_Employee.start_date <= end_date, Client_Employee.start_date == None)
+#             )
+
+#         client_counts = client_counts_query.group_by(Client_Info.client_name).all()
+#         client_count_dict = {client.client_name: client.count for client in client_counts}
+
+#         row_data = {
+#             'department': dept.dept_name,
+#             'non_billable_count': non_billable_count,
+#             'total_count': total_count
+#         }
+
+#         for client in client_list:
+#             row_data[client] = client_count_dict.get(client, 0)
+
+#         client_department_counts.append(row_data)
+
+#     return render_template('client_department_distribution.html',
+#                            client_department_counts=client_department_counts,
+#                            client_list=client_list,
+#                            start_date=start_date_str,
+#                            end_date=end_date_str)
+
+
+# @app.route('/export_department_billability', methods=['GET'])
+# def export_department_billability():
+#     start_date = request.args.get('start_date')
+#     end_date = request.args.get('end_date')
+
+#     # Parse dates
+#     if start_date:
+#         start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
+#     if end_date:
+#         end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
+
+#     # ✅ Get all departments
+#     all_departments = db.session.query(Department.dept_name).order_by(Department.dept_name).all()
+#     departments = [d[0] for d in all_departments]
+
+#     data = []
+
+#     for dept_name in departments:
+#         # ✅ Get all employees in this department
+#         dept_employees = (
+#             db.session.query(Employee_Info.empid)
+#             .join(Department, Employee_Info.dept_id == Department.id)
+#             .filter(Department.dept_name == dept_name)
+#             .all()
+#         )
+#         dept_empids = [emp[0] for emp in dept_employees]
+#         total_count = len(dept_empids)
+
+#         billable_count = 0
+#         non_billable_count = 0
+
+#         for empid in dept_empids:
+#             # ✅ Get all projects this employee logged timesheets for
+#             project_query = (
+#                 db.session.query(Project_Info.project_billability)
+#                 .join(TimesheetEntry, Project_Info.id == TimesheetEntry.project_id)
+#                 .filter(TimesheetEntry.empid == empid)
+#             )
+
+#             # Apply date filter if given
+#             if start_date:
+#                 project_query = project_query.filter(TimesheetEntry.date >= start_date)
+#             if end_date:
+#                 project_query = project_query.filter(TimesheetEntry.date <= end_date)
+
+#             # Distinct project billabilities → e.g., {"Billable"} or {"Non-billable"}
+#             project_billabilities = {row[0] for row in project_query.distinct().all()}
+
+#             # ✅ Determine billable vs non-billable
+#             if "Billable" in project_billabilities:
+#                 billable_count += 1
+#             else:
+#                 non_billable_count += 1  # includes non-billable projects OR no timesheets
+
+#         data.append({
+#             "Department": dept_name,
+#             "Billable Count": billable_count,
+#             "Non-Billable Count": non_billable_count,
+#             "Total Count": total_count
+#         })
+
+#     # ✅ Convert to DataFrame for CSV
+#     df = pd.DataFrame(data)
+
+#     output = io.BytesIO()
+#     df.to_csv(output, index=False)
+#     output.seek(0)
+
+#     filename = f"department_billability_{datetime.now().strftime('%Y%m%d')}.csv"
+
+#     return send_file(
+#         output,
+#         mimetype="text/csv",
+#         as_attachment=True,
+#         download_name=filename
+#     )
+
+
+
+# @app.route('/export_client_department', methods=['GET'])
+# def export_client_department():
+#     start_date_str = request.args.get('start_date')
+#     end_date_str = request.args.get('end_date')
+
+#     try:
+#         start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date() if start_date_str else None
+#         end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date() if end_date_str else None
+#     except ValueError:
+#         flash('Invalid date format. Please use YYYY-MM-DD format.', 'error')
+#         return redirect(url_for('client_department_distribution'))
+
+#     client_list = [client[0] for client in db.session.query(Client_Info.client_name).distinct().order_by(Client_Info.client_name).all()]
+#     departments = db.session.query(Department).order_by(Department.dept_name).all()
+
+#     output = StringIO()
+#     writer = csv.writer(output)
+
+#     # Header Row
+#     header = ['Department', 'Non-Billable Count', 'Total Count'] + client_list
+#     writer.writerow(header)
+
+#     for dept in departments:
+#         dept_empids = [emp.empid for emp in dept.employees]
+#         total_count = len(dept_empids)
+
+#         non_billable_count = 0
+#         for empid in dept_empids:
+#             employee_clients_query = db.session.query(Client_Info.client_name).join(
+#                 Client_Employee, Client_Info.clientID == Client_Employee.clientID
+#             ).filter(Client_Employee.empid == empid)
+
+#             if start_date:
+#                 employee_clients_query = employee_clients_query.filter(Client_Employee.start_date >= start_date)
+#             if end_date:
+#                 employee_clients_query = employee_clients_query.filter(
+#                     or_(Client_Employee.start_date <= end_date, Client_Employee.start_date == None)
+#                 )
+
+#             client_names = [client[0] for client in employee_clients_query.all()]
+#             if len(client_names) <= 1 and (not client_names or client_names[0] == 'Internal'):
+#                 non_billable_count += 1
+
+#         client_counts_query = db.session.query(
+#             Client_Info.client_name,
+#             func.count(Employee_Info.empid).label('count')
+#         ).join(
+#             Client_Employee, Client_Info.clientID == Client_Employee.clientID
+#         ).join(
+#             Employee_Info, Client_Employee.empid == Employee_Info.empid
+#         ).filter(
+#             Employee_Info.dept_id == dept.id
+#         )
+
+#         if start_date:
+#             client_counts_query = client_counts_query.filter(Client_Employee.start_date >= start_date)
+#         if end_date:
+#             client_counts_query = client_counts_query.filter(
+#                 or_(Client_Employee.start_date <= end_date, Client_Employee.start_date == None)
+#             )
+
+#         client_counts = client_counts_query.group_by(Client_Info.client_name).all()
+#         client_count_dict = {client.client_name: client.count for client in client_counts}
+
+#         row = [dept.dept_name, non_billable_count, total_count]
+#         for client in client_list:
+#             row.append(client_count_dict.get(client, 0))
+
+#         writer.writerow(row)
+
+#     output.seek(0)
+#     response = make_response(output.getvalue())
+#     response.headers['Content-Disposition'] = 'attachment; filename=client_department_distribution.csv'
+#     response.headers['Content-Type'] = 'text/csv'
+#     return response
  
 # @app.route('/admin/location_reports', methods=['GET'])
 # def location_reports():
@@ -3167,6 +4846,8 @@ def location_reports():
     # Otherwise redirect to the main reports page
     return redirect(url_for('admin_reports'))
 
+
+
 @app.route('/admin/employee_type_reports', methods=['GET'])
 def employee_type_reports():
     # Get employee type data
@@ -3243,25 +4924,79 @@ def billability_reports():
     # Otherwise redirect to the main reports page
     return redirect(url_for('admin_reports'))
 
+
+
+# @app.route('/admin/reports/data', methods=['GET'])
+# def admin_reports_data():
+#     try:
+#         # ------- LOCATION DATA -------
+#         location_data = get_location_data()
+#         location_grand_total = sum(item['count'] for item in location_data)
+
+#         # ------- EMPLOYEE TYPE DATA -------
+#         emp_type_data = get_employee_type_data()
+#         emp_type_grand_total = sum(item['count'] for item in emp_type_data) if emp_type_data else 0
+
+#         # ------- BILLABILITY DATA -------
+#         billability_data = get_billability_data()
+
+#         return jsonify({
+#             "status": "success",
+#             "location_report": {
+#                 "data": location_data,
+#                 "total": location_grand_total
+#             },
+#             "employee_type_report": {
+#                 "data": emp_type_data,
+#                 "total": emp_type_grand_total
+#             },
+#             "billability_report": billability_data
+#         }), 200
+
+#     except Exception as e:
+#         return jsonify({"status": "error", "message": str(e)}), 500
+
+# ============================
+
+
+from flask import jsonify  # make sure this import exists
 @app.route('/admin/reports', methods=['GET'])
 def admin_reports():
-    # Get all data types
-    location_data = get_location_data()
-    location_grand_total = sum(item['count'] for item in location_data)
-    
-    emp_type_data = get_employee_type_data()
-    emp_type_grand_total = sum(item['count'] for item in emp_type_data) if emp_type_data else 0
-    
-    billability_data = get_billability_data()
-    
-    # Return template with all data
-    return render_template(
-        'admin_reports.html',
-        location_data=location_data,
-        grand_total=location_grand_total,  # Used by location report
-        emp_type_data=emp_type_data,
-        billability_data=billability_data
-    )
+    try:
+        # Get all data types
+        location_data = get_location_data()
+        location_grand_total = sum(item['count'] for item in location_data)
+
+        emp_type_data = get_employee_type_data()
+        emp_type_grand_total = (
+            sum(item['count'] for item in emp_type_data) if emp_type_data else 0
+        )
+
+        billability_data = get_billability_data()
+
+        # ✅ Return JSON instead of rendering a template
+        return jsonify({
+            "status": "success",
+            "location_report": {
+                "data": location_data,
+                "total": location_grand_total
+            },
+            "employee_type_report": {
+                "data": emp_type_data,
+                "total": emp_type_grand_total
+            },
+            "billability_report": billability_data
+        }), 200
+
+    except Exception as e:
+        # log in console
+        print("ERROR in /admin/reports:", e)
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
+
+
 
 def get_location_data():
     # Get counts by work_location
@@ -3385,15 +5120,135 @@ def get_billability_data(start_date=None, end_date=None):
     print(f"Billability data: {billability_data}")
     return billability_data
 
-
+# ================================
 ################################################################################
+
+# @app.route('/timesheet_reports')
+# def timesheet_reports():
+#     start_date = request.args.get('start_date')
+#     end_date = request.args.get('end_date')
+#     department = request.args.get('department')  # ✅ single value from dropdown
+
+#     query = db.session.query(
+#         Employee_Info.empid,
+#         (Employee_Info.fname + literal(' ') + Employee_Info.lname).label('emp_name'),
+#         Department.dept_name.label('department'),
+#         Client_Info.client_name,
+#         Project_Info.project_name,
+#         Project_Info.project_billability,
+#         TimesheetEntry.hours_worked,
+#         TimesheetEntry.work_date
+#     ).join(
+#         Department, Employee_Info.dept_id == Department.id
+#     ).join(
+#         TimesheetEntry, TimesheetEntry.empid == Employee_Info.empid
+#     ).join(
+#         Project_Info, TimesheetEntry.project_id == Project_Info.id
+#     ).join(
+#         Client_Info, Project_Info.client_id == Client_Info.clientID
+#     )
+
+#     # Apply date filters
+#     if start_date:
+#         query = query.filter(TimesheetEntry.work_date >= start_date)
+#     if end_date:
+#         query = query.filter(TimesheetEntry.work_date <= end_date)
+
+#     # Apply department filter (if selected)
+#     if department:
+#         query = query.filter(Department.dept_name == department)
+
+#     results = query.order_by(TimesheetEntry.work_date.desc()).all()
+
+#     # Load department list for dropdown
+#     departments = db.session.query(Department.dept_name).distinct().order_by(Department.dept_name).all()
+#     department_list = [d[0] for d in departments]
+
+#     return render_template(
+#         'timesheet_reports.html',
+#         data=results,
+#         departments=department_list,
+#         selected_department=department,  # ✅ used in the dropdown to keep selection
+#         start_date=start_date,
+#         end_date=end_date
+#     )
+   
+   
+# @app.route('/download_timesheet_report', methods=['GET'])
+# def download_timesheet_report():
+#     start_date = request.args.get('start_date')
+#     end_date = request.args.get('end_date')
+#     department = request.args.get('department')
+
+#     query = db.session.query(
+#         Employee_Info.empid,
+#         (Employee_Info.fname + literal(' ') + Employee_Info.lname).label('emp_name'),
+#         Department.dept_name.label('department'),
+#         Client_Info.client_name,
+#         Project_Info.project_name,
+#         Project_Info.project_billability,
+#         TimesheetEntry.hours_worked,
+#         TimesheetEntry.work_date
+#     ).join(
+#         TimesheetEntry, TimesheetEntry.empid == Employee_Info.empid
+#     ).join(
+#         Project_Info, TimesheetEntry.project_id == Project_Info.id
+#     ).join(
+#         Client_Info, Project_Info.client_id == Client_Info.clientID
+#     ).join(
+#         Department, Employee_Info.dept_id == Department.id
+#     )
+
+#     if start_date:
+#         query = query.filter(TimesheetEntry.work_date >= start_date)
+#     if end_date:
+#         query = query.filter(TimesheetEntry.work_date <= end_date)
+#     if department:
+#         query = query.filter(Department.dept_name == department)
+
+#     results = query.order_by(TimesheetEntry.work_date.desc()).all()
+
+#     output = io.StringIO()
+#     writer = csv.writer(output)
+
+#     # Write CSV Header
+#     writer.writerow([
+#         'Employee ID', 'Employee Name', 'Department',
+#         'Client Name', 'Project Name', 'Billability',
+#         'Hours Worked', 'Work Date'
+#     ])
+
+#     # Write CSV Rows
+#     for row in results:
+#         writer.writerow([
+#             row.empid,
+#             row.emp_name,
+#             row.department,
+#             row.client_name,
+#             row.project_name,
+#             row.project_billability,
+#             row.hours_worked,
+#             row.work_date.strftime("%Y-%m-%d") if row.work_date else ""
+#         ])
+
+#     response = make_response(output.getvalue())
+#     response.headers["Content-Disposition"] = "attachment; filename=timesheet_report.csv"
+#     response.headers["Content-type"] = "text/csv"
+#     return response
+
+
+
+
+# ================================
+# Timesheet Reports - JSON version and CSV download
 
 @app.route('/timesheet_reports')
 def timesheet_reports():
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
-    department = request.args.get('department')  # ✅ single value from dropdown
-
+    department = request.args.get('department')  # single value from dropdown
+    print("here IIIIIIIII am")
+    
     query = db.session.query(
         Employee_Info.empid,
         (Employee_Info.fname + literal(' ') + Employee_Info.lname).label('emp_name'),
@@ -3429,14 +5284,27 @@ def timesheet_reports():
     departments = db.session.query(Department.dept_name).distinct().order_by(Department.dept_name).all()
     department_list = [d[0] for d in departments]
 
-    return render_template(
-        'timesheet_reports.html',
-        data=results,
-        departments=department_list,
-        selected_department=department,  # ✅ used in the dropdown to keep selection
-        start_date=start_date,
-        end_date=end_date
-    )
+    # Convert results to JSON
+    data_list = []
+    for row in results:
+        data_list.append({
+            "empid": row.empid,
+            "emp_name": row.emp_name,
+            "department": row.department,
+            "client_name": row.client_name,
+            "project_name": row.project_name,
+            "project_billability": row.project_billability,
+            "hours_worked": row.hours_worked,
+            "work_date": str(row.work_date)
+        })
+    # Return JSON instead of template — NOTHING extra added
+    return jsonify({
+        "data": data_list,
+        "departments": department_list,
+        "selected_department": department,
+        "start_date": start_date,
+        "end_date": end_date
+    })
    
    
 @app.route('/download_timesheet_report', methods=['GET'])
@@ -3447,7 +5315,7 @@ def download_timesheet_report():
 
     query = db.session.query(
         Employee_Info.empid,
-        (Employee_Info.fname + literal(' ') + Employee_Info.lname).label('emp_name'),
+        (func.trim(Employee_Info.fname) + ' ' + func.trim(Employee_Info.lname)).label('emp_name'),
         Department.dept_name.label('department'),
         Client_Info.client_name,
         Project_Info.project_name,
@@ -3476,14 +5344,12 @@ def download_timesheet_report():
     output = io.StringIO()
     writer = csv.writer(output)
 
-    # Write CSV Header
     writer.writerow([
         'Employee ID', 'Employee Name', 'Department',
         'Client Name', 'Project Name', 'Billability',
         'Hours Worked', 'Work Date'
     ])
 
-    # Write CSV Rows
     for row in results:
         writer.writerow([
             row.empid,
@@ -3502,16 +5368,110 @@ def download_timesheet_report():
     return response
 
 
-@app.route('/timesheet_approvers')
+# ================================
+
+# @app.route('/timesheet_approvers')
+# def timesheet_approvers():
+#     Emp = aliased(Employee_Info)
+#     Approver = aliased(Employee_Info)
+
+#     # Get filters from query params
+#     department = request.args.get('department')
+#     approver = request.args.get('approver')
+
+#     # Base query with dept join
+#     query = db.session.query(
+#         Emp.empid.label('employee_id'),
+#         (Emp.fname + literal(' ') + Emp.lname).label('employee_name'),
+#         Approver.empid.label('approver_id'),
+#         (Approver.fname + literal(' ') + Approver.lname).label('approver_name'),
+#         Department.dept_name.label('department')
+#     ).join(
+#         Department, Emp.dept_id == Department.id
+#     ).join(
+#         Approver, Emp.approver_id == Approver.empid
+#     )
+
+#     # Apply department filter
+#     if department:
+#         query = query.filter(Department.dept_name == department)
+
+#     # Apply approver filter
+#     if approver:
+#         query = query.filter((Approver.fname + literal(' ') + Approver.lname) == approver)
+
+#     results = query.order_by(Emp.empid).all()
+
+#     # Fetch all department names for dropdown
+#     departments = [d.dept_name for d in db.session.query(Department.dept_name).distinct().order_by(Department.dept_name).all()]
+
+#     # Fetch all unique approver names for dropdown
+#     approvers_query = db.session.query(
+#         (Employee_Info.fname + literal(' ') + Employee_Info.lname).label('approver_name')
+#     ).filter(Employee_Info.empid.in_(
+#         db.session.query(Employee_Info.approver_id).distinct().filter(Employee_Info.approver_id.isnot(None))
+#     ))
+#     approvers = [a.approver_name for a in approvers_query.all()]
+
+#     return render_template(
+#         'timesheet_approvers.html',
+#         data=results,
+#         departments=departments,
+#         approvers=approvers
+#     )
+
+ 
+# @app.route('/download_timesheet_approvers')
+# def download_timesheet_approvers():
+#     Emp = aliased(Employee_Info)
+#     Approver = aliased(Employee_Info)
+
+#     # Join with Departments
+#     results = db.session.query(
+#         Emp.empid.label('employee_id'),
+#         (Emp.fname + literal(' ') + Emp.lname).label('employee_name'),
+#         Approver.empid.label('approver_id'),
+#         (Approver.fname + literal(' ') + Approver.lname).label('approver_name'),
+#         Department.dept_name.label('department')
+#     ).join(
+#         Approver, Emp.approver_id == Approver.empid
+#     ).outerjoin(
+#         Department, Emp.dept_id == Department.id
+#     ).order_by(
+#         Emp.empid
+#     ).all()
+
+#     # Prepare CSV in-memory
+#     si = StringIO()
+#     cw = csv.writer(si)
+#     # Write CSV Header
+#     cw.writerow(['Employee ID', 'Employee Name', 'Approver ID', 'Approver Name', 'Department'])
+
+#     # Write data rows
+#     for row in results:
+#         cw.writerow(row)
+
+#     # Return response as downloadable CSV
+#     output = si.getvalue()
+#     return Response(
+#         output,
+#         mimetype='text/csv',
+#         headers={"Content-Disposition": "attachment;filename=timesheet_approvers.csv"}
+#     )
+
+
+
+# ===============================
+# Timesheet Approvers - JSON version and CSV download
+
+@app.route('/timesheet_approvers', methods=['GET'])
 def timesheet_approvers():
     Emp = aliased(Employee_Info)
     Approver = aliased(Employee_Info)
 
-    # Get filters from query params
     department = request.args.get('department')
     approver = request.args.get('approver')
 
-    # Base query with dept join
     query = db.session.query(
         Emp.empid.label('employee_id'),
         (Emp.fname + literal(' ') + Emp.lname).label('employee_name'),
@@ -3520,46 +5480,59 @@ def timesheet_approvers():
         Department.dept_name.label('department')
     ).join(
         Department, Emp.dept_id == Department.id
-    ).join(
+    ).outerjoin(
         Approver, Emp.approver_id == Approver.empid
     )
 
-    # Apply department filter
     if department:
         query = query.filter(Department.dept_name == department)
 
-    # Apply approver filter
     if approver:
         query = query.filter((Approver.fname + literal(' ') + Approver.lname) == approver)
 
     results = query.order_by(Emp.empid).all()
 
-    # Fetch all department names for dropdown
-    departments = [d.dept_name for d in db.session.query(Department.dept_name).distinct().order_by(Department.dept_name).all()]
+    # Convert query result to JSON list
+    data_list = [
+        {
+            "employee_id": r.employee_id,
+            "employee_name": r.employee_name,
+            "approver_id": r.approver_id,
+            "approver_name": r.approver_name,
+            "department": r.department
+        }
+        for r in results
+    ]
 
-    # Fetch all unique approver names for dropdown
-    approvers_query = db.session.query(
-        (Employee_Info.fname + literal(' ') + Employee_Info.lname).label('approver_name')
-    ).filter(Employee_Info.empid.in_(
-        db.session.query(Employee_Info.approver_id).distinct().filter(Employee_Info.approver_id.isnot(None))
-    ))
-    approvers = [a.approver_name for a in approvers_query.all()]
+    # Dropdown values
+    departments = [
+        d.dept_name for d in
+        db.session.query(Department.dept_name).distinct().order_by(Department.dept_name).all()
+    ]
 
-    return render_template(
-        'timesheet_approvers.html',
-        data=results,
-        departments=departments,
-        approvers=approvers
-    )
+    approvers = [
+        a[0] for a in db.session.query(
+            (Employee_Info.fname + literal(' ') + Employee_Info.lname)
+        ).filter(Employee_Info.approver_id.isnot(None)).distinct().all()
+    ]
+
+    return jsonify({
+        "success": True,
+        "total": len(data_list),
+        "results": data_list,
+        "departments": departments,
+        "approvers": approvers,
+        "selected_department": department,
+        "selected_approver": approver
+    }), 200
 
  
-@app.route('/download_timesheet_approvers')
+@app.route('/download_timesheet_approvers', methods=['GET'])
 def download_timesheet_approvers():
     Emp = aliased(Employee_Info)
     Approver = aliased(Employee_Info)
 
-    # Join with Departments
-    results = db.session.query(
+    query = db.session.query(
         Emp.empid.label('employee_id'),
         (Emp.fname + literal(' ') + Emp.lname).label('employee_name'),
         Approver.empid.label('approver_id'),
@@ -3571,40 +5544,163 @@ def download_timesheet_approvers():
         Department, Emp.dept_id == Department.id
     ).order_by(
         Emp.empid
-    ).all()
+    )
 
-    # Prepare CSV in-memory
+    results = query.all()
+
+    # CSV creation
     si = StringIO()
     cw = csv.writer(si)
-    # Write CSV Header
+
+    # Header
     cw.writerow(['Employee ID', 'Employee Name', 'Approver ID', 'Approver Name', 'Department'])
 
-    # Write data rows
-    for row in results:
-        cw.writerow(row)
+    # Proper row writing
+    for r in results:
+        cw.writerow([
+            r.employee_id,
+            r.employee_name,
+            r.approver_id,
+            r.approver_name,
+            r.department
+        ])
 
-    # Return response as downloadable CSV
     output = si.getvalue()
+
     return Response(
         output,
         mimetype='text/csv',
-        headers={"Content-Disposition": "attachment;filename=timesheet_approvers.csv"}
+        headers={
+            "Content-Disposition": f"attachment; filename=timesheet_approvers_{datetime.now().strftime('%Y%m%d')}.csv"
+        }
     )
 
-@app.route('/timesheet_defaulters')
+# ================================
+
+# @app.route('/timesheet_defaulters')
+# def timesheet_defaulters():
+#     start_date = request.args.get("start_date")
+#     end_date = request.args.get("end_date")
+#     department = request.args.get("department")
+#     status = request.args.get("status")
+
+#     # ✅ Fetch department names for the dropdown
+#     departments = [d.dept_name for d in db.session.query(Department.dept_name).distinct().order_by(Department.dept_name).all()]
+
+#     # ✅ Aliased for clarity
+#     emp = aliased(Employee_Info)
+#     dept = aliased(Department)
+
+#     query = db.session.query(
+#         emp.empid,
+#         (emp.fname + literal(' ') + emp.lname).label('emp_name'),
+#         dept.dept_name.label('department'),
+#         Client_Info.client_name,
+#         TimesheetEntry.work_date,
+#         Timesheet.status
+#     ).outerjoin(
+#         Timesheet, emp.empid == Timesheet.empid
+#     ).outerjoin(
+#         TimesheetEntry, emp.empid == TimesheetEntry.empid
+#     ).outerjoin(
+#         Project_Info, TimesheetEntry.project_id == Project_Info.id
+#     ).outerjoin(
+#         Client_Info, Project_Info.client_id == Client_Info.clientID  # ✅ fixed
+#     ).outerjoin(
+#         dept, emp.dept_id == dept.id
+#     )
+
+#     # Filters
+#     if start_date and end_date:
+#         query = query.filter(TimesheetEntry.work_date.between(start_date, end_date))
+
+#     if department:
+#         query = query.filter(dept.dept_name == department)
+
+#     if status:
+#         query = query.filter(Timesheet.status == status)
+#     else:
+#         query = query.filter(Timesheet.status.in_(["Submitted", "Approved", "Not Submitted"]))
+
+#     results = query.order_by(TimesheetEntry.work_date.desc()).all()
+
+#     return render_template(
+#         'timesheet_defaulter.html',
+#         data=results,
+#         departments=departments,
+#         selected_department=department,
+#         start_date=start_date,
+#         end_date=end_date,
+#         selected_status=status
+#     )
+
+ 
+# @app.route('/download_timesheet_defaulters')
+# def download_timesheet_defaulters():
+#     start_date = request.args.get("start_date")
+#     end_date = request.args.get("end_date")
+#     department = request.args.get("department")
+#     status = request.args.get("status")
+
+#     query = db.session.query(
+#         Employee_Info.empid,
+#         (Employee_Info.fname + literal(' ') + Employee_Info.lname).label('emp_name'),
+#         Department.dept_name.label('department'),
+#         Client_Info.client_name,
+#         TimesheetEntry.work_date,
+#         Timesheet.status
+#     ).outerjoin(
+#         Department, Employee_Info.dept_id == Department.id
+#     ).outerjoin(
+#         Timesheet, Employee_Info.empid == Timesheet.empid
+#     ).outerjoin(
+#         TimesheetEntry, Employee_Info.empid == TimesheetEntry.empid
+#     ).outerjoin(
+#         Project_Info, TimesheetEntry.project_id == Project_Info.id
+#     ).outerjoin(
+#         Client_Info, Project_Info.client_id == Client_Info.clientID  # ✅ correct join
+#     )
+
+#     if start_date and end_date:
+#         query = query.filter(TimesheetEntry.work_date.between(start_date, end_date))
+
+#     if department:
+#         query = query.filter(Department.dept_name == department)
+
+#     if status:
+#         query = query.filter(Timesheet.status == status)
+#     else:
+#         query = query.filter(Timesheet.status.in_(["Submitted", "Approved", "Not Submitted"]))
+
+#     results = query.order_by(TimesheetEntry.work_date.desc()).all()
+
+#     def generate():
+#         yield "Employee ID,Employee Name,Department,Client Name,Work Date,Status\n"
+#         for row in results:
+#             yield f"{row.empid},{row.emp_name},{row.department or ''},{row.client_name or ''},{row.work_date},{row.status or 'Not Submitted'}\n"
+
+#     response = Response(generate(), mimetype="text/csv")
+#     response.headers["Content-Disposition"] = "attachment; filename=timesheet_defaulters.csv"
+#     return response
+
+
+
+# ===============================
+# Timesheet Defaulters - JSON version and CSV download
+
+@app.route('/timesheet_defaulters', methods=['GET'])
 def timesheet_defaulters():
     start_date = request.args.get("start_date")
     end_date = request.args.get("end_date")
     department = request.args.get("department")
     status = request.args.get("status")
-
-    # ✅ Fetch department names for the dropdown
+ 
+    # Fetch Department List for Filters
     departments = [d.dept_name for d in db.session.query(Department.dept_name).distinct().order_by(Department.dept_name).all()]
-
-    # ✅ Aliased for clarity
+ 
     emp = aliased(Employee_Info)
     dept = aliased(Department)
-
+ 
     query = db.session.query(
         emp.empid,
         (emp.fname + literal(' ') + emp.lname).label('emp_name'),
@@ -3619,35 +5715,46 @@ def timesheet_defaulters():
     ).outerjoin(
         Project_Info, TimesheetEntry.project_id == Project_Info.id
     ).outerjoin(
-        Client_Info, Project_Info.client_id == Client_Info.clientID  # ✅ fixed
+        Client_Info, Project_Info.client_id == Client_Info.clientID
     ).outerjoin(
         dept, emp.dept_id == dept.id
     )
-
-    # Filters
+ 
+    # Apply Filters
     if start_date and end_date:
         query = query.filter(TimesheetEntry.work_date.between(start_date, end_date))
-
+ 
     if department:
         query = query.filter(dept.dept_name == department)
-
+ 
     if status:
         query = query.filter(Timesheet.status == status)
     else:
         query = query.filter(Timesheet.status.in_(["Submitted", "Approved", "Not Submitted"]))
-
+ 
     results = query.order_by(TimesheetEntry.work_date.desc()).all()
-
-    return render_template(
-        'timesheet_defaulter.html',
-        data=results,
-        departments=departments,
-        selected_department=department,
-        start_date=start_date,
-        end_date=end_date,
-        selected_status=status
-    )
-
+ 
+    defaulters_list = []
+    for r in results:
+        defaulters_list.append({
+            "empid": r.empid,
+            "emp_name": r.emp_name,
+            "department": r.department,
+            "client_name": r.client_name,
+            "work_date": r.work_date.strftime('%Y-%m-%d') if r.work_date else None,
+            "status": r.status
+        })
+ 
+    return jsonify({
+        "success": True,
+        "departments": departments,
+        "selected_department": department,
+        "start_date": start_date,
+        "end_date": end_date,
+        "selected_status": status,
+        "data": defaulters_list
+    }), 200
+ 
  
 @app.route('/download_timesheet_defaulters')
 def download_timesheet_defaulters():
@@ -3655,7 +5762,7 @@ def download_timesheet_defaulters():
     end_date = request.args.get("end_date")
     department = request.args.get("department")
     status = request.args.get("status")
-
+ 
     query = db.session.query(
         Employee_Info.empid,
         (Employee_Info.fname + literal(' ') + Employee_Info.lname).label('emp_name'),
@@ -3672,30 +5779,34 @@ def download_timesheet_defaulters():
     ).outerjoin(
         Project_Info, TimesheetEntry.project_id == Project_Info.id
     ).outerjoin(
-        Client_Info, Project_Info.client_id == Client_Info.clientID  # ✅ correct join
+        Client_Info, Project_Info.client_id == Client_Info.clientID
     )
-
+ 
+    # Filters
     if start_date and end_date:
         query = query.filter(TimesheetEntry.work_date.between(start_date, end_date))
-
     if department:
         query = query.filter(Department.dept_name == department)
-
     if status:
         query = query.filter(Timesheet.status == status)
     else:
         query = query.filter(Timesheet.status.in_(["Submitted", "Approved", "Not Submitted"]))
-
+ 
     results = query.order_by(TimesheetEntry.work_date.desc()).all()
-
+ 
     def generate():
         yield "Employee ID,Employee Name,Department,Client Name,Work Date,Status\n"
         for row in results:
-            yield f"{row.empid},{row.emp_name},{row.department or ''},{row.client_name or ''},{row.work_date},{row.status or 'Not Submitted'}\n"
-
+            work_date = row.work_date.strftime('%Y-%m-%d') if row.work_date else ""
+            status = row.status if row.status else "Not Submitted"
+            yield f"{row.empid},{row.emp_name},{row.department or ''},{row.client_name or ''},{work_date},{status}\n"
+ 
     response = Response(generate(), mimetype="text/csv")
     response.headers["Content-Disposition"] = "attachment; filename=timesheet_defaulters.csv"
     return response
+ 
+
+# ================================
 
 
 @app.route("/admin/utilization", methods=["GET", "POST"])
