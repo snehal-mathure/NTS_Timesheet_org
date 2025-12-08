@@ -109,86 +109,110 @@
 // 
 
 // admindashboard.js
+// import axios from "axios";
+
+// const api = axios.create({
+//   baseURL: "/api", // if backend is http://127.0.0.1:5000/api this is correct
+//   headers: { "Content-Type": "application/json" },
+// });
+
+// // helper → ensures always an array
+// const safeArray = (val) => {
+//   if (Array.isArray(val)) return val;
+//   if (val && Array.isArray(val.data)) return val.data;
+//   return [];
+// };
+
+// // ----------------------
+// // Dashboard totals
+// // ----------------------
+// export async function fetchDashboardTotals() {
+//   const res = await api.get("/admin/dashboard-totals");
+//   return res.data || {};
+// }
+
+// // ----------------------
+// // Client allocations
+// // ----------------------
+// export async function fetchClientAllocations() {
+//   const res = await api.get("/admin/client-allocations");
+//   return safeArray(res.data);
+// }
+
+// // ----------------------
+// // Clients list
+// // ----------------------
+// export async function fetchClients() {
+//   const res = await api.get("/admin/clients");
+//   return safeArray(res.data);
+// }
+
+// // ----------------------
+// // Projects list
+// // ----------------------
+// export async function fetchProjects() {
+//   const res = await api.get("/admin/projects");
+//   return safeArray(res.data);
+// }
+
+// // ----------------------
+// // Chart counts
+// // ----------------------
+// export async function fetchChartCounts() {
+//   const res = await api.get("/admin/chart-counts");
+//   return res.data || {};
+// }
+
+// export default {
+//   fetchDashboardTotals,
+//   fetchClientAllocations,
+//   fetchClients,
+//   fetchProjects,
+//   fetchChartCounts,
+// };
+
+// // ----------------------
+// // FIX: Admin dashboard (previously used API_URL → undefined)
+// // ----------------------
+// export const getAdminDashboard = async () => {
+//   const res = await api.get("/admin");
+//   return res.data;
+// };
+
+// // ----------------------
+// // FIX: CSV export
+// // ----------------------
+// export const exportClientAllocationsCSV = async () => {
+//   const response = await api.get("/admin/export_client_allocations", {
+//     responseType: "blob",
+//   });
+
+//   const link = document.createElement("a");
+//   link.href = URL.createObjectURL(response.data);
+//   link.download = "client_allocations.csv";
+//   link.click();
+// };
+
 import axios from "axios";
-
-const api = axios.create({
-  baseURL: "/api", // if backend is http://127.0.0.1:5000/api this is correct
-  headers: { "Content-Type": "application/json" },
-});
-
-// helper → ensures always an array
-const safeArray = (val) => {
-  if (Array.isArray(val)) return val;
-  if (val && Array.isArray(val.data)) return val.data;
-  return [];
-};
-
-// ----------------------
-// Dashboard totals
-// ----------------------
-export async function fetchDashboardTotals() {
-  const res = await api.get("/admin/dashboard-totals");
-  return res.data || {};
-}
-
-// ----------------------
-// Client allocations
-// ----------------------
-export async function fetchClientAllocations() {
-  const res = await api.get("/admin/client-allocations");
-  return safeArray(res.data);
-}
-
-// ----------------------
-// Clients list
-// ----------------------
-export async function fetchClients() {
-  const res = await api.get("/admin/clients");
-  return safeArray(res.data);
-}
-
-// ----------------------
-// Projects list
-// ----------------------
-export async function fetchProjects() {
-  const res = await api.get("/admin/projects");
-  return safeArray(res.data);
-}
-
-// ----------------------
-// Chart counts
-// ----------------------
-export async function fetchChartCounts() {
-  const res = await api.get("/admin/chart-counts");
-  return res.data || {};
-}
-
-export default {
-  fetchDashboardTotals,
-  fetchClientAllocations,
-  fetchClients,
-  fetchProjects,
-  fetchChartCounts,
-};
-
-// ----------------------
-// FIX: Admin dashboard (previously used API_URL → undefined)
-// ----------------------
+ 
+const API_URL = "http://127.0.0.1:5000";
+ 
 export const getAdminDashboard = async () => {
-  const res = await api.get("/admin");
+  const res = await axios.get(`${API_URL}/admin`, {
+    withCredentials: true,
+  });
   return res.data;
 };
-
-// ----------------------
-// FIX: CSV export
-// ----------------------
+ 
 export const exportClientAllocationsCSV = async () => {
-  const response = await api.get("/admin/export_client_allocations", {
+  const response = await axios.get(`${API_URL}/admin/export_client_allocations`, {
     responseType: "blob",
+    withCredentials: true,
   });
-
+ 
   const link = document.createElement("a");
   link.href = URL.createObjectURL(response.data);
   link.download = "client_allocations.csv";
   link.click();
 };
+ 

@@ -1,5 +1,6 @@
+
 // src/pages/ViewClients.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import PageHeader from "../components/PageHeader";
@@ -18,10 +19,18 @@ export default function ViewClients() {
   const [modalDeleteId, setModalDeleteId] = useState(null);
   const [errorModalId, setErrorModalId] = useState(null);
 
+  // NEW: success message state
+  const [successMessage, setSuccessMessage] = useState("");
+  const successTimerRef = useRef(null);
+
   const accent = "#4C6FFF"; // dashboard blue
 
   useEffect(() => {
     loadClients();
+    return () => {
+      // cleanup any pending timer
+      if (successTimerRef.current) clearTimeout(successTimerRef.current);
+    };
   }, []);
 
   async function loadClients(q = "") {
@@ -51,6 +60,13 @@ export default function ViewClients() {
     setFormValues({});
   }
 
+  // show success helper (auto dismiss)
+  const showSuccess = (msg) => {
+    setSuccessMessage(msg);
+    if (successTimerRef.current) clearTimeout(successTimerRef.current);
+    successTimerRef.current = setTimeout(() => setSuccessMessage(""), 3000);
+  };
+
   async function onSave(clientId) {
     try {
       const payload = {
@@ -67,6 +83,13 @@ export default function ViewClients() {
           prev.map((c) => (c.clientID === clientId ? { ...c, ...payload } : c))
         );
         onCancelEdit();
+
+        // NEW: show success message (prefer server message if present)
+        const msg =
+          (res.data && (res.data.message || res.data.msg)) ||
+          res.message ||
+          "Client updated successfully";
+        showSuccess(msg);
       } else {
         alert(res.message || "Update failed");
       }
@@ -152,6 +175,21 @@ export default function ViewClients() {
               </Link>
             </div>
 
+            {/* optional success banner */}
+            {successMessage && (
+              <div className="px-6 py-4 bg-emerald-50 border-t border-emerald-100">
+                <div className="max-w-5xl mx-auto flex items-center justify-between">
+                  <div className="text-emerald-800 text-sm">{successMessage}</div>
+                  <button
+                    onClick={() => setSuccessMessage("")}
+                    className="text-emerald-700 bg-emerald-100 px-2 py-1 rounded"
+                  >
+                    OK
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Search Area */}
             <div className="px-6 py-5">
               <form
@@ -187,32 +225,18 @@ export default function ViewClients() {
             {/* Table */}
             <div className="px-6 pb-6">
               {loading ? (
-                <div className="text-slate-500 py-6 text-center">
-                  Loading...
-                </div>
+                <div className="text-slate-500 py-6 text-center">Loading...</div>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="min-w-full text-sm divide-y divide-[#e5e7f5]">
                     <thead className="bg-[#F3F5FF]">
                       <tr className="text-slate-600">
-                        <th className="py-3 px-4 text-left font-medium">
-                          Client ID
-                        </th>
-                        <th className="py-3 px-4 text-left font-medium">
-                          Name
-                        </th>
-                        <th className="py-3 px-4 text-left font-medium">
-                          Start Date
-                        </th>
-                        <th className="py-3 px-4 text-left font-medium">
-                          End Date
-                        </th>
-                        <th className="py-3 px-4 text-left font-medium">
-                          Daily Hours
-                        </th>
-                        <th className="py-3 px-4 text-left font-medium">
-                          Actions
-                        </th>
+                        <th className="py-3 px-4 text-left font-medium">Client ID</th>
+                        <th className="py-3 px-4 text-left font-medium">Name</th>
+                        <th className="py-3 px-4 text-left font-medium">Start Date</th>
+                        <th className="py-3 px-4 text-left font-medium">End Date</th>
+                        <th className="py-3 px-4 text-left font-medium">Daily Hours</th>
+                        <th className="py-3 px-4 text-left font-medium">Actions</th>
                       </tr>
                     </thead>
 
@@ -326,9 +350,7 @@ export default function ViewClients() {
                                     Edit
                                   </button>
                                   <button
-                                    onClick={() =>
-                                      setModalDeleteId(client.clientID)
-                                    }
+                                    onClick={() => setModalDeleteId(client.clientID)}
                                     className="p-2 rounded-xl bg-red-100 text-red-700 border border-red-200"
                                   >
                                     Delete
@@ -344,8 +366,7 @@ export default function ViewClients() {
                               <td colSpan="6" className="p-4">
                                 <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex justify-between">
                                   <span>
-                                    Delete{" "}
-                                    <strong>{client.client_name}</strong>?
+                                    Delete <strong>{client.client_name}</strong>?
                                   </span>
                                   <div className="flex gap-2">
                                     <button
@@ -356,9 +377,7 @@ export default function ViewClients() {
                                     </button>
                                     <button
                                       className="px-3 py-1 rounded-xl bg-red-600 text-white"
-                                      onClick={() =>
-                                        onDeleteConfirmed(client.clientID)
-                                      }
+                                      onClick={() => onDeleteConfirmed(client.clientID)}
                                     >
                                       Delete
                                     </button>
@@ -374,10 +393,7 @@ export default function ViewClients() {
                               <td colSpan="6" className="p-4">
                                 <div className="bg-yellow-50 border-l-4 border-yellow-600 p-4 rounded-xl">
                                   <div className="flex justify-between">
-                                    <p>
-                                      Cannot delete client. Remove associated
-                                      records first.
-                                    </p>
+                                    <p>Cannot delete client. Remove associated records first.</p>
                                     <button
                                       onClick={() => setErrorModalId(null)}
                                       className="px-3 py-1 rounded-xl bg-indigo-600 text-white"
@@ -391,14 +407,16 @@ export default function ViewClients() {
                           )}
                         </React.Fragment>
                       ))}
+
+                      {clients.length === 0 && (
+                        <tr>
+                          <td colSpan="6" className="py-6 text-center text-slate-500">
+                            No clients found.
+                          </td>
+                        </tr>
+                      )}
                     </tbody>
                   </table>
-
-                  {clients.length === 0 && (
-                    <div className="py-6 text-center text-slate-500">
-                      No clients found.
-                    </div>
-                  )}
                 </div>
               )}
             </div>
@@ -408,3 +426,4 @@ export default function ViewClients() {
     </div>
   );
 }
+

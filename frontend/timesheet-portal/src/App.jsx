@@ -23,6 +23,19 @@ import TimesheetReports from "./components/timesheet_report/TimesheetReports";
 import TimesheetDefaulters from "./components/timesheet_report/TimesheetDefaulters";
 import TimesheetApprovers from "./components/timesheet_report/TimesheetApprovers";
 import LeaveReportsAdmin from "./components/leave_report/LeaveReportsAdmin";
+// import UserDashboard from "./components/UserDashboard";
+import AddProjectInTimesheet from "./components/AddProjectInTimesheet";
+import EmpLeaveDashboard from "./components/EmpLeaveDashboard";
+import ApplyLeave from "./components/ApplyLeave";
+import ApproveTimesheets from "./components/ApproveTimesheets";
+import ApprovalHistory from "./components/ApprovalHistory";
+import ApproveLeaves from "./components/ApproveLeaves";
+import ApprovalHistoryLeaves from "./components/ApprovalHistoryLeaves";
+import TimesheetDashboard from "./components/timesheets/Timesheet-fill";
+import TimesheetReview from "./components/timesheets/Timesheet_review";
+import MyTimesheets from "./components/timesheets/MyTimesheet";
+import EditEmployeePage from "./components/EditEmployeePage";
+import UtilizationReport from "./components/UtilizationReport";
 
 function App() {
   return (
@@ -40,6 +53,22 @@ function App() {
         <Route path="/manageholiday" element={<ManageHoliday />} />
         <Route path="/addproject" element={<AddProject />} />
         <Route path="/projectlist" element={<ProjectList />} />
+        {/* <Route path="/userdashboard" element={<UserDashboard />} /> */}
+        <Route path="/addprojectintimesheet" element={<AddProjectInTimesheet />} />
+        <Route path="/empleavedashboard" element={<EmpLeaveDashboard />} />
+        <Route path="/applyleave" element={<ApplyLeave />} />
+        <Route path="/approvetimesheets" element={<ApproveTimesheets/>} />
+        <Route path="/approvalhistory" element={<ApprovalHistory/>} />
+        <Route path="/approveleave" element={<ApproveLeaves/>} />
+        <Route path="/approvalhistoryleaves" element={<ApprovalHistoryLeaves/>} />
+        <Route path="/userdashboard" element={<TimesheetDashboard />} />
+       
+          <Route path="/dashboard/timesheet_review" element={<TimesheetReview/>}/>
+          <Route path="/dashboard/my_timesheets" element={<MyTimesheets/>}/>
+          <Route path="/editemployee/:empid" element={<EditEmployeePage />} />
+
+         <Route path="/editemployee/" element={<EditEmployeePage />} />
+         <Route path="/utilization" element={<UtilizationReport />} />
 
         {/* Onboarding reports mini-app (sub sidebar + pages) */}
         <Route path="/onboarding-reports" element={<OnboardingReports />}>
