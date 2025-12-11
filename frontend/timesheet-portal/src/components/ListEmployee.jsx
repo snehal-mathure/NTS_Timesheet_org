@@ -948,162 +948,202 @@ export default function ListEmployee() {
 
           {/* DETAIL VIEW */}
           {selectedEmployee ? (
-            <div className="bg-white/90 rounded-3xl shadow-[0_24px_60px_rgba(15,23,42,0.12)] border border-[#e5e7f5] p-5 md:p-6 space-y-6">
-              <div className="flex items-center justify-between gap-3 border-b border-[#e5e7f5] pb-4">
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={backToList}
-                    className="inline-flex items-center justify-center w-9 h-9 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50"
-                  >
-                    <FiArrowLeft className="text-slate-700" size={16} />
-                  </button>
-                  <div>
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
-                      Employee Detail
-                    </p>
-                    <h2 className="text-base md:text-lg font-semibold text-slate-900">
-                      {selectedEmployee.fname} {selectedEmployee.lname}
-                    </h2>
-                    <p className="text-[11px] text-slate-500">
-                      Emp ID: {selectedEmployee.empid}
-                    </p>
-                  </div>
-                </div>
+            <div className="bg-white/90 rounded-3xl shadow-xl border border-[#e5e7f5] overflow-hidden">
 
-                <Link
-                  to={`/admin/edit_employee/${selectedEmployee.empid}`}
-                  className="inline-flex items-center px-3 py-1.5 rounded-2xl text-xs font-medium bg-amber-100 text-amber-800 border border-amber-200 hover:bg-amber-50"
+              {/* ===== TOP HEADER (COMPACT) ===== */}
+              <div
+                className="relative px-6 py-4 md:px-8 md:py-5 rounded-t-3xl border-b border-slate-200 bg-white"
+              >
+
+                {/* Back Button - moved slightly downward */}
+                <button
+                  onClick={backToList}
+                  className="absolute left-4 top-6 inline-flex items-center justify-center 
+             w-9 h-9 bg-white hover:bg-slate-100 rounded-xl border border-slate-300 transition"
                 >
-                  Edit Details
-                </Link>
-              </div>
+                  <FiArrowLeft size={16} className="text-slate-700" />
+                </button>
 
-              {/* Info sections */}
-              <div className="grid grid-cols-1 gap-4 md:gap-6 md:grid-cols-2">
-                <section className="rounded-2xl border border-slate-100 bg-slate-50/60 p-4">
-                  <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-[0.16em] mb-3">
-                    Personal
-                  </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                    <Field label="Name">
+                <div className="flex items-center gap-4 ml-16">
+
+                  {/* Avatar */}
+                  <div className="w-12 h-12 rounded-2xl bg-[#F3F5FF] border border-slate-200 
+                    flex items-center justify-center text-sm font-semibold text-slate-700">
+                    {selectedEmployee.fname?.[0]}
+                    {selectedEmployee.lname?.[0]}
+                  </div>
+
+                  <div className="leading-tight">
+                    <h1 className="text-slate-900 text-base font-semibold">
                       {selectedEmployee.fname} {selectedEmployee.lname}
-                    </Field>
-                    <Field label="Email">{selectedEmployee.email}</Field>
-                    <Field label="Mobile">
-                      {selectedEmployee.mobile || "N/A"}
-                    </Field>
-                    <Field label="Gender">
-                      {selectedEmployee.gender || "N/A"}
-                    </Field>
+                    </h1>
+                    <p className="text-[12px] text-slate-600">
+                      Employee ID: {selectedEmployee.empid}
+                    </p>
                   </div>
-                </section>
-
-                <section className="rounded-2xl border border-slate-100 bg-slate-50/60 p-4">
-                  <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-[0.16em] mb-3">
-                    Employment
-                  </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                    <Field label="Department">
-                      {selectedEmployee.department?.dept_name || "N/A"}
-                    </Field>
-                    <Field label="Designation">
-                      {selectedEmployee.designation || "N/A"}
-                    </Field>
-                    <Field label="Type">
-                      {selectedEmployee.employee_type || "N/A"}
-                    </Field>
-                    <Field label="Location">
-                      {selectedEmployee.location || "N/A"}
-                    </Field>
-                    <Field label="Prev. Experience">
-                      {(selectedEmployee.prev_total_exp ?? 0) + " yrs"}
-                    </Field>
-                    <Field label="Total Experience">
-                      {selectedEmployee.total_experience
-                        ? `${selectedEmployee.total_experience} yrs`
-                        : "N/A"}
-                    </Field>
-                  </div>
-                </section>
-
-                <section className="rounded-2xl border border-slate-100 bg-slate-50/60 p-4">
-                  <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-[0.16em] mb-3">
-                    Dates
-                  </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                    <Field label="Date of Joining">
-                      {selectedEmployee.doj || "N/A"}
-                    </Field>
-                    <Field label="Last Working Day">
-                      {selectedEmployee.lwd || "Ongoing"}
-                    </Field>
-                  </div>
-                </section>
-
-                <section className="rounded-2xl border border-slate-100 bg-slate-50/60 p-4">
-                  <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-[0.16em] mb-3">
-                    Access / Approvals
-                  </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                    <Field label="Approver ID">
-                      {selectedEmployee.approver_id || "N/A"}
-                    </Field>
-                    <Field label="Company">
-                      {selectedEmployee.company || "NTS"}
-                    </Field>
-                  </div>
-                </section>
+                </div>
               </div>
 
-              {/* Client Assignments */}
-              <section className="mt-4">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-[0.16em]">
-                    Client Assignments
-                  </h3>
-                </div>
-                {clientDetails && clientDetails.length ? (
-                  <div className="overflow-x-auto rounded-2xl border border-slate-100 bg-white">
-                    <table className="min-w-full text-xs">
-                      <thead className="bg-[#F3F5FF]">
-                        <tr className="text-[11px] text-slate-600">
-                          <th className="px-3 py-2 text-left font-medium">
-                            Client ID
-                          </th>
-                          <th className="px-3 py-2 text-left font-medium">
-                            Client Name
-                          </th>
-                          <th className="px-3 py-2 text-left font-medium">
-                            Start Date
-                          </th>
-                          <th className="px-3 py-2 text-left font-medium">
-                            End Date
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {clientDetails.map((d, i) => (
-                          <tr
-                            key={i}
-                            className="hover:bg-[#F8F9FF] transition border-t border-slate-100"
-                          >
-                            <td className="px-3 py-2">{d.client?.clientID}</td>
-                            <td className="px-3 py-2">{d.client?.client_name}</td>
-                            <td className="px-3 py-2">{d.assignment?.start_date}</td>
-                            <td className="px-3 py-2">
-                              {d.assignment?.end_date || "Ongoing"}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <p className="text-xs text-slate-500 mt-1">
-                    No client assignments found.
-                  </p>
-                )}
-              </section>
+              {/* ===== MAIN CONTENT ===== */}
+              <div className="p-6 md:p-8 space-y-8">
+
+                {/* --- FIELD COMPONENT FOR LABEL + VALUE --- */}
+                {/** Must be inside render scope */}
+                {(() => {
+                  function Field({ label, children }) {
+                    return (
+                      <div className="space-y-0.5">
+                        <div className="text-[11px] font-medium text-slate-500">{label}</div>
+                        <div className="text-[12px] text-slate-800">{children}</div>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <>
+                      {/* ===== INFO GRID ===== */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                        {/* PERSONAL */}
+                        <section className="rounded-2xl border border-slate-200 bg-white/70 p-5 shadow-sm">
+                          <h3 className="text-[11px] font-semibold text-slate-600 tracking-wide mb-3">
+                            PERSONAL INFORMATION
+                          </h3>
+
+                          <div className="grid grid-cols-2 gap-4">
+                            <Field label="Name">
+                              {selectedEmployee.fname} {selectedEmployee.lname}
+                            </Field>
+
+                            <Field label="Gender">
+                              {selectedEmployee.gender || "N/A"}
+                            </Field>
+
+                            <Field label="Email">{selectedEmployee.email}</Field>
+
+                            <Field label="Mobile">
+                              {selectedEmployee.mobile || "N/A"}
+                            </Field>
+                          </div>
+                        </section>
+
+                        {/* EMPLOYMENT */}
+                        <section className="rounded-2xl border border-slate-200 bg-white/70 p-5 shadow-sm">
+                          <h3 className="text-[11px] font-semibold text-slate-600 tracking-wide mb-3">
+                            EMPLOYMENT DETAILS
+                          </h3>
+
+                          <div className="grid grid-cols-2 gap-4">
+                            <Field label="Department">
+                              {selectedEmployee.department?.dept_name || "N/A"}
+                            </Field>
+
+                            <Field label="Designation">
+                              {selectedEmployee.designation}
+                            </Field>
+
+                            <Field label="Type">{selectedEmployee.employee_type}</Field>
+
+                            <Field label="Location">
+                              {selectedEmployee.location}
+                            </Field>
+
+                            <Field label="Prev. Experience">
+                              {(selectedEmployee.prev_total_exp ?? 0) + " yrs"}
+                            </Field>
+
+                            <Field label="Total Experience">
+                              {selectedEmployee.total_experience
+                                ? `${selectedEmployee.total_experience} yrs`
+                                : "N/A"}
+                            </Field>
+                          </div>
+                        </section>
+
+                        {/* IMPORTANT DATES */}
+                        <section className="rounded-2xl border border-slate-200 bg-white/70 p-5 shadow-sm">
+                          <h3 className="text-[11px] font-semibold text-slate-600 tracking-wide mb-3">
+                            IMPORTANT DATES
+                          </h3>
+
+                          <div className="grid grid-cols-2 gap-4">
+                            <Field label="Date of Joining">
+                              {selectedEmployee.doj}
+                            </Field>
+
+                            <Field label="Last Working Day">
+                              {selectedEmployee.lwd || "Ongoing"}
+                            </Field>
+                          </div>
+                        </section>
+
+                        {/* ACCESS / APPROVALS */}
+                        <section className="rounded-2xl border border-slate-200 bg-white/70 p-5 shadow-sm">
+                          <h3 className="text-[11px] font-semibold text-slate-600 tracking-wide mb-3">
+                            ACCESS & APPROVALS
+                          </h3>
+
+                          <div className="grid grid-cols-2 gap-4">
+                            <Field label="Approver ID">
+                              {selectedEmployee.approver_id}
+                            </Field>
+
+                            <Field label="Company">
+                              {selectedEmployee.company || "N/A"}
+                            </Field>
+                          </div>
+                        </section>
+                      </div>
+
+                      {/* ===== CLIENT ASSIGNMENTS TABLE ===== */}
+                      <section>
+                        <h3 className="text-[11px] font-semibold text-slate-600 tracking-wide mb-3">
+                          CLIENT ASSIGNMENTS
+                        </h3>
+
+                        {clientDetails?.length ? (
+                          <div className="overflow-hidden rounded-2xl border border-slate-200 shadow-sm">
+                            <table className="min-w-full text-xs">
+                              <thead className="bg-[#F3F5FF]">
+                                <tr className="text-[11px] text-slate-600">
+                                  <th className="px-4 py-2 text-left">Client ID</th>
+                                  <th className="px-4 py-2 text-left">Client Name</th>
+                                  <th className="px-4 py-2 text-left">Start Date</th>
+                                  <th className="px-4 py-2 text-left">End Date</th>
+                                </tr>
+                              </thead>
+
+                              <tbody className="divide-y divide-slate-100">
+                                {clientDetails.map((d, i) => (
+                                  <tr
+                                    key={i}
+                                    className="hover:bg-[#F8F9FF] transition"
+                                  >
+                                    <td className="px-4 py-2">
+                                      {d.client?.clientID}
+                                    </td>
+                                    <td className="px-4 py-2">
+                                      {d.client?.client_name}
+                                    </td>
+                                    <td className="px-4 py-2">
+                                      {d.assignment?.start_date}
+                                    </td>
+                                    <td className="px-4 py-2">
+                                      {d.assignment?.end_date || "Ongoing"}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        ) : (
+                          <p className="text-[11px] text-slate-500">No client assignments found.</p>
+                        )}
+                      </section>
+                    </>
+                  );
+                })()}
+              </div>
             </div>
           ) : (
             /* LIST VIEW */
@@ -1124,7 +1164,7 @@ export default function ListEmployee() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 md:gap-3">
+                {/* <div className="flex items-center gap-2 md:gap-3">
                   <a
                     href={csvUrl}
                     className="inline-flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-slate-900/90 text-white text-xs font-medium shadow-sm hover:bg-slate-900"
@@ -1139,7 +1179,7 @@ export default function ListEmployee() {
                     <FiPlus className="text-[13px]" />
                     Add Employee
                   </Link>
-                </div>
+                </div> */}
               </div>
 
               {/* Top controls: search + status + filter toggle */}

@@ -46,6 +46,7 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, 
 from reportlab.lib.enums import TA_CENTER, TA_RIGHT
 import io
 from io import StringIO
+from io import BytesIO
 import csv
 from flask import make_response
 import pandas as pd 
@@ -1785,50 +1786,134 @@ def api_get_departments():
 
 @app.route("/api/employees/export", methods=["GET"])
 def export_employees():
-    if 'user_id' not in session:
+    if "user_id" not in session:
         return jsonify({"error": "Unauthorized"}), 401
 
-    dept = request.args.get("dept", "")
+    # Filters
+    department_name = request.args.get("dept", "")
     approver_id = request.args.get("approver_id", "")
     start_date = request.args.get("start_date", "")
     end_date = request.args.get("end_date", "")
 
-    query = Employee_Info.query.outerjoin(Department, Employee_Info.dept_id == Department.id)
+    query = Employee_Info.query.outerjoin(
+        Department, Employee_Info.dept_id == Department.id
+    )
 
-    if dept:
-        query = query.filter(Employee_Info.dept_id == int(dept))
+    if department_name:
+        query = query.filter(Department.dept_name == department_name)
 
     if approver_id:
         query = query.filter(Employee_Info.approver_id == approver_id)
 
     if start_date and end_date:
-        s = datetime.strptime(start_date, "%Y-%m-%d").date()
-        e = datetime.strptime(end_date, "%Y-%m-%d").date()
-        query = query.filter(Employee_Info.doj.between(s, e))
+        try:
+            s = datetime.strptime(start_date, "%Y-%m-%d").date()
+            e = datetime.strptime(end_date, "%Y-%m-%d").date()
+            query = query.filter(Employee_Info.doj.between(s, e))
+        except ValueError:
+            return jsonify({"error": "Invalid date format, use YYYY-MM-DD"}), 400
 
     employees = query.all()
 
-    # ---- CSV as BYTES ----
-    output = BytesIO()
+    # Create CSV using StringIO
+    output = StringIO()
     writer = csv.writer(output)
 
-    writer.writerow(["Emp ID", "Name", "Email", "Department", "Designation", "DOJ", "LWD"])
+    # Header
+    writer.writerow([
+        'Emp ID', 'Emp Name', 'Gender', 'Emp Type', 'Location', 'Company', 'Work location',
+        'Country', 'City', 'Mobile', 'Email', 'Designation', 'Reporting Manager',
+        'Core Skill', 'Skills details', 'Experience on DOJ', 'Total experience as on date',
+        'NTS Emp DOJ', 'NTS Emp LWD', 'Department', 'Full name of client',
+        'Client Start Date', 'Client End Date', 'Project Name', 'Project Type',
+        'Project Billability', 'Daily Hours'
+    ])
 
+    current_date = date.today()
+
+    # Data writing
     for emp in employees:
-        writer.writerow([
+        dept_name = emp.department.dept_name if emp.department else ""
+
+        exp_on_doj = "0"
+        total_exp = "N/A"
+
+        if emp.doj:
+            yrs = (current_date - emp.doj).days / 365.25
+            total_exp = f"{yrs:.1f}"
+
+        base_row = [
             emp.empid,
             f"{emp.fname} {emp.lname}",
+            emp.gender or "",
+            emp.employee_type or "",
+            emp.location or "",
+            emp.company or "",
+            emp.work_location or "",
+            emp.country or "",
+            emp.city or "",
+            emp.mobile or "",
             emp.email,
-            emp.department.dept_name if emp.department else "",
-            emp.designation,
-            emp.doj.strftime('%d %b %Y') if emp.doj else "",
-            emp.lwd.strftime('%d %b %Y') if emp.lwd else "",
-        ])
+            emp.designation or "",
+            emp.approver_id or "",
+            emp.core_skill or "",
+            emp.skill_details or "",
+            exp_on_doj,
+            total_exp,
+            emp.doj.strftime('%d-%m-%Y') if emp.doj else "",
+            emp.lwd.strftime('%d-%m-%Y') if emp.lwd else "",
+            dept_name
+        ]
 
-    output.seek(0)
+        client_assignments = Client_Employee.query.filter_by(empid=emp.empid).all()
 
+        if client_assignments:
+            for ca in client_assignments:
+                client_name = ""
+                daily_hours = ""
+                project_name = ""
+                project_type = ""
+                project_billability = ""
+
+                if ca.clientID:
+                    client_info = Client_Info.query.get(int(ca.clientID))
+                    if client_info:
+                        client_name = client_info.client_name
+                        daily_hours = str(client_info.daily_hours or "")
+
+                        project = (
+                            db.session.query(Project_Info)
+                            .join(Employee_Project, Employee_Project.project_id == Project_Info.id)
+                            .join(Client_Info, Project_Info.client_id == Client_Info.clientID)
+                            .filter(Employee_Project.empid == emp.empid)
+                            .filter(Client_Info.client_name == client_name)
+                            .first()
+                        )
+
+                        if project:
+                            project_name = project.project_name or ""
+                            project_type = project.project_type or ""
+                            project_billability = project.project_billability or ""
+
+                writer.writerow(base_row + [
+                    client_name,
+                    ca.start_date.strftime('%d-%m-%Y') if ca.start_date else "",
+                    ca.end_date.strftime('%d-%m-%Y') if ca.end_date else "",
+                    project_name,
+                    project_type,
+                    project_billability,
+                    daily_hours
+                ])
+        else:
+            writer.writerow(base_row + ["", "", "", "", "", "", ""])
+
+    # Convert to bytes
+    byte_data = BytesIO(output.getvalue().encode("utf-8"))
+    byte_data.seek(0)
+
+    # Send CSV file
     return send_file(
-        output,
+        byte_data,
         mimetype="text/csv",
         as_attachment=True,
         download_name="employees_export.csv"
@@ -2078,11 +2163,83 @@ def export_employees():
 #     }), 200
 
 
+
+# 2) GET SINGLE EMPLOYEE DETAILS
+# ================================
+@app.route("/api/employees/<empid>", methods=["GET"])
+def employee_details(empid):
+    emp = Employee_Info.query.options(joinedload(Employee_Info.department)).filter_by(empid=empid.upper()).first()
+    if not emp:
+        return jsonify({"message": "Employee not found"}), 404
+
+    # Calculate company experience
+    today = date.today()
+    end_date = emp.lwd if emp.lwd and emp.lwd <= today else today
+
+    years_in_company = 0
+    if emp.doj:
+        years_in_company = (end_date - emp.doj).days / 365.25
+
+    total_experience = round(years_in_company + float(emp.prev_total_exp or 0), 1)
+
+    # Get client assignments
+    assignments = Client_Employee.query.filter_by(empid=empid.upper()).all()
+
+    client_details = []
+    for a in assignments:
+        client = Client_Info.query.filter_by(clientID=a.clientID).first()
+        if client:
+            client_details.append({
+                "client": {
+                    "clientID": client.clientID,
+                    "client_name": client.client_name
+                },
+                "assignment": {
+                    "start_date": a.start_date.strftime("%Y-%m-%d") if a.start_date else None,
+                    "end_date": a.end_date.strftime("%Y-%m-%d") if a.end_date else None
+                }
+            })
+
+    # Serialize employee for React
+    employee_data = {
+        "empid": emp.empid,
+        "fname": emp.fname,
+        "lname": emp.lname,
+        "email": emp.email,
+        "mobile": emp.mobile,
+        "gender": emp.gender,
+        "designation": emp.designation,
+        "employee_type": emp.employee_type,
+        "prev_total_exp": emp.prev_total_exp,
+        "total_experience": total_experience,
+        "location": emp.location,
+        "company": emp.company,
+        "work_location": emp.work_location,
+        "country": emp.country,
+        "city": emp.city,
+        "core_skill": emp.core_skill,
+        "skill_details": emp.skill_details,
+        "approver_id": emp.approver_id,
+        "doj": emp.doj.strftime("%Y-%m-%d") if emp.doj else None,
+        "lwd": emp.lwd.strftime("%Y-%m-%d") if emp.lwd else None,
+        "department": {
+            "id": emp.department.id,
+            "dept_name": emp.department.dept_name
+        } if emp.department else None
+    }
+
+    return jsonify({
+        "employee": employee_data,
+        "client_details": client_details
+    }), 200
+
+
+
 @app.route('/api/employee/<empid>', methods=['GET'])
 def api_get_employee(empid):
     employee = Employee_Info.query.filter_by(empid=empid).first()
  
-    is_admin = session.get('user_id') == 'N0582'
+    is_admin = session.get('user_id') == 'N0482'
  
     client_assignments = Client_Employee.query.filter_by(empid=empid).all()
  
@@ -2506,9 +2663,9 @@ def edit_employee(empid):
         # -------------------------------------------------------
         logged_in_user = session.get("user_id")
         print("SESSION USER:", session.get("user_id"))
-        print("IS ADMIN:", session.get("user_id") == "N0582")
+        print("IS ADMIN:", session.get("user_id") == "N0482")
         print("REQUEST JSON:", request.get_json())
-        is_admin = logged_in_user == "N0582"
+        is_admin = logged_in_user == "N0482"
  
         if is_admin:
             employee.dept_id = form.get("dept_id", employee.dept_id)
