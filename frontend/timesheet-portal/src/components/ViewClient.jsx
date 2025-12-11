@@ -147,7 +147,7 @@ export default function ViewClients() {
   };
 
   // main margin classes mirror sidebar widths: collapsed -> md:ml-20 (icons only); expanded -> md:ml-72
-  const mainMarginClass = sidebarCollapsed ? "md:ml-20" : "md:ml-72";
+  const mainMarginClass = sidebarCollapsed ? "md:ml-20" : "md:ml-60";
 
   return (
     <div className="min-h-screen flex" style={{ backgroundColor: "#F5F7FF" }}>
@@ -219,7 +219,6 @@ export default function ViewClients() {
                 />
 
                 <div className="flex gap-2">
-                  <button className="px-4 py-2.5 rounded-2xl bg-[#4C6FFF] text-white text-sm shadow-md hover:bg-[#3f57d9]">Search</button>
                   <button
                     type="button"
                     onClick={() => {

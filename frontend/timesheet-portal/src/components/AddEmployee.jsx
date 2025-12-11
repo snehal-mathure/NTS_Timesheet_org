@@ -397,7 +397,7 @@ export default function AddEmployeePage() {
   // compute main margin:
   // - sidebarCollapsed === true  -> show icon rail width (md:ml-20)
   // - sidebarCollapsed === false -> show full sidebar width (md:ml-72)
-  const mainMarginClass = sidebarCollapsed ? "md:ml-20" : "md:ml-72";
+  const mainMarginClass = sidebarCollapsed ? "md:ml-20" : "md:ml-60";
 
   // SCROLL LOGIC:
   // outer: h-screen + overflow-hidden

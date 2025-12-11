@@ -10,6 +10,9 @@ import {
   FiPieChart,
   FiRefreshCcw,
   FiX,
+  FiUsers,       
+  FiBriefcase,  
+  FiLayers      
 } from "react-icons/fi";
 
 import { Pie, Doughnut } from "react-chartjs-2";
@@ -182,7 +185,7 @@ export default function AdminDashboard() {
   // compute main margin:
   // - sidebarCollapsed === true  -> show icon rail width (md:ml-20)
   // - sidebarCollapsed === false -> show full sidebar width (md:ml-72)
-  const mainMarginClass = sidebarCollapsed ? "md:ml-20" : "md:ml-72";
+  const mainMarginClass = sidebarCollapsed ? "md:ml-20" : "md:ml-60";
 
   return (
     <div className="min-h-screen bg-[#EEF2FF] flex">
@@ -211,7 +214,7 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      <div className="flex-1 flex flex-col">
+      <div className={`flex-1 flex flex-col transition-all duration-200 ${mainMarginClass}`}>
         {/* Top Bar Mobile */}
         <div className="lg:hidden flex justify-between items-center px-4 py-3 bg-white shadow-sm">
           <button onClick={() => setSidebarOpen(true)}>

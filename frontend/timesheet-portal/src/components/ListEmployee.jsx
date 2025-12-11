@@ -903,7 +903,7 @@ export default function ListEmployee() {
   // compute main margin:
   // - sidebarCollapsed === true  -> show icon rail width (md:ml-20)
   // - sidebarCollapsed === false -> show full sidebar width (md:ml-72)
-  const mainMarginClass = sidebarCollapsed ? "md:ml-20" : "md:ml-72";
+  const mainMarginClass = sidebarCollapsed ? "md:ml-20" : "md:ml-60";
 
   return (
     <div className="min-h-screen flex" style={{ backgroundColor: "#F5F7FF" }}>
