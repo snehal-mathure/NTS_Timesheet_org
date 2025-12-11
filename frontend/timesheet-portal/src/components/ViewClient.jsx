@@ -347,8 +347,8 @@ export default function ViewClients() {
                             <td className="py-3 px-4">
                               {editingId === client.clientID ? (
                                 <div className="flex gap-3">
-                                  <button onClick={() => onSave(client.clientID)} className="px-3 py-2 rounded-xl bg-emerald-600 text-white">Save</button>
-                                  <button onClick={onCancelEdit} className="px-3 py-2 rounded-xl bg-slate-200">Cancel</button>
+                                  <button onClick={() => onSave(client.clientID)}className="inline-flex items-center px-4 py-2 rounded-2xl text-xs font-medium border border-teal-300 bg-teal-100 text-teal-700 hover:bg-teal-200 hover:border-teal-400 hover:text-teal-900 transition">Save</button>
+                                  <button onClick={onCancelEdit} className="inline-flex items-center px-4 py-2 rounded-2xl text-xs font-medium border border-slate-300 bg-white text-slate-700 hover:bg-slate-100 hover:border-slate-400 hover:text-slate-900 transition">Cancel</button>
                                 </div>
                               ) : (
                                 <div className="flex justify-start gap-2">

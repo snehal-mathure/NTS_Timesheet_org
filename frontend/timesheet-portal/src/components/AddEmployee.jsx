@@ -452,9 +452,21 @@ export default function AddEmployeePage() {
             <div className="flex items-center justify-between px-6 py-5 border-b border-[#e5e7f5] bg-white/80">
               <div className="flex items-center gap-4">
                 <div className="w-11 h-11 rounded-2xl bg-[#F3F5FF] flex items-center justify-center shadow-sm">
-                  <svg className="w-6 h-6 text-[#4C6FFF]" viewBox="0 0 24 24" fill="none">
-                    <path d="M5 20v-1a4 4 0 014-4h2a4 4 0 014 4v1" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                    <circle cx="12" cy="8" r="3" stroke="currentColor" strokeWidth="1.6" />
+                  <svg
+                    width="28"
+                    height="28"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#4C6FFF"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="w-6 h-6"
+                  >
+                    <path d="M16 11c1.66 0 3-1.57 3-3.5S17.66 4 16 4s-3 1.57-3 3.5 1.34 3.5 3 3.5z" />
+                    <path d="M8 11c1.66 0 3-1.57 3-3.5S9.66 4 8 4 5 5.57 5 7.5 6.34 11 8 11z" />
+                    <path d="M2 20v-1c0-2.8 3.6-5 8-5" />
+                    <path d="M14 14c4.4 0 8 2.2 8 5v1" />
                   </svg>
                 </div>
                 <div>
@@ -463,7 +475,8 @@ export default function AddEmployeePage() {
                 </div>
               </div>
 
-              <Link to="/listemployee" className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl border border-[#e0e4ff] text-xs font-medium text-slate-700 bg-white hover:bg-[#f3f5ff]">
+              <Link to="/listemployee" className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl border border-[#d0d4ff] text-xs font-medium text-slate-700 bg-white hover:bg-[#eef0ff] hover:border-[#b8bdff] hover:text-slate-900 transition">
+
                 View All Employees
               </Link>
             </div>
@@ -715,8 +728,8 @@ export default function AddEmployeePage() {
 
                   {/* Actions */}
                   <div className="flex justify-end gap-3 pt-2 border-t border-[#e5e7f5] mt-2">
-                    <Link to="/listemployee" className="inline-flex items-center px-4 py-2 rounded-2xl text-xs font-medium border border-slate-200 bg-white text-slate-700 hover:bg-slate-50">Cancel</Link>
-                    <button type="submit" disabled={loading} className="inline-flex items-center px-4 py-2 rounded-2xl text-xs font-semibold text-white shadow-[0_14px_40px_rgba(76,111,255,0.55)] focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[rgba(76,111,255,0.35)]" style={{ background: `linear-gradient(135deg, ${accent}, #6C5CE7)` }}>
+                    <Link to="/listemployee" className="inline-flex items-center px-4 py-2 rounded-2xl text-xs font-medium border border-slate-300 bg-white text-slate-700 hover:bg-slate-100 hover:border-slate-400 hover:text-slate-900 transition">Cancel</Link>
+                    <button type="submit" disabled={loading} className="inline-flex items-center px-4 py-2 rounded-2xl text-xs font-semibold text-white focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[rgba(76,111,255,0.35)]" style={{ background: `linear-gradient(135deg, ${accent}, #6C5CE7)` }}>
                       {loading ? "Saving..." : "Add Employee"}
                     </button>
                   </div>
