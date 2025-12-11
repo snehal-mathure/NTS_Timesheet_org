@@ -3,6 +3,7 @@ import React from "react";
 
 import Login from "./components/Login";
 import Register from "./components/Register";
+import ForgotPassword from "./components/forgotpassword";
 import AdminDashboard from "./components/AdminDashboard";
 import AddClient from "./components/AddClient";
 import ViewClient from "./components/ViewClient";
@@ -44,6 +45,7 @@ function App() {
         {/* normal routes */}
         <Route path="/" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/dashboard" element={<AdminDashboard />} />
         <Route path="/addclient" element={<AddClient />} />
         <Route path="/viewclient" element={<ViewClient />} />

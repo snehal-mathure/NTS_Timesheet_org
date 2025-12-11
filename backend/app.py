@@ -1,5 +1,3 @@
-# app.py
-# from chromadb import Client
 from flask import (
     Flask,
     render_template,
@@ -64,13 +62,13 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import inch
 from flask_cors import CORS
 from flask import Flask
+from flask import jsonify
 
 
 db = SQLAlchemy() 
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
-
 
 db_path = os.path.join(app.root_path, 'mydatabase.db') #this is for local
 # db_path = '/home/nts_sqlite_db/mydatabase.db'          #this for server
@@ -80,13 +78,10 @@ app.config["SESSION_COOKIE_SAMESITE"] = "None"
 app.config["SESSION_COOKIE_SECURE"] = True  # True only if HTTPS
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 
-
 from models import * 
 
 db.init_app(app)
 migrate = Migrate(app, db)
-
-
 
 with app.app_context():
     db.create_all()
@@ -97,80 +92,6 @@ app.secret_key = "your_secret_key"
 CORS(app, supports_credentials=True)  # Allow requests from React frontend
 
 ############## Authentication and Authorizarion-START###########
-
-
-
-# @app.route("/register", methods=["GET", "POST"])
-# def register():
-#     if request.method == "POST":
-#         # Get form data
-#         empid = request.form["empid"]
-#         fname = request.form["fname"]
-#         lname = request.form["lname"]
-#         email = request.form["email"]
-#         password = request.form["password"]
-#         confirm_password = request.form["confirm_password"]
-#         dept_id = request.form["dept_id"]
-#         approver_id = request.form[
-#             "approver_id"
-#         ]  # You may leave this empty or use an existing empid
-
-#         # Check if passwords match
-#         if password != confirm_password:
-#             flash("Passwords do not match. Please try again.", "danger")
-#             return redirect(url_for("register"))
-
-#         # Check if the email already exists
-#         user = Employee_Info.query.filter_by(email=email).first()
-#         if user:
-#             flash("Email already registered. Please log in.", "danger")
-#             return redirect(url_for("login"))
-
-#         # Check if the empid already exists
-#         existing_emp = Employee_Info.query.filter_by(empid=empid).first()
-#         if existing_emp:
-#             flash(
-#                 "Employee ID already exists. Please choose a different one.", "danger"
-#             )
-#             return redirect(url_for("register"))
-
-#         # Validate approver_id if provided
-#         if approver_id:
-#             approver = Employee_Info.query.filter_by(empid=approver_id).first()
-#             if not approver:
-#                 flash(
-#                     f"No employee found with empid {approver_id}. Please provide a valid approver ID.",
-#                     "danger",
-#                 )
-#                 return redirect(url_for("register"))
-
-#         # Create a new user instance and hash the password
-#         new_user = Employee_Info(
-#             empid=empid,
-#             fname=fname,
-#             lname=lname,
-#             email=email,
-#             dept_id=dept_id,
-#             approver_id=approver_id
-#             if approver_id
-#             else None,  # Set approver_id if it's provided
-#         )
-#         new_user.set_password(password)  # Set the hashed password
-
-#         # Add the new user to the database
-#         db.session.add(new_user)
-#         db.session.commit()
-
-#         flash("Registration successful! You can now log in.", "success")
-#         return redirect(url_for("login"))
-    
-    
-#     departments = Department.query.all()
-#     return render_template("register.html", departments=departments)
-
-
-
-
 @app.route("/register", methods=["POST"])
 def register():
     # Get JSON data from frontend
@@ -221,58 +142,6 @@ def register():
     db.session.commit()
 
     return jsonify({"message": "success"}), 201
- 
-
-
-
-
-
-# @app.route("/", methods=["GET", "POST"])
-# def login():
-#     if request.method == "POST":
-#         email = request.form["email"]
-#         password = request.form["password"]
-
-#         # Basic validation
-#         if not email or not password:
-#             flash("Please enter both email and password", "error")
-#             return redirect(url_for("login"))
-
-#         # Query user by email
-#         user = Employee_Info.query.filter_by(email=email).first()
-
-#         if user and check_password_hash(
-#             user.password, password
-#         ):  # Use check_password_hash to verify password
-#             # Store user info in the session (empid can serve as a unique identifier)
-#             session["user_id"] = user.empid
-#             session["user_fname"] = user.fname
-#             session["user_lname"] = user.lname
-#             session["user_email"] = user.email
-#             # flash("Login successful!", "success")
-
-#             # Check if the user is an approver for any employees
-#             # is_admin = (
-#             #     db.session.query(Employee_Info)
-#             #     .filter(Employee_Info.empid == 'N0482')
-#             #     .first()
-#             # )
-#             is_admin = (user.empid == 'N0482')
-#             # Convert to binary flag
-#             is_admin = 1 if is_admin else 0
-            
-#             # flash("Login successful!", "success")
-            
-#             # Redirect based on user role
-#             if is_admin:
-#                 return redirect(url_for("admin_dashboard"))
-#             else:
-#                 return redirect(url_for("dashboard"))
-#         else:
-#             flash("Invalid credentials. Please try again.", "danger")
-
-#     return render_template("login.html")
-
 
 
 @app.route("/login", methods=["POST"])
@@ -311,7 +180,7 @@ def login():
         }), 200
     else:
         return jsonify({"error": "Invalid credentials"}), 401
-
+    
 
 @app.route("/userclients", methods=["GET"])
 def get_clients_for_user():
@@ -386,461 +255,43 @@ def get_user_projects():
     except Exception as e:
         print("Error:", e)
         return jsonify({"error": "Server error"}), 500
-    
 
 
 @app.route("/logout")
 def logout():
     session.clear()  # Clear session data
-    flash("You have been logged out.", "info")
-    return redirect(url_for("login"))  # Redirect to login instead of 'home'
+    return jsonify({"success": True, "message": "You have been logged out."}), 200
 
-@app.route("/forgot_password", methods=["GET", "POST"])
+
+@app.route("/forgot_password", methods=["POST"])
 def forgot_password():
-    if request.method == "POST":
-        empid = request.form["empid"]
-        email = request.form["email"]
-        new_password = request.form["new_password"]
-        confirm_password = request.form["confirm_password"]
- 
-        # Validate input
-        if not empid or not email or not new_password or not confirm_password:
-            flash("All fields are required.", "danger")
-            return redirect(url_for("forgot_password"))
- 
-        if new_password != confirm_password:
-            flash("Passwords do not match.", "danger")
-            return redirect(url_for("forgot_password"))
- 
-        # Check if Employee ID and Email match an existing user
-        user = Employee_Info.query.filter_by(empid=empid, email=email).first()
- 
-        if user:
-            # Update password
-            hashed_password = generate_password_hash(new_password)
-            user.password = hashed_password
-            db.session.commit()
- 
-            flash("Password reset successful! You can now log in.", "success")
-            return redirect(url_for("login"))
-        else:
-            flash("Invalid Employee ID or Email.", "danger")
- 
-    return render_template("forgot_password.html")
+    data = request.get_json()
 
+    empid = data.get("empid")
+    email = data.get("email")
+    new_password = data.get("new_password")
+    confirm_password = data.get("confirm_password")
 
-#Tushar's code
-# @app.route("/dashboard", methods=["GET", "POST"])
-# def dashboard():
-    if request.method == "POST":
-        # Process form submission, same as before
-        projects = []
-        projects_count = int(request.form.get("projects_count", 0))
+    # Validate input
+    if not empid or not email or not new_password or not confirm_password:
+        return jsonify({"status": "error", "message": "All fields are required."}), 400
 
-        start_of_week_str = request.form.get("week_start_date")
-        start_of_week = datetime.strptime(start_of_week_str, "%Y-%m-%d")
+    if new_password != confirm_password:
+        return jsonify({"status": "error", "message": "Passwords do not match."}), 400
 
-        # Check if a timesheet exists for the given employee and week start date
-        timesheet = (
-            db.session.query(Timesheet)
-            .filter(
-                and_(
-                    Timesheet.empid == session["user_id"],
-                    Timesheet.week_start_date == start_of_week.date(),
-                )
-            )
-            .first()
-        )
-        
-        if not timesheet:
-            timesheet = Timesheet(
-                empid=session["user_id"],
-                week_start_date=start_of_week,
-                submitted_date=datetime.now(),
-                status="Not Submitted",
-            )
-            db.session.add(timesheet)
-            db.session.commit()
-        print(timesheet.status)
-        # Process each project data from the form
-        if timesheet.status!="Approved":
-        
-            for i in range(projects_count):
-                client = request.form.get(f"client_{i}")
-                project = request.form.get(f"project_{i}")
-                # Assuming you have a session object to interact with the database
-                project_name_to_find = (
-                    project  # Replace with the project name you're looking for
-                )
+    # Check if Employee ID and Email match an existing user
+    user = Employee_Info.query.filter_by(empid=empid, email=email).first()
 
-                # Query to get the project code based on the project_name
-                project1 = (
-                    db.session.query(Project_Info)
-                    .filter_by(project_name=project_name_to_find)
-                    .first()
-                )
+    if not user:
+        return jsonify({"status": "error", "message": "Invalid Employee ID or Email."}), 400
 
-                if project1:
-                    project = project1.project_code
-                else:
-                    print("Project not found.")
-                hours = {
-                    "mon": float(request.form.get(f"mon_{i}", 0)),
-                    "tue": float(request.form.get(f"tue_{i}", 0)),
-                    "wed": float(request.form.get(f"wed_{i}", 0)),
-                    "thu": float(request.form.get(f"thu_{i}", 0)),
-                    "fri": float(request.form.get(f"fri_{i}", 0)),
-                    "sat": float(request.form.get(f"sat_{i}", 0)),
-                    "sun": float(request.form.get(f"sun_{i}", 0)),
-                }
-                total_hours = sum(hours.values())
+    # Update password
+    hashed_password = generate_password_hash(new_password)
+    user.password = hashed_password
+    db.session.commit()
 
-                project_info = (
-                    db.session.query(Project_Info)
-                    .filter_by(project_code=project, client_name=client)
-                    .first()
-                )
+    return jsonify({"status": "success", "message": "Password reset successful! You can now log in."}), 200
 
-                if project_info:
-                    for day, hour in hours.items():
-                        work_date = start_of_week + timedelta(
-                            days=list(hours.keys()).index(day)
-                        )
-
-                        existing_entry = (
-                            db.session.query(TimesheetEntry)
-                            .filter(
-                                TimesheetEntry.empid == session["user_id"],
-                                TimesheetEntry.timesheet_id == timesheet.id,
-                                TimesheetEntry.project_id == project_info.id,
-                                TimesheetEntry.work_date == work_date.date(),
-                            )
-                            .first()
-                        )
-
-                        if existing_entry:
-                            existing_entry.hours_worked = hour
-                        else:
-                            entry = TimesheetEntry(
-                                empid=session["user_id"],
-                                timesheet_id=timesheet.id,
-                                project_id=project_info.id,
-                                work_date=work_date,
-                                hours_worked=hour,
-                            )
-                            ##changed
-                            
-                            if timesheet.status != "Approved":
-                                db.session.add(entry)
-
-                    projects.append(
-                        {
-                            "client": client,
-                            "project": project,
-                            "hours": hours,
-                            "total_hours": total_hours,
-                        }
-                    )
-
-            db.session.commit()
-
-            return redirect(url_for("timesheet_review", week_start_date=start_of_week_str))
-        else:
-            return "Already approved"
-
-    else:
-        # Handle GET requests (when the start of the week changes)
-        if "user_id" not in session:
-            flash("You must log in first.", "warning")
-            return redirect(url_for("login"))
-            
-
-        user_id = session["user_id"]
-        user_fname = session["user_fname"]
-        user_lname = session["user_lname"]
-        emp_name = user_fname + " " + user_lname
-        # Fetch the approver_id for the logged-in user
-        is_approver = (
-            db.session.query(Employee_Info)
-            .filter(Employee_Info.approver_id == user_id)
-            .first()
-        )
-        is_approver = 1 if is_approver else 0
-
-        # Get the week start date from query params, or use the current date if not provided
-        start_of_week_str = request.args.get("week_start_date")
-
-        if not start_of_week_str:
-            current_date = datetime.now()
-            start_of_week = current_date - timedelta(
-                days=current_date.weekday()
-            )  # Get Monday of current week
-        else:
-            start_of_week = datetime.strptime(start_of_week_str, "%Y-%m-%d")
-
-        status = db.session.query(Timesheet.status).filter(
-                Timesheet.empid == user_id,
-                Timesheet.week_start_date == start_of_week.date()).first()
-        if status:    
-            ts_status = status[0]
-        else:
-            ts_status = None
-
-
-        #logic implementation for clone option
-        prev_week_st_date =(start_of_week + timedelta(days=-7)).date()
-        prev_status = db.session.query(Timesheet.status).filter(
-                Timesheet.empid == user_id,
-                Timesheet.week_start_date == prev_week_st_date).first()
-        if prev_status:    
-            prev_status = prev_status[0]
-        else:
-            prev_status = None
-        # Fetch assigned projects for the user
-        assigned_projects = (
-            db.session.query(
-                Project_Info.project_name,
-                Project_Info.client_name,
-                Project_Info.project_code,
-            )
-            .join(Employee_Project, Project_Info.id == Employee_Project.project_id)
-            .filter(Employee_Project.empid == user_id)
-            .all()
-        )
-        print(assigned_projects)
-
-        # Fetch the timesheet entries for the selected week
-        timesheet_entries = (
-            db.session.query(
-                TimesheetEntry,
-                Project_Info.project_name,
-                Project_Info.client_name,
-                Project_Info.project_code,
-            )
-            .join(Project_Info, TimesheetEntry.project_id == Project_Info.id)
-            .join(Employee_Project, Employee_Project.project_id == Project_Info.id)
-            .filter(
-                # Employee_Project.empid == user_id,
-                TimesheetEntry.empid == user_id,
-                TimesheetEntry.work_date > start_of_week + timedelta(days=-1),
-                TimesheetEntry.work_date < start_of_week + timedelta(days=6),
-            )
-            .all()
-        )
-
-        # Organize the hours worked by project and day
-        hours_by_project = {}
-        for entry, project_name, client_name, project_code in timesheet_entries:
-            if project_code not in hours_by_project:
-                hours_by_project[project_code] = {
-                    "client_name": client_name,
-                    "project_name": project_name,
-                    "hours": {
-                        day: 0
-                        for day in ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
-                    },
-                }
-
-            day_of_week = entry.work_date.weekday()
-            day_name = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"][day_of_week]
-
-            hours_by_project[project_code]["hours"][day_name] += entry.hours_worked
-        # Format start and end dates for the week
-        start_of_week_str = start_of_week.strftime("%Y-%m-%d")
-        end_of_week = start_of_week + timedelta(days=6)
-        end_of_week_str = end_of_week.strftime("%Y-%m-%d")
-
-        return render_template(
-            "dashboard.html",
-            assigned_projects=assigned_projects,
-            current_date=datetime.now().strftime("%Y-%m-%d"),
-            start_of_week=start_of_week_str,
-            end_of_week=end_of_week_str,
-            emp_name=emp_name,
-            projects_count=len(assigned_projects),
-            hours_by_project=hours_by_project,
-            is_approver=is_approver,
-            ts_status = ts_status,
-            prev_week_st_date =prev_week_st_date,
-            prev_status=prev_status
-        )
-
-############## Authentication and Authorizarion-END###########
-
-############### Admin Part - Start #############
-# @app.route('/admin')
-# def admin_dashboard():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-    
-    if session['user_id'] != 'N0482':
-        # Not the admin user - redirect to unauthorized page or home
-        flash('You do not have permission to access the admin dashboard', 'error')
-        return redirect(url_for('login'))
- 
-    
-    try:
-        # Get all employees
-        employees = Employee_Info.query.all()
-        clients = Client_Info.query.all()
-        projects = Project_Info.query.all()
-        
-        # Add the query to get client names and count of employees allocated to each client
-        client_allocations = db.session.query(
-            Client_Info.client_name,
-            func.count(Client_Employee.empid).label('employee_count')
-        ).join(
-            Client_Employee, Client_Info.clientID == Client_Employee.clientID
-        ).group_by(
-            Client_Info.client_name
-        ).all()
-        
-        return render_template('admin_dashboard.html',
-                              session=session,
-                              employees=employees,
-                              clients=clients,
-                              projects=projects,
-                              client_allocations=client_allocations)
-    except Exception as e:
-        print(f"Error in admin dashboard: {str(e)}")
-        return render_template('admin_dashboard.html',
-                              session=session,
-                              employees=[])
-
-
-# @app.route('/admin')
-# def admin_dashboard():
-#     if 'user_id' not in session:
-#         return redirect(url_for('login'))
-   
-#     if session['user_id'] != 'N0482':
-#         flash('You do not have permission to access the admin dashboard', 'error')
-#         return redirect(url_for('login'))
-   
-#     try:
-#         # Get counts for the dashboard
-#         total_employees = Employee_Info.query.count()
-#         total_clients = Client_Info.query.count()
-#         total_projects = Project_Info.query.count()
-       
-#         # Get client allocations (client name vs. number of employees allocated)
-#         client_allocations = db.session.query(
-#             Client_Info.client_name,
-#             func.count(Client_Employee.empid).label('employee_count')
-#         ).join(
-#             Client_Employee, Client_Info.clientID == Client_Employee.clientID
-#         ).group_by(Client_Info.client_name).all()
- 
-#         client_names = [client.client_name for client in client_allocations]
-#         employee_counts = [client.employee_count for client in client_allocations]
- 
-#         # Get department-wise employee count
-#         department_allocations = db.session.query(
-#             Department.dept_name,
-#             func.count(Employee_Info.empid).label('employee_count')
-#         ).join(Employee_Info, Employee_Info.dept_id == Department.id)\
-#         .group_by(Department.dept_name).all()
-
-#         department_names = [row.dept_name for row in department_allocations]
-#         department_counts = [row.employee_count for row in department_allocations]
-
- 
-#         # Get Billable & Non-Billable Project Count
-#         billable_count = db.session.query(func.count()).filter(Project_Info.project_billability == 'Billable').scalar()
-#         non_billable_count = db.session.query(func.count()).filter(Project_Info.project_billability == 'Non-Billable').scalar()
- 
-#         return render_template('admin_dashboard.html',
-#                                session=session,
-#                                total_employees=total_employees,
-#                                total_clients=total_clients,
-#                                total_projects=total_projects,
-#                                client_names=client_names,
-#                                employee_counts=employee_counts,
-#                                department_names=department_names,
-#                                department_counts=department_counts,
-#                                billable_count=billable_count,
-#                                non_billable_count=non_billable_count)
-#     except Exception as e:
-#         print(f"Error in admin dashboard: {str(e)}")
-#         return render_template('admin_dashboard.html',
-#                                session=session,
-#                                total_employees=total_employees,
-#                                total_clients=total_clients,
-#                                total_projects=total_projects)
-
-from flask import jsonify
-# Show client allocations, department allocations, billable vs non-billable counts
-# @app.route('/admin')
-# def admin_dashboard():
-#     if 'user_id' not in session:
-#         return jsonify({"error": "Unauthorized", "message": "User not logged in"}), 401
-   
-#     if session['user_id'] != 'N0482':
-#         return jsonify({"error": "Forbidden", "message": "You do not have permission to access the admin dashboard"}), 403
-
-#     try:
-#         # Counts
-#         total_employees = Employee_Info.query.count()
-#         total_clients = Client_Info.query.count()
-#         total_projects = Project_Info.query.count()
-
-#         # Client allocations
-#         client_allocations = db.session.query(
-#             Client_Info.client_name,
-#             func.count(Client_Employee.empid).label('employee_count')
-#         ).join(
-#             Client_Employee, Client_Info.clientID == Client_Employee.clientID
-#         ).group_by(Client_Info.client_name).all()
-
-#         client_data = [
-#             {"client_name": c.client_name, "employee_count": c.employee_count}
-#             for c in client_allocations
-#         ]
-
-#         # Department allocations
-#         department_allocations = db.session.query(
-#             Department.dept_name,
-#             func.count(Employee_Info.empid).label('employee_count')
-#         ).join(Employee_Info, Employee_Info.dept_id == Department.id)\
-#         .group_by(Department.dept_name).all()
-
-#         department_data = [
-#             {"department_name": d.dept_name, "employee_count": d.employee_count}
-#             for d in department_allocations
-#         ]
-
-#         # Billable vs Non-Billable
-#         billable_count = db.session.query(func.count()).filter(
-#             Project_Info.project_billability == 'Billable'
-#         ).scalar()
-
-#         non_billable_count = db.session.query(func.count()).filter(
-#             Project_Info.project_billability == 'Non-Billable'
-#         ).scalar()
-
-#         # --- RETURN JSON FOR REACT ---
-#         return jsonify({
-#             "status": "success",
-#             "data": {
-#                 "total_employees": total_employees,
-#                 "total_clients": total_clients,
-#                 "total_projects": total_projects,
-
-#                 "client_allocations": client_data,
-#                 "department_allocations": department_data,
-
-#                 "billable_count": billable_count,
-#                 "non_billable_count": non_billable_count
-#             }
-#         }), 200
-
-#     except Exception as e:
-#         print("Error:", str(e))
-#         return jsonify({
-#             "status": "error",
-#             "message": "Failed to load dashboard data",
-#             "error": str(e)
-#         }), 500
 
 @app.route('/admin', methods=['GET'])
 def admin_dashboard():
@@ -1767,10 +1218,6 @@ def add_employee():
         return jsonify({"status": "error", "message": str(e)}), 500
 
 
-
-
-
-
 @app.route("/api/departments", methods=["GET"])
 def api_get_departments():
     depts = Department.query.order_by(Department.dept_name).all()
@@ -2306,7 +1753,6 @@ def approvers_by_department():
         }
         for a in approvers
     ]), 200
-
 
 
 @app.route('/dashboard/edit_employee/<empid>', methods=['GET', 'POST'])
@@ -4936,222 +4382,6 @@ def export_client_department():
 #     }
    
 #     return render_template('admin_reports.html', billability_data=billability_data)
- 
-
-
-# #######################Timesheet Part-Start###########################
-
-# # @app.route("/dashboard", methods=["GET", "POST"])
-# # def dashboard():
-#     if request.method == "POST":
-#         # Process form submission for timesheet
-
-#         projects_count = int(request.form.get("projects_count", 0))
-#         start_of_week_str = request.form.get("week_start_date")
-#         if not start_of_week_str:
-#             flash("Week start date is missing.", "error")
-#             return redirect(url_for("dashboard"))
-#         try:
-#             start_of_week = datetime.strptime(start_of_week_str, "%Y-%m-%d")
-#         except ValueError:
-#             flash("Invalid week start date format.", "error")
-#             return redirect(url_for("dashboard"))
-#         print("Parsed start_of_week:", start_of_week)
-
-#         # Validate that for any internal leave row, a leave is applied.
-#         error_days = []
-#         days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
-#         for i in range(projects_count):
-#             client = request.form.get(f"client_{i}", "").strip().lower()
-#             project = request.form.get(f"project_{i}", "").strip().lower()
-#             # Check if this row represents an internal leave row.
-#             if client == "internal" and project == "leave":
-#                 for day in days:
-#                     try:
-#                         hours_val = float(request.form.get(f"{day}_{i}", 0))
-#                     except ValueError:
-#                         hours_val = 0
-#                     if hours_val > 0:
-#                         work_date = start_of_week.date() + timedelta(days=days.index(day))
-#                         # Query for a leave entry on that day with status Pending or Approved
-#                         leave_entry = (Leave_Entries.query
-#                                        .join(Leave_Request, Leave_Entries.leave_req_id == Leave_Request.id)
-#                                        .filter(Leave_Request.empid == session["user_id"],
-#                                                Leave_Request.status.in_(["Pending", "Approved"]),
-#                                                Leave_Entries.date == work_date)
-#                                        .first())
-#                         if not leave_entry:
-#                             error_days.append(work_date.strftime("%Y-%m-%d"))
-#         if error_days:
-#             flash("Please apply leave for the following day(s): " + ", ".join(error_days), "error")
-#             # Redirect back to the same week so that the user remains on the same page
-#             return redirect(url_for("dashboard", week_start_date=start_of_week_str))
-
-#         # Check if a timesheet exists for the given employee and week start date
-#         timesheet = (db.session.query(Timesheet)
-#                      .filter(
-#                          and_(
-#                              Timesheet.empid == session["user_id"],
-#                              Timesheet.week_start_date == start_of_week.date(),
-#                          )
-#                      )
-#                      .first())
-
-#         if not timesheet:
-#             timesheet = Timesheet(
-#                 empid=session["user_id"],
-#                 week_start_date=start_of_week,
-#                 submitted_date=datetime.now(),
-#                 status="Not Submitted",
-#             )
-#             db.session.add(timesheet)
-#             db.session.commit()
-
-#         # Process each project row from the form
-#         for i in range(projects_count):
-#             client = request.form.get(f"client_{i}")
-#             project = request.form.get(f"project_{i}")
-#             project_name_to_find = project
-#             project1 = (db.session.query(Project_Info)
-#                         .filter_by(project_name=project_name_to_find)
-#                         .first())
-#             if project1:
-#                 project = project1.project_code
-#             else:
-#                 print("Project not found for row", i)
-#             hours = {
-#                 "mon": float(request.form.get(f"mon_{i}", 0)),
-#                 "tue": float(request.form.get(f"tue_{i}", 0)),
-#                 "wed": float(request.form.get(f"wed_{i}", 0)),
-#                 "thu": float(request.form.get(f"thu_{i}", 0)),
-#                 "fri": float(request.form.get(f"fri_{i}", 0)),
-#                 "sat": float(request.form.get(f"sat_{i}", 0)),
-#                 "sun": float(request.form.get(f"sun_{i}", 0)),
-#             }
-#             total_hours = sum(hours.values())
-
-#             project_info = (db.session.query(Project_Info)
-#                             .filter_by(project_code=project, client_name=client)
-#                             .first())
-#             if project_info:
-#                 for day, hour in hours.items():
-#                     work_date = start_of_week + timedelta(days=list(hours.keys()).index(day))
-#                     existing_entry = (db.session.query(TimesheetEntry)
-#                                       .filter(
-#                                           TimesheetEntry.empid == session["user_id"],
-#                                           TimesheetEntry.timesheet_id == timesheet.id,
-#                                           TimesheetEntry.project_id == project_info.id,
-#                                           TimesheetEntry.work_date == work_date.date(),
-#                                       )
-#                                       .first())
-#                     if existing_entry:
-#                         existing_entry.hours_worked = hour
-#                     else:
-#                         entry = TimesheetEntry(
-#                             empid=session["user_id"],
-#                             timesheet_id=timesheet.id,
-#                             project_id=project_info.id,
-#                             work_date=work_date,
-#                             hours_worked=hour,
-#                         )
-#                         db.session.add(entry)
-#             else:
-#                 print(f"Skipping row {i} as project_info not found")
-#         db.session.commit()
-#         return redirect(url_for("timesheet_review", week_start_date=start_of_week_str))
-
-#     else:
-#         # Handle GET requests
-#         if "user_id" not in session:
-#             flash("You must log in first.", "warning")
-#             return redirect(url_for("login"))
-
-#         user_id = session["user_id"]
-#         user_fname = session["user_fname"]
-#         user_lname = session["user_lname"]
-#         emp_name = f"{user_fname} {user_lname}"
-#         is_approver = 1 if db.session.query(Employee_Info).filter(Employee_Info.approver_id == user_id).first() else 0
-
-#         start_of_week_str = request.args.get("week_start_date")
-#         if not start_of_week_str:
-#             current_date = datetime.now()
-#             start_of_week = current_date - timedelta(days=current_date.weekday())
-#         else:
-#             start_of_week = datetime.strptime(start_of_week_str, "%Y-%m-%d")
-
-#         status = db.session.query(Timesheet.status).filter(
-#             Timesheet.empid == user_id,
-#             Timesheet.week_start_date == start_of_week.date()).first()
-#         ts_status = status[0] if status else None
-
-#         prev_week_st_date = (start_of_week + timedelta(days=-7)).date()
-#         prev_status = db.session.query(Timesheet.status).filter(
-#             Timesheet.empid == user_id,
-#             Timesheet.week_start_date == prev_week_st_date).first()
-#         prev_status = prev_status[0] if prev_status else None
-
-#         assigned_projects = (db.session.query(
-#                                 Project_Info.project_name,
-#                                 Project_Info.client_name,
-#                                 Project_Info.project_code,
-#                               )
-#                               .join(Employee_Project, Project_Info.id == Employee_Project.project_id)
-#                               .filter(Employee_Project.empid == user_id)
-#                               .all())
-#         print(assigned_projects)
-
-#         timesheet_entries = (db.session.query(
-#                                 TimesheetEntry,
-#                                 Project_Info.project_name,
-#                                 Project_Info.client_name,
-#                                 Project_Info.project_code,
-#                               )
-#                               .join(Project_Info, TimesheetEntry.project_id == Project_Info.id)
-#                               .join(Employee_Project, Employee_Project.project_id == Project_Info.id)
-#                               .filter(
-#                                   TimesheetEntry.empid == user_id,
-#                                   TimesheetEntry.work_date > start_of_week + timedelta(days=-1),
-#                                   TimesheetEntry.work_date < start_of_week + timedelta(days=6),
-#                               )
-#                               .all())
-#         hours_by_project = {}
-#         for project in assigned_projects:
-#             project_code = project.project_code
-#             hours_by_project[project_code] = {
-#                 "client_name": project.client_name,
-#                 "project_name": project.project_name,
-#                 "hours": {day: 0 for day in ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]},
-#             }
-
-#         for entry, project_name, client_name, project_code in timesheet_entries:
-#             if project_code not in hours_by_project:
-#                 hours_by_project[project_code] = {
-#                     "client_name": client_name,
-#                     "project_name": project_name,
-#                     "hours": {day: 0 for day in ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]},
-#                 }
-#             day_of_week = entry.work_date.weekday()
-#             day_name = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"][day_of_week]
-#             hours_by_project[project_code]["hours"][day_name] += entry.hours_worked
-
-#         start_of_week_str = start_of_week.strftime("%Y-%m-%d")
-#         end_of_week = start_of_week + timedelta(days=6)
-#         end_of_week_str = end_of_week.strftime("%Y-%m-%d")
-
-#         return render_template(
-#             "dashboard.html",
-#             assigned_projects=assigned_projects,
-#             current_date=datetime.now().strftime("%Y-%m-%d"),
-#             start_of_week=start_of_week_str,
-#             end_of_week=end_of_week_str,
-#             emp_name=emp_name,
-#             projects_count=len(assigned_projects),
-#             hours_by_project=hours_by_project,
-#             is_approver=is_approver,
-#             ts_status=ts_status,
-#             prev_week_st_date=prev_week_st_date,
-#             prev_status=prev_status
-#         )
 
 
 # @app.route('/admin/reports', methods=['GET'])
@@ -6501,7 +5731,6 @@ def utilization_filters():
         ]
     }), 200
  
- 
 
 @app.route("/admin/utilization", methods=["POST"])
 def api_utilization():
@@ -6641,8 +5870,6 @@ def api_utilization():
             })
  
     return jsonify({"status": "success", "data": result}), 200
-
-
 
 
 # @app.route("/admin/utilization/download", methods=["GET", "POST"])
@@ -7260,261 +6487,7 @@ def api_utilization_data():
         return jsonify({"status": "error", "message": "Failed to fetch data"}), 500
  
 
-##K##############################start timesheet################################ 
-
-
-# @app.route("/dashboard", methods=["GET", "POST"])
-# def dashboard():
-#     if request.method == "POST":
-#        # Process form submission for timesheet
-#         projects_count = int(request.form.get("projects_count", 0))
-#         start_of_week_str = request.form.get("week_start_date")
-#         print("Parsed start_of_week:", start_of_week_str)
-#         if not start_of_week_str:
-#             flash("Week start date is missing.", "error")
-#             return redirect(url_for("dashboard"))
-#         try:
-#             start_of_week = datetime.strptime(start_of_week_str, "%Y-%m-%d")
-#         except ValueError:
-#             flash("Invalid week start date format.", "error")
-#             return redirect(url_for("dashboard"))
-        
-#         error_days = []
-#         days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
-#         for i in range(projects_count):
-#             client = request.form.get(f"client_{i}", "").strip().lower()
-#             project = request.form.get(f"project_{i}", "").strip().lower()
-#             if client == "internal" and project == "leave":
-#                 for day in days:
-#                     try:
-#                         hours_val = float(request.form.get(f"{day}_{i}", 0))
-#                     except ValueError:
-#                         hours_val = 0
-#                     if hours_val > 0:
-#                         work_date = start_of_week.date() + timedelta(days=days.index(day))
-#                         leave_entry = (
-#                             Leave_Entries.query
-#                             .join(Leave_Request, Leave_Entries.leave_req_id == Leave_Request.id)
-#                             .filter(
-#                                 Leave_Request.empid == session["user_id"],
-#                                 Leave_Request.status.in_(["Pending", "Approved"]),
-#                                 Leave_Entries.date == work_date
-#                             )
-#                             .first()
-#                         )
-#                         if not leave_entry:
-#                             error_days.append(work_date.strftime("%Y-%m-%d"))
-#         if error_days:
-#             error_msg = "Please apply leave for the following day(s): " + ", ".join(error_days)
-#             flash(error_msg, "error")
-#             return redirect(url_for("dashboard", week_start_date=start_of_week_str))
-
-#         timesheet = (db.session.query(Timesheet)
-#                      .filter(
-#                          and_(
-#                              Timesheet.empid == session["user_id"],
-#                              Timesheet.week_start_date == start_of_week.date(),
-#                          )
-#                      )
-#                      .first())
-
-#         if not timesheet:
-#             timesheet = Timesheet(
-#                 empid=session["user_id"],
-#                 week_start_date=start_of_week,
-#                 submitted_date=datetime.now(),
-#                 status="Not Submitted",
-#             )
-#             db.session.add(timesheet)
-#             db.session.commit()
-
-#         for i in range(projects_count):
-#             client = request.form.get(f"client_{i}")
-#             project = request.form.get(f"project_{i}")
-#             project_name_to_find = project
-#             project1 = (db.session.query(Project_Info)
-#                         .filter_by(project_name=project_name_to_find)
-#                         .first())
-#             if project1:
-#                 project = project1.project_code
-#             else:
-#                 print("Project not found for row", i)
-#             hours = {
-#                 "mon": float(request.form.get(f"mon_{i}", 0)),
-#                 "tue": float(request.form.get(f"tue_{i}", 0)),
-#                 "wed": float(request.form.get(f"wed_{i}", 0)),
-#                 "thu": float(request.form.get(f"thu_{i}", 0)),
-#                 "fri": float(request.form.get(f"fri_{i}", 0)),
-#                 "sat": float(request.form.get(f"sat_{i}", 0)),
-#                 "sun": float(request.form.get(f"sun_{i}", 0)),
-#             }
-#             total_hours = sum(hours.values())
-
-#             project_info = (db.session.query(Project_Info)
-#                             .join(Client_Info)
-#                             .filter(Project_Info.project_code == project,
-#                                     Client_Info.client_name == client)
-#                             .first())
-#             if project_info:
-#                 for day, hour in hours.items():
-#                     work_date = start_of_week + timedelta(days=list(hours.keys()).index(day))
-#                     existing_entry = (db.session.query(TimesheetEntry)
-#                                       .filter(
-#                                           TimesheetEntry.empid == session["user_id"],
-#                                           TimesheetEntry.timesheet_id == timesheet.id,
-#                                           TimesheetEntry.project_id == project_info.id,
-#                                           TimesheetEntry.work_date == work_date.date(),
-#                                       )
-#                                       .first())
-#                     if existing_entry:
-#                         existing_entry.hours_worked = hour
-#                     else:
-#                         entry = TimesheetEntry(
-#                             empid=session["user_id"],
-#                             timesheet_id=timesheet.id,
-#                             project_id=project_info.id,
-#                             work_date=work_date,
-#                             hours_worked=hour,
-#                         )
-#                         db.session.add(entry)
-#             else:
-#                 print(f"Skipping row {i} as project_info not found")
-#         db.session.commit()
-#         return redirect(url_for("timesheet_review", week_start_date=start_of_week_str))
-
-#     else:
-#         if "user_id" not in session:
-#             flash("You must log in first.", "warning")
-#             return redirect(url_for("login"))
-
-#         user_id = session["user_id"]
-#         user_fname = session["user_fname"]
-#         user_lname = session["user_lname"]
-#         emp_name = f"{user_fname} {user_lname}"
-#         is_approver = 1 if db.session.query(Employee_Info).filter(Employee_Info.approver_id == user_id).first() else 0
-
-#         start_of_week_str = request.args.get("week_start_date")
-#         if not start_of_week_str:
-#             current_date = datetime.now()
-#             start_of_week = current_date - timedelta(days=current_date.weekday())
-#         else:
-#             start_of_week = datetime.strptime(start_of_week_str, "%Y-%m-%d")
-
-#         print("Requested week_start_date:", start_of_week_str)
-
-#         status = db.session.query(Timesheet.status).filter(
-#             Timesheet.empid == user_id,
-#             Timesheet.week_start_date == start_of_week.date()).first()
-#         ts_status = status[0] if status else None
-
-#         prev_week_st_date = (start_of_week + timedelta(days=-7)).date()
-#         prev_status = db.session.query(Timesheet.status).filter(
-#             Timesheet.empid == user_id,
-#             Timesheet.week_start_date == prev_week_st_date).first()
-#         prev_status = prev_status[0] if prev_status else None
-
-#         assigned_projects = (db.session.query(
-#                                 Project_Info.project_name,
-#                                 Client_Info.client_name,
-#                                 Project_Info.project_code,
-#                               )
-#                               .join(Client_Info, Project_Info.client_id == Client_Info.clientID)
-#                               .join(Employee_Project, Project_Info.id == Employee_Project.project_id)
-#                               .filter(Employee_Project.empid == user_id)
-#                               .all())
-#         print(assigned_projects)
-
-#         timesheet_entries = (db.session.query(
-#                                 TimesheetEntry,
-#                                 Project_Info.project_name,
-#                                 Client_Info.client_name,
-#                                 Project_Info.project_code,
-#                               )
-#                               .join(Project_Info, TimesheetEntry.project_id == Project_Info.id)
-#                               .join(Client_Info, Project_Info.client_id == Client_Info.clientID)
-#                               .join(Employee_Project, Employee_Project.project_id == Project_Info.id)
-#                               .filter(
-#                                   TimesheetEntry.empid == user_id,
-#                                   TimesheetEntry.work_date > start_of_week + timedelta(days=-1),
-#                                   TimesheetEntry.work_date < start_of_week + timedelta(days=6),
-#                               )
-#                               .all())
-#         hours_by_project = {}
-#         for project in assigned_projects:
-#             project_code = project.project_code
-#             hours_by_project[project_code] = {
-#                 "client_name": project.client_name,
-#                 "project_name": project.project_name,
-#                 "hours": {day: 0 for day in ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]},
-#             }
-
-#         print("Initial hours_by_project (assigned):")
-#         print(hours_by_project)
-
-#         for entry, project_name, client_name, project_code in timesheet_entries:
-#             if project_code not in hours_by_project:
-#                 hours_by_project[project_code] = {
-#                     "client_name": client_name,
-#                     "project_name": project_name,
-#                     "hours": {day: 0 for day in ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]},
-#                 }
-#             day_of_week = entry.work_date.weekday()
-#             day_name = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"][day_of_week]
-#             hours_by_project[project_code]["hours"][day_name] += entry.hours_worked
-
-#         print("\nUpdated hours_by_project (after entries):")
-#         for project_code, data in hours_by_project.items():
-#             print(f"{project_code}: {data}")
-
-#         total_hours_by_day = {day: 0 for day in ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]}
-#         weekly_total_hours_by_day = {day: 0 for day in ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]}
-#         weekly_total_hours = 0
-
-#         for project_code, project_data in hours_by_project.items():
-#             project_total = 0
-#             for day, hours in project_data["hours"].items():
-#                 total_hours_by_day[day] += hours
-#                 weekly_total_hours_by_day[day] += hours
-#                 project_total += hours
-#             hours_by_project[project_code]["total_hours"] = project_total
-#             weekly_total_hours += project_total
-
-#         print("\nTotal hours by project (including total_hours key):")
-#         for project_code, data in hours_by_project.items():
-#             print(f"{project_code} -> Total: {data['total_hours']}")
-
-#         print("\nTotal hours by day across all projects:")
-#         print(total_hours_by_day)
-
-#         print("\nWeekly total hours by day (across projects):")
-#         print(weekly_total_hours_by_day)
-
-#         print("\nOverall weekly total hours:")
-#         print(weekly_total_hours)
-
-#         start_of_week_str = start_of_week.strftime("%Y-%m-%d")
-#         end_of_week = start_of_week + timedelta(days=6)
-#         end_of_week_str = end_of_week.strftime("%Y-%m-%d")
-#         error_popup = request.args.get("error_popup", "")
-
-#         return render_template(
-#             "dashboard.html",
-#             assigned_projects=assigned_projects,
-#             current_date=datetime.now().strftime("%Y-%m-%d"),
-#             start_of_week=start_of_week_str,
-#             end_of_week=end_of_week_str,
-#             emp_name=emp_name,
-#             projects_count=len(assigned_projects),
-#             hours_by_project=hours_by_project,
-#             total_hours_by_day=total_hours_by_day,
-#             weekly_total_hours_by_day=weekly_total_hours_by_day,
-#             weekly_total_hours=weekly_total_hours,
-#             is_approver=is_approver,
-#             ts_status=ts_status,
-#             prev_week_st_date=prev_week_st_date,
-#             prev_status=prev_status,
-#             error_popup=error_popup,
-#         )
+################################start timesheet################################ 
 
 @app.route("/dashboard", methods=["GET", "POST"])
 def dashboard():

@@ -502,20 +502,22 @@ export default function AddClient() {
                     <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" aria-hidden>
                       <path d="M8 6h11M8 12h11M8 18h11M3 6h.01M3 12h.01M3 18h.01" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
-                    View All Clients
+                    View Clients
                   </Link>
 
                   <button
                     type="submit"
-                    disabled={submitting}
-                    className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl text-xs md:text-sm font-semibold text-white shadow-[0_14px_40px_rgba(76,111,255,0.55)] focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[rgba(76,111,255,0.35)]"
-                    style={{ background: `linear-gradient(135deg, ${accent}, #6C5CE7)` }}
+                    className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl text-xs md:text-sm font-semibold text-white focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[rgba(76,111,255,0.35)]"
+                    style={{
+                      background: `linear-gradient(135deg, ${accent}, #6C5CE7)`,
+                    }}
                   >
                     <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" aria-hidden>
                       <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                     {submitting ? "Saving..." : "Add Client"}
                   </button>
+
                 </div>
               </form>
             </div>
