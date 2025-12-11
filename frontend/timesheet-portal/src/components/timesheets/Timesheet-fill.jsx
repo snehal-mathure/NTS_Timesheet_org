@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { getDashboardData } from "../../services/dashboardService";
+import { toast } from "react-toastify";
 import {
   getUserClients,
   getUserProjects,
@@ -57,6 +58,9 @@ export default function TimesheetDashboard() {
   // Dropdown API data
   const [clients, setClients] = useState([]);
   const [projectsByRow, setProjectsByRow] = useState({});
+  const [holidays, setHolidays] = useState([]);
+  const [leaves, setLeaves] = useState([]);
+
 
   // Track unsaved changes
   const [isDirty, setIsDirty] = useState(false);
@@ -177,6 +181,9 @@ export default function TimesheetDashboard() {
 
       setData(payload);
       setLoading(false);
+      setHolidays(payload.holidays || []);
+      setLeaves(payload.leaves || []);
+
 
       // If backend provides rows -> prefill
       const backendRowsRaw = (payload && payload.rows) || [];
@@ -324,7 +331,7 @@ export default function TimesheetDashboard() {
       }
     } catch (err) {
       console.error(err);
-      alert("Error saving timesheet");
+      toast.error("Error saving timesheet");
     }
   };
 
@@ -333,6 +340,15 @@ export default function TimesheetDashboard() {
 
   const { emp_name } = data;
   const weekEnd = new Date(weekStart.getTime() + 6 * 86400000);
+  const weekDates = {
+  mon: formatDate(weekStart),
+  tue: formatDate(new Date(weekStart.getTime() + 1 * 86400000)),
+  wed: formatDate(new Date(weekStart.getTime() + 2 * 86400000)),
+  thu: formatDate(new Date(weekStart.getTime() + 3 * 86400000)),
+  fri: formatDate(new Date(weekStart.getTime() + 4 * 86400000)),
+  sat: formatDate(new Date(weekStart.getTime() + 5 * 86400000)),
+  sun: formatDate(new Date(weekStart.getTime() + 6 * 86400000)),
+};
 
   // compute main margin responsive to sidebarCollapsed
   const mainMarginClass = sidebarCollapsed ? "md:ml-20" : "md:ml-72";
@@ -450,7 +466,8 @@ export default function TimesheetDashboard() {
                   </tr>
                 </thead>
 
-                <tbody className="bg-[#F7FAFF] text-[11px] md:text-xs">
+                <tbody className="bg-[#FAFAF7] text-[11px] md:text-xs">
+
                   {rows.map((row, idx) => {
                     const rowTotal = Object.values(row.hours).reduce(
                       (sum, h) => sum + (parseFloat(h) || 0),
@@ -506,7 +523,24 @@ export default function TimesheetDashboard() {
                         </td>
 
                         {/* WEEKDAY HOURS */}
-                        {["mon", "tue", "wed", "thu", "fri"].map((day) => (
+                        {["mon", "tue", "wed", "thu", "fri"].map((day) =>{
+                        
+                        const date = weekDates[day];
+                        const isHoliday = holidays.includes(date);
+                        const isLeave = leaves.includes(date);
+
+                        let colorClass = "";
+
+                        if (row.locked) {
+                          colorClass = "bg-slate-100 border-slate-200 cursor-not-allowed text-slate-500";
+                        } else if (isHoliday) {
+                          colorClass = "bg-[#F3E8FF]  border-[#D9B7FF]"; // holiday red
+                        } else if (isLeave) {
+                          colorClass = "bg-[#FFF6CC] border-[#FFCC66]"; // leave yellow
+                        } else {
+                          colorClass = "bg-[#F9FBFF] border-[#D8E3FF] hover:border-slate-300"; // normal day
+                        }
+                        return(
                           <td
                             key={day}
                             className="p-1.5 align-middle text-center"
@@ -518,21 +552,39 @@ export default function TimesheetDashboard() {
                               max="24"
                               step="0.5"
                               placeholder="0"
-                              className={`w-12 md:w-14 h-8 rounded-xl px-2.5 text-center text-xs md:text-sm border ${
+                              className={`w-12 md:w-14 h-8 rounded-xl px-2.5 text-center 
+                              text-xs md:text-sm border ${
                                 row.locked
                                   ? "bg-slate-100 border-slate-200 cursor-not-allowed text-slate-500"
-                                  : "bg-[#F9FBFF] border-[#D8E3FF] hover:border-slate-300"
-                              } focus:outline-none focus:ring-2 focus:ring-[#CFE0FF] focus:border-transparent`}
+                                  : colorClass
+                              }
+                              focus:outline-none focus:ring-2 focus:ring-[#CFE0FF] focus:border-transparent`}
                               value={row.hours[day]}
                               onChange={(e) =>
                                 handleHourChange(idx, day, e.target.value)
                               }
                             />
                           </td>
-                        ))}
+                        )
+                        })}
 
                         {/* SATURDAY & SUNDAY */}
-                        {["sat", "sun"].map((day) => (
+                        {["sat", "sun"].map((day) => {
+                        const date = weekDates[day];
+                        const isHoliday = holidays.includes(date);
+                        const isLeave = leaves.includes(date);
+
+                        let colorClass = "";
+
+                        if (isHoliday) {
+                          colorClass = "bg-[#FFE5E5] border-[#FF7A7A]"; // holiday red
+                        } else if (isLeave) {
+                          colorClass = "bg-[#FFF6CC] border-[#FFCC66]"; // leave yellow
+                        } else {
+                          colorClass = "bg-[#FFF9EC] border-[#F2DCA2]"; // weekend default
+                        }
+
+                        return(
                           <td
                             key={day}
                             className="p-1.5 align-middle text-center"
@@ -544,18 +596,21 @@ export default function TimesheetDashboard() {
                               max="24"
                               step="0.5"
                               placeholder="0"
-                              className={`w-12 md:w-14 h-8 rounded-xl px-2.5 text-center text-xs md:text-sm border ${
-                                row.locked
-                                  ? "bg-[#FFF7E8] border-[#F2DCA2] cursor-not-allowed text-slate-500"
-                                  : "bg-[#FFF9EC] border-[#F2DCA2] hover:border-[#e3c883]"
-                              } focus:outline-none focus:ring-2 focus:ring-[#FCE9A8] focus:border-transparent`}
+                               className={`w-12 md:w-14 h-8 rounded-xl px-2.5 text-center 
+                                text-xs md:text-sm border ${
+                                  row.locked
+                                    ? "bg-[#FFF7E8] border-[#F2DCA2] cursor-not-allowed text-slate-500"
+                                    : colorClass
+                                }
+                                focus:outline-none focus:ring-2 focus:ring-[#FCE9A8] focus:border-transparent`}
                               value={row.hours[day]}
                               onChange={(e) =>
                                 handleHourChange(idx, day, e.target.value)
                               }
                             />
                           </td>
-                        ))}
+                        )
+                        })}
 
                         {/* ROW TOTAL */}
                         <td className="p-1.5 align-middle text-center">

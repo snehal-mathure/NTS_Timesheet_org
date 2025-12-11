@@ -143,6 +143,7 @@
 // src/pages/TimesheetReview.jsx
 import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 
 // Services
 import { getReviewTimesheet } from "../../services/TimesheestReviewServices";
@@ -211,11 +212,11 @@ export default function TimesheetReview() {
   const handleSubmit = async () => {
     try {
       await submitTimesheetFinal(timesheetId, weekStart);
-      alert("Timesheet submitted successfully!");
+      toast.success("Timesheet submitted successfully!");
       navigate("/dashboard/my_timesheets");
     } catch (error) {
       console.error("Error submitting timesheet:", error);
-      alert("Error submitting timesheet.");
+      toast.error("Error submitting timesheet.");
     }
   };
 

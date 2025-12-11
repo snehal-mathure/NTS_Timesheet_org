@@ -686,6 +686,9 @@
 // src/components/Sidebar.jsx
 import React, { useEffect, useState, useCallback } from "react";
 import { NavLink } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { logoutUser } from "../services/authService";
+
 import {
   FiMenu,
   FiChevronLeft,
@@ -785,6 +788,19 @@ export default function Sidebar() {
   const activeItem = "bg-[#e4e9ff] text-[#4C6FFF] shadow-sm";
   const softBlueBg = "#F3F5FF";
   const iconClass = "text-[#4C6FFF]";
+
+    const navigate = useNavigate();  // <-- Add this
+
+  // ⭐ Add this function here
+  const handleLogout = async () => {
+    const result = await logoutUser();
+    if (result.success) {
+      navigate("/"); // redirect after successful logout
+    } else {
+      alert("Logout failed");
+    }
+  }
+
 
   return (
     <>
@@ -1030,8 +1046,14 @@ export default function Sidebar() {
                 )}
               </div>
 
-              <button onClick={logout} className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-medium border border-[#e0e4ff] hover:bg-[#f3f5ff] ${collapsed ? "mx-auto mt-2" : ""}`}>
-                <FiLogOut className="text-slate-600" size={13} />
+              <button
+                onClick={handleLogout}
+                className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-medium
+                  border border-[#e0e4ff] hover:bg-[#f3f5ff] ${
+                    collapsed ? "mx-auto mt-2" : ""
+                  }`}
+              >
+                <FiLogOut className="text-slate-600" size={14} />
                 {!collapsed && <span>Logout</span>}
               </button>
             </div>

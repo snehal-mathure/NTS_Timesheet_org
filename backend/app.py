@@ -257,6 +257,12 @@ def get_user_projects():
         return jsonify({"error": "Server error"}), 500
 
 
+# @app.route("/logout")
+# def logout():
+#     session.clear()  # Clear session data
+#     flash("You have been logged out.", "info")
+#     return redirect(url_for("login"))  # Redirect to login instead of 'home'
+
 @app.route("/logout")
 def logout():
     session.clear()  # Clear session data
@@ -1755,134 +1761,135 @@ def approvers_by_department():
     ]), 200
 
 
-@app.route('/dashboard/edit_employee/<empid>', methods=['GET', 'POST'])
-def edit_employee_dashboard(empid):
-    if 'user_id' not in session:
-        flash('Please login to continue', 'error')
-        return redirect(url_for('login'))
 
-    employee = Employee_Info.query.filter_by(empid=empid.upper()).first_or_404()
+# @app.route('/dashboard/edit_employee/<empid>', methods=['GET', 'POST'])
+# def edit_employee_dashboard(empid):
+#     if 'user_id' not in session:
+#         flash('Please login to continue', 'error')
+#         return redirect(url_for('login'))
 
-    today = date.today()
-    end_date = employee.lwd if employee.lwd and employee.lwd <= today else today
+#     employee = Employee_Info.query.filter_by(empid=empid.upper()).first_or_404()
 
-    years_in_company = 0
-    if employee.doj:
-        delta = end_date - employee.doj
-        years_in_company = delta.days / 365.25
+#     today = date.today()
+#     end_date = employee.lwd if employee.lwd and employee.lwd <= today else today
 
-    total_experience = years_in_company
-    if hasattr(employee, 'prev_experience') and employee.prev_experience:
-        total_experience += float(employee.prev_experience)
-    total_experience = round(total_experience, 1)
+#     years_in_company = 0
+#     if employee.doj:
+#         delta = end_date - employee.doj
+#         years_in_company = delta.days / 365.25
 
-    is_admin = session.get('user_id') == 'N0482'
-    is_self_edit = session.get('user_id') == employee.empid
+#     total_experience = years_in_company
+#     if hasattr(employee, 'prev_experience') and employee.prev_experience:
+#         total_experience += float(employee.prev_experience)
+#     total_experience = round(total_experience, 1)
 
-    if not (is_admin or is_self_edit):
-        flash('You do not have permission to edit this employee information', 'error')
-        return redirect(url_for('dashboard'))
+#     is_admin = session.get('user_id') == 'N0482'
+#     is_self_edit = session.get('user_id') == employee.empid
 
-    client_assignments = Client_Employee.query.filter_by(empid=empid.upper()).all()
-    assignment_dict = {
-        int(ca.clientID): {
-            'start_date': ca.start_date.strftime('%Y-%m-%d') if ca.start_date else '',
-            'end_date': ca.end_date.strftime('%Y-%m-%d') if ca.end_date else ''
-        } for ca in client_assignments
-    }
+#     if not (is_admin or is_self_edit):
+#         flash('You do not have permission to edit this employee information', 'error')
+#         return redirect(url_for('dashboard'))
 
-    if request.method == 'POST':
-        print("Form submitted!")
-        try:
-            # Update Employee Info
-            employee.fname = request.form.get('fname', employee.fname)
-            employee.lname = request.form.get('lname', employee.lname)
-            employee.email = request.form.get('email', employee.email)
-            employee.mobile = request.form.get('mobile', employee.mobile)
-            employee.gender = request.form.get('gender', employee.gender)
-            employee.work_location = request.form.get('work_location', employee.work_location)
-            employee.country = request.form.get('country', employee.country)
-            employee.city = request.form.get('city', employee.city)
-            employee.core_skill = request.form.get('core_skill', employee.core_skill)
-            employee.skill_details = request.form.get('skill_details', employee.skill_details)
+#     client_assignments = Client_Employee.query.filter_by(empid=empid.upper()).all()
+#     assignment_dict = {
+#         int(ca.clientID): {
+#             'start_date': ca.start_date.strftime('%Y-%m-%d') if ca.start_date else '',
+#             'end_date': ca.end_date.strftime('%Y-%m-%d') if ca.end_date else ''
+#         } for ca in client_assignments
+#     }
 
-            prev_exp = request.form.get('prev_experience')
-            if prev_exp is not None:
-                try:
-                    employee.prev_total_exp = float(prev_exp)
-                except ValueError:
-                    flash('Previous experience must be a valid number', 'error')
+#     if request.method == 'POST':
+#         print("Form submitted!")
+#         try:
+#             # Update Employee Info
+#             employee.fname = request.form.get('fname', employee.fname)
+#             employee.lname = request.form.get('lname', employee.lname)
+#             employee.email = request.form.get('email', employee.email)
+#             employee.mobile = request.form.get('mobile', employee.mobile)
+#             employee.gender = request.form.get('gender', employee.gender)
+#             employee.work_location = request.form.get('work_location', employee.work_location)
+#             employee.country = request.form.get('country', employee.country)
+#             employee.city = request.form.get('city', employee.city)
+#             employee.core_skill = request.form.get('core_skill', employee.core_skill)
+#             employee.skill_details = request.form.get('skill_details', employee.skill_details)
 
-            if is_admin:
-                # Department & Admin fields
-                is_new_dept = request.form.get('is_new_dept') == 'true'
-                dept_value = request.form.get('dept_id')
+#             prev_exp = request.form.get('prev_experience')
+#             if prev_exp is not None:
+#                 try:
+#                     employee.prev_total_exp = float(prev_exp)
+#                 except ValueError:
+#                     flash('Previous experience must be a valid number', 'error')
 
-                if is_new_dept and dept_value:
-                    existing_dept = Department.query.filter_by(dept_name=dept_value.strip()).first()
-                    if existing_dept:
-                        employee.dept_id = existing_dept.id
-                    else:
-                        new_dept = Department(dept_name=dept_value.strip())
-                        db.session.add(new_dept)
-                        db.session.flush()
-                        employee.dept_id = new_dept.id
-                else:
-                    if dept_value and dept_value.isdigit():
-                        employee.dept_id = int(dept_value)
+#             if is_admin:
+#                 # Department & Admin fields
+#                 is_new_dept = request.form.get('is_new_dept') == 'true'
+#                 dept_value = request.form.get('dept_id')
+
+#                 if is_new_dept and dept_value:
+#                     existing_dept = Department.query.filter_by(dept_name=dept_value.strip()).first()
+#                     if existing_dept:
+#                         employee.dept_id = existing_dept.id
+#                     else:
+#                         new_dept = Department(dept_name=dept_value.strip())
+#                         db.session.add(new_dept)
+#                         db.session.flush()
+#                         employee.dept_id = new_dept.id
+#                 else:
+#                     if dept_value and dept_value.isdigit():
+#                         employee.dept_id = int(dept_value)
                         
 
-                employee.designation = request.form.get('designation', employee.designation)
-                employee.employee_type = request.form.get('employee_type', employee.employee_type)
-                employee.location = request.form.get('location', employee.location)
-                employee.company = request.form.get('company', employee.company)
-                employee.approver_id = request.form.get('approver_id', employee.approver_id)
+#                 employee.designation = request.form.get('designation', employee.designation)
+#                 employee.employee_type = request.form.get('employee_type', employee.employee_type)
+#                 employee.location = request.form.get('location', employee.location)
+#                 employee.company = request.form.get('company', employee.company)
+#                 employee.approver_id = request.form.get('approver_id', employee.approver_id)
 
-                doj = request.form.get('doj')
-                lwd = request.form.get('lwd')
+#                 doj = request.form.get('doj')
+#                 lwd = request.form.get('lwd')
 
-                if doj and doj.strip():
-                    employee.doj = datetime.strptime(doj, '%Y-%m-%d').date()
-                if lwd and lwd.strip():
-                    employee.lwd = datetime.strptime(lwd, '%Y-%m-%d').date()
-                else:
-                    employee.lwd = None
+#                 if doj and doj.strip():
+#                     employee.doj = datetime.strptime(doj, '%Y-%m-%d').date()
+#                 if lwd and lwd.strip():
+#                     employee.lwd = datetime.strptime(lwd, '%Y-%m-%d').date()
+#                 else:
+#                     employee.lwd = None
 
-                db.session.commit()
-                print("✅ Employee & client assignments saved")
-                flash('Employee information updated successfully', 'success')
-                return redirect(url_for('view_employee', empid=empid) if is_admin else url_for('dashboard'))
+#                 db.session.commit()
+#                 print("✅ Employee & client assignments saved")
+#                 flash('Employee information updated successfully', 'success')
+#                 return redirect(url_for('view_employee', empid=empid) if is_admin else url_for('dashboard'))
 
-        except Exception as e:
-            db.session.rollback()
-            print(f" Commit failed: {e}")
-            import traceback
-            traceback.print_exc()
-            flash(f'Error updating employee information: {str(e)}', 'error')
+#         except Exception as e:
+#             db.session.rollback()
+#             print(f" Commit failed: {e}")
+#             import traceback
+#             traceback.print_exc()
+#             flash(f'Error updating employee information: {str(e)}', 'error')
 
-    # Render page
-    available_clients = Client_Info.query.all() if is_admin else []
-    # ✅ Ensure safe JSON for JS
-    available_clients_js = json.dumps([
-        {"clientID": int(c.clientID), "client_name": c.client_name}
-        for c in available_clients
-    ]) if is_admin else "[]"
+#     # Render page
+#     available_clients = Client_Info.query.all() if is_admin else []
+#     # ✅ Ensure safe JSON for JS
+#     available_clients_js = json.dumps([
+#         {"clientID": int(c.clientID), "client_name": c.client_name}
+#         for c in available_clients
+#     ]) if is_admin else "[]"
 
-    all_departments = Department.query.order_by(Department.dept_name).all()
-    assigned_client_ids = [int(ca.clientID) for ca in client_assignments]
+#     all_departments = Department.query.order_by(Department.dept_name).all()
+#     assigned_client_ids = [int(ca.clientID) for ca in client_assignments]
 
-    return render_template(
-        'edit_employee.html',
-        employee=employee,
-        is_admin=is_admin,
-        client_assignments=client_assignments,
-        available_clients=available_clients,
-        available_clients_js=available_clients_js,
-        assigned_client_ids=assigned_client_ids,
-        assignment_dict=assignment_dict,
-        all_departments=all_departments,
-        total_experience=total_experience
-    )
+#     return render_template(
+#         'edit_employee.html',
+#         employee=employee,
+#         is_admin=is_admin,
+#         client_assignments=client_assignments,
+#         available_clients=available_clients,
+#         available_clients_js=available_clients_js,
+#         assigned_client_ids=assigned_client_ids,
+#         assignment_dict=assignment_dict,
+#         all_departments=all_departments,
+#         total_experience=total_experience
+#     )
 
 
 # @app.route('/admin/edit_employee/<empid>', methods=['GET', 'POST'])
@@ -6680,6 +6687,34 @@ def dashboard():
             )
             .all())
 
+        # ---------------- HOLIDAYS FOR THIS WEEK ----------------
+        holidays = (
+            db.session.query(Holidays.start_date)
+            .filter(
+                Holidays.start_date >= start_of_week.date(),
+                Holidays.start_date <= (start_of_week + timedelta(days=6)).date()
+            )
+            .all()
+        )
+
+        holiday_list = [h[0].strftime("%Y-%m-%d") for h in holidays]
+
+
+        # ---------------- APPLIED LEAVES FOR THIS WEEK ----------------
+        leave_entries = (
+            db.session.query(Leave_Entries.date)
+            .join(Leave_Request, Leave_Entries.leave_req_id == Leave_Request.id)
+            .filter(
+                Leave_Request.empid == user_id,
+                Leave_Request.status.in_(["Pending", "Approved"]),
+                Leave_Entries.date >= start_of_week.date(),
+                Leave_Entries.date <= (start_of_week + timedelta(days=6)).date(),
+            )
+            .all()
+        )
+
+        leave_list = [l[0].strftime("%Y-%m-%d") for l in leave_entries]
+
         # Prepare hours structure
         hours_by_project = {}
         for project in assigned_projects:
@@ -6729,6 +6764,9 @@ def dashboard():
                 "ts_status": ts_status,
                 "prev_week_start_date": str(prev_week_st_date),
                 "prev_status": prev_status,
+                "holidays": holiday_list,
+                "leaves": leave_list,
+
             }
         }), 200
     

@@ -1,5 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import React from "react";
+import { ToastContainer } from "react-toastify";
+import 'react-toastify/dist/ReactToastify.css';
 
 import Login from "./components/Login";
 import Register from "./components/Register";
@@ -40,9 +42,12 @@ import UtilizationReport from "./components/UtilizationReport";
 
 function App() {
   return (
+    
     <Router>
+       <ToastContainer position="top-right" autoClose={3000} />
       <Routes>
         {/* normal routes */}
+        
         <Route path="/" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />

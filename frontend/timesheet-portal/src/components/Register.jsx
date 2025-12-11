@@ -1,7 +1,7 @@
-import { registerUser } from "../services/authservice";
+import { registerUser } from "../services/authService";
 import React, { useState, useEffect } from "react";
 import { FiEye, FiEyeOff } from "react-icons/fi";
-import { getDepartments } from "../services/authservice";
+import { getDepartments } from "../services/authService";
 
 export default function Register() {
   const [departments, setDepartments] = useState([]);

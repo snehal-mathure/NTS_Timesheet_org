@@ -6,6 +6,7 @@ export const getDashboardData = async (weekStartDate) => {
       params: { week_start_date: weekStartDate },
        
     });
+    console.log(response.data)
     return response.data;
   } catch (error) {
     console.error("Error fetching dashboard data:", error);
