@@ -1,3 +1,4 @@
+
 // // src/components/ProjectList.jsx
 // import React, { useEffect, useState } from "react";
 // import { Link } from "react-router-dom";
@@ -26,6 +27,20 @@
 //   const [deleteModal, setDeleteModal] = useState(false);
 //   const [selectedProject, setSelectedProject] = useState(null);
 //   const [loading, setLoading] = useState(false);
+
+//   // ✅ success message after edit
+//   const [successMessage, setSuccessMessage] = useState("");
+
+//   // 🔹 Edit form state
+//   const [editForm, setEditForm] = useState({
+//     client_id: "",
+//     project_name: "",
+//     project_code: "",
+//     project_billability: "",
+//     project_type: "",
+//     start_date: "",
+//     end_date: "",
+//   });
 
 //   const accent = "#4C6FFF";
 
@@ -61,6 +76,23 @@
 
 //   const openEdit = (project) => {
 //     setSelectedProject(project);
+
+//     // 🔹 Prefill form from selected project
+//     setEditForm({
+//       client_id:
+//         project.client_id ??
+//         project.clientID ??
+//         project.clientId ??
+//         "",
+
+//       project_name: project.project_name || "",
+//       project_code: project.project_code || "",
+//       project_billability: project.project_billability || "",
+//       project_type: project.project_type || "",
+//       start_date: project.start_date ? project.start_date.slice(0, 10) : "",
+//       end_date: project.end_date ? project.end_date.slice(0, 10) : "",
+//     });
+
 //     setEditModal(true);
 //   };
 
@@ -79,6 +111,28 @@
 //     } catch (err) {
 //       console.error("Delete failed", err);
 //       alert("Failed to delete project");
+//     }
+//   };
+
+//   // 🔹 Save changes from Edit modal + show success message
+//   const handleEditSubmit = async () => {
+//     if (!selectedProject) return;
+//     try {
+//       await projectService.updateProject(selectedProject.id, editForm);
+//       setEditModal(false);
+//       setSelectedProject(null);
+//       await loadData();
+
+//       // ✅ show success text
+//       setSuccessMessage("Project updated successfully.");
+
+//       // optional: auto-hide after few seconds
+//       setTimeout(() => {
+//         setSuccessMessage("");
+//       }, 3000);
+//     } catch (err) {
+//       console.error("Update failed", err);
+//       alert("Failed to update project");
 //     }
 //   };
 
@@ -105,6 +159,19 @@
 //       {/* MAIN */}
 //       <main className="flex-1 px-4 md:px-10 py-6 md:py-2">
 //         <div className="max-w-5xl w-full mx-auto mt-4 md:mt-6 space-y-5">
+//           {/* ✅ Success banner (non-intrusive) */}
+//           {successMessage && (
+//             <div className="flex items-center justify-between px-4 py-2 rounded-2xl border border-emerald-200 bg-emerald-50 text-[11px] text-emerald-800">
+//               <span>{successMessage}</span>
+//               <button
+//                 onClick={() => setSuccessMessage("")}
+//                 className="w-5 h-5 flex items-center justify-center rounded-full border border-emerald-200 hover:bg-emerald-100"
+//               >
+//                 <FiX className="w-3 h-3" />
+//               </button>
+//             </div>
+//           )}
+
 //           {/* Page header like View Clients */}
 //           <PageHeader
 //             section="Projects"
@@ -317,10 +384,11 @@
 //                               </td>
 //                               <td className="py-3 px-4">
 //                                 <span
-//                                   className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium ${p.project_billability === "Billable"
+//                                   className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium ${
+//                                     p.project_billability === "Billable"
 //                                       ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
 //                                       : "bg-amber-50 text-amber-700 border border-amber-100"
-//                                     }`}
+//                                   }`}
 //                                 >
 //                                   {p.project_billability}
 //                                 </span>
@@ -408,7 +476,7 @@
 //             </div>
 //           )}
 
-//           {/* Edit Modal placeholder */}
+//           {/* Edit Modal */}
 //           {editModal && (
 //             <div className="fixed inset-0 z-40 flex items-center justify-center">
 //               <div
@@ -418,7 +486,7 @@
 //               <div className="relative bg-white rounded-3xl shadow-xl w-[90%] max-w-md p-5">
 //                 <div className="flex items-center justify-between mb-3">
 //                   <h2 className="text-sm font-semibold text-slate-900">
-//                     Edit Project (placeholder)
+//                     Edit Project
 //                   </h2>
 //                   <button
 //                     onClick={() => setEditModal(false)}
@@ -427,10 +495,161 @@
 //                     <FiX size={14} />
 //                   </button>
 //                 </div>
-//                 <p className="text-xs text-slate-600">
-//                   You can plug your edit form here, using{" "}
-//                   <code>selectedProject</code> data.
-//                 </p>
+
+//                 {/* FORM CONTENT */}
+//                 <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
+//                   {/* Client */}
+//                   <div>
+//                     <label className="block text-[11px] font-medium text-slate-700 mb-1">
+//                       Client
+//                     </label>
+//                     <select
+//                       className="w-full border border-slate-200 rounded-2xl px-3 py-2 text-sm bg-[#F8F9FF] focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none"
+//                       value={editForm.client_id}
+//                       onChange={(e) =>
+//                         setEditForm((prev) => ({
+//                           ...prev,
+//                           client_id: e.target.value,
+//                         }))
+//                       }
+//                     >
+//                       <option value="">Select Client</option>
+//                       {clients.map((c) => (
+//                         <option
+//                           key={c.clientID ?? c.id ?? c.client_id}
+//                           value={c.clientID ?? c.id ?? c.client_id}
+//                         >
+//                           {c.client_name ?? c.name}
+//                         </option>
+//                       ))}
+//                     </select>
+//                   </div>
+
+//                   {/* Project Name */}
+//                   <div>
+//                     <label className="block text-[11px] font-medium text-slate-700 mb-1">
+//                       Project Name
+//                     </label>
+//                     <input
+//                       type="text"
+//                       className="w-full border border-slate-200 rounded-2xl px-3 py-2 text-sm bg-[#F8F9FF] focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none"
+//                       value={editForm.project_name}
+//                       onChange={(e) =>
+//                         setEditForm((prev) => ({
+//                           ...prev,
+//                           project_name: e.target.value,
+//                         }))
+//                       }
+//                     />
+//                   </div>
+
+//                   {/* Project Code */}
+//                   <div>
+//                     <label className="block text-[11px] font-medium text-slate-700 mb-1">
+//                       Project Code
+//                     </label>
+//                     <input
+//                       type="text"
+//                       className="w-full border border-slate-200 rounded-2xl px-3 py-2 text-sm bg-[#F8F9FF] focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none"
+//                       value={editForm.project_code}
+//                       onChange={(e) =>
+//                         setEditForm((prev) => ({
+//                           ...prev,
+//                           project_code: e.target.value,
+//                         }))
+//                       }
+//                     />
+//                   </div>
+
+//                   {/* Billability */}
+//                   <div>
+//                     <label className="block text-[11px] font-medium text-slate-700 mb-1">
+//                       Project Billability
+//                     </label>
+//                     <select
+//                       className="w-full border border-slate-200 rounded-2xl px-3 py-2 text-sm bg-[#F8F9FF] focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none"
+//                       value={editForm.project_billability}
+//                       onChange={(e) =>
+//                         setEditForm((prev) => ({
+//                           ...prev,
+//                           project_billability: e.target.value,
+//                         }))
+//                       }
+//                     >
+//                       <option value="Billable">Billable</option>
+//                       <option value="Non-Billable">Non-Billable</option>
+//                     </select>
+//                   </div>
+
+//                   {/* Project Type */}
+//                   <div>
+//                     <label className="block text-[11px] font-medium text-slate-700 mb-1">
+//                       Project Type
+//                     </label>
+//                     <input
+//                       type="text"
+//                       className="w-full border border-slate-200 rounded-2xl px-3 py-2 text-sm bg-[#F8F9FF] focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none"
+//                       value={editForm.project_type}
+//                       onChange={(e) =>
+//                         setEditForm((prev) => ({
+//                           ...prev,
+//                           project_type: e.target.value,
+//                         }))
+//                       }
+//                     />
+//                   </div>
+
+//                   {/* Start Date */}
+//                   <div>
+//                     <label className="block text-[11px] font-medium text-slate-700 mb-1">
+//                       Start Date
+//                     </label>
+//                     <input
+//                       type="date"
+//                       className="w-full border border-slate-200 rounded-2xl px-3 py-2 text-sm bg-[#F8F9FF] focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none"
+//                       value={editForm.start_date}
+//                       onChange={(e) =>
+//                         setEditForm((prev) => ({
+//                           ...prev,
+//                           start_date: e.target.value,
+//                         }))
+//                       }
+//                     />
+//                   </div>
+
+//                   {/* End Date */}
+//                   <div>
+//                     <label className="block text-[11px] font-medium text-slate-700 mb-1">
+//                       End Date
+//                     </label>
+//                     <input
+//                       type="date"
+//                       className="w-full border border-slate-200 rounded-2xl px-3 py-2 text-sm bg-[#F8F9FF] focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none"
+//                       value={editForm.end_date}
+//                       onChange={(e) =>
+//                         setEditForm((prev) => ({
+//                           ...prev,
+//                           end_date: e.target.value,
+//                         }))
+//                       }
+//                     />
+//                   </div>
+//                 </div>
+
+//                 <div className="flex justify-end gap-2 mt-5">
+//                   <button
+//                     className="px-3.5 py-1.5 rounded-2xl border border-slate-200 bg-white text-xs font-medium text-slate-700 hover:bg-slate-50"
+//                     onClick={() => setEditModal(false)}
+//                   >
+//                     Cancel
+//                   </button>
+//                   <button
+//                     className="px-3.5 py-1.5 rounded-2xl bg-emerald-600 text-white text-xs font-medium hover:bg-emerald-700"
+//                     onClick={handleEditSubmit}
+//                   >
+//                     Save Changes
+//                   </button>
+//                 </div>
 //               </div>
 //             </div>
 //           )}
@@ -454,6 +673,8 @@ import {
 import projectService from "../services/AdminDashboard/projectService";
 import Sidebar from "./Sidebar";
 import PageHeader from "./PageHeader";
+
+const SIDEBAR_STORAGE_KEY = "td_sidebar_collapsed";
 
 export default function ProjectList() {
   const [projects, setProjects] = useState([]);
@@ -484,6 +705,24 @@ export default function ProjectList() {
   });
 
   const accent = "#4C6FFF";
+
+  // sidebar collapsed state (to adjust layout)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(
+    typeof window !== "undefined" && localStorage.getItem(SIDEBAR_STORAGE_KEY) === "true"
+  );
+
+  useEffect(() => {
+    // listen for same-tab and cross-tab changes
+    const handler = () => {
+      setSidebarCollapsed(localStorage.getItem(SIDEBAR_STORAGE_KEY) === "true");
+    };
+    window.addEventListener("td_sidebar_change", handler);
+    window.addEventListener("storage", handler);
+    return () => {
+      window.removeEventListener("td_sidebar_change", handler);
+      window.removeEventListener("storage", handler);
+    };
+  }, []);
 
   useEffect(() => {
     loadData();
@@ -521,11 +760,7 @@ export default function ProjectList() {
     // 🔹 Prefill form from selected project
     setEditForm({
       client_id:
-        project.client_id ??
-        project.clientID ??
-        project.clientId ??
-        "",
-
+        project.client_id ?? project.clientID ?? project.clientId ?? "",
       project_name: project.project_name || "",
       project_code: project.project_code || "",
       project_billability: project.project_billability || "",
@@ -589,16 +824,18 @@ export default function ProjectList() {
     new Set(projects.map((p) => p.project_type).filter(Boolean))
   );
 
-  return (
-    <div
-      className="min-h-screen flex"
-      style={{ backgroundColor: "#F5F7FF" }}
-    >
-      {/* Sidebar (same style as other pages) */}
-      <Sidebar />
+  // main margin classes mirror sidebar widths: collapsed -> md:ml-20 (icons only); expanded -> md:ml-72
+  const mainMarginClass = sidebarCollapsed ? "md:ml-20" : "md:ml-72";
 
-      {/* MAIN */}
-      <main className="flex-1 px-4 md:px-10 py-6 md:py-2">
+  return (
+    <div className="min-h-screen flex" style={{ backgroundColor: "#F5F7FF" }}>
+      {/* FIXED SIDEBAR (desktop) */}
+      <aside className="hidden md:block fixed inset-y-0 left-0 z-40 w-72 md:w-72 lg:w-72">
+        <Sidebar />
+      </aside>
+
+      {/* MAIN: shift to avoid overlap with fixed sidebar */}
+      <main className={`flex-1 transition-all duration-200 ${mainMarginClass} px-4 md:px-10 py-6 md:py-2`}>
         <div className="max-w-5xl w-full mx-auto mt-4 md:mt-6 space-y-5">
           {/* ✅ Success banner (non-intrusive) */}
           {successMessage && (
@@ -767,40 +1004,21 @@ export default function ProjectList() {
                   <table className="min-w-full text-sm divide-y divide-[#e5e7f5]">
                     <thead className="bg-[#F3F5FF]">
                       <tr className="text-slate-600">
-                        <th className="py-3 px-4 text-left font-medium">
-                          Client
-                        </th>
-                        <th className="py-3 px-4 text-left font-medium">
-                          Project
-                        </th>
-                        <th className="py-3 px-4 text-left font-medium">
-                          Code
-                        </th>
-                        <th className="py-3 px-4 text-left font-medium">
-                          Start Date
-                        </th>
-                        <th className="py-3 px-4 text-left font-medium">
-                          End Date
-                        </th>
-                        <th className="py-3 px-4 text-left font-medium">
-                          Billability
-                        </th>
-                        <th className="py-3 px-4 text-left font-medium">
-                          Type
-                        </th>
-                        <th className="py-3 px-4 text-center font-medium">
-                          Actions
-                        </th>
+                        <th className="py-3 px-4 text-left font-medium">Client</th>
+                        <th className="py-3 px-4 text-left font-medium">Project</th>
+                        <th className="py-3 px-4 text-left font-medium">Code</th>
+                        <th className="py-3 px-4 text-left font-medium">Start Date</th>
+                        <th className="py-3 px-4 text-left font-medium">End Date</th>
+                        <th className="py-3 px-4 text-left font-medium">Billability</th>
+                        <th className="py-3 px-4 text-left font-medium">Type</th>
+                        <th className="py-3 px-4 text-center font-medium">Actions</th>
                       </tr>
                     </thead>
 
                     <tbody>
                       {projects.length === 0 ? (
                         <tr>
-                          <td
-                            colSpan={8}
-                            className="py-6 text-center text-sm text-slate-500"
-                          >
+                          <td colSpan={8} className="py-6 text-center text-sm text-slate-500">
                             No projects found.
                           </td>
                         </tr>
@@ -808,18 +1026,10 @@ export default function ProjectList() {
                         projects.map((p) => (
                           <React.Fragment key={p.id}>
                             <tr className="hover:bg-[#F8F9FF] transition">
-                              <td className="py-3 px-4 text-slate-800">
-                                {p.client_name}
-                              </td>
-                              <td className="py-3 px-4 text-slate-800">
-                                {p.project_name}
-                              </td>
-                              <td className="py-3 px-4 text-slate-700">
-                                {p.project_code}
-                              </td>
-                              <td className="py-3 px-4 text-slate-700">
-                                {p.start_date?.slice(0, 10)}
-                              </td>
+                              <td className="py-3 px-4 text-slate-800">{p.client_name}</td>
+                              <td className="py-3 px-4 text-slate-800">{p.project_name}</td>
+                              <td className="py-3 px-4 text-slate-700">{p.project_code}</td>
+                              <td className="py-3 px-4 text-slate-700">{p.start_date?.slice(0, 10)}</td>
                               <td className="py-3 px-4 text-slate-700">
                                 {p.end_date ? p.end_date.slice(0, 10) : "Ongoing"}
                               </td>
@@ -834,9 +1044,7 @@ export default function ProjectList() {
                                   {p.project_billability}
                                 </span>
                               </td>
-                              <td className="py-3 px-4 text-slate-700">
-                                {p.project_type}
-                              </td>
+                              <td className="py-3 px-4 text-slate-700">{p.project_type}</td>
                               <td className="py-3 px-4">
                                 <div className="flex justify-center gap-2">
                                   <button
@@ -869,47 +1077,30 @@ export default function ProjectList() {
           {/* Delete Modal */}
           {deleteModal && (
             <div className="fixed inset-0 z-50 flex items-center justify-center">
-              <div
-                className="absolute inset-0 bg-black/40"
-                onClick={() => setDeleteModal(false)}
-              />
+              <div className="absolute inset-0 bg-black/40" onClick={() => setDeleteModal(false)} />
               <div className="relative bg-white rounded-3xl shadow-[0_18px_40px_rgba(15,23,42,0.35)] w-[90%] max-w-sm p-5 border border-slate-100">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <div className="w-8 h-8 rounded-2xl bg-rose-50 flex items-center justify-center">
                       <FiTrash2 className="text-rose-500" size={15} />
                     </div>
-                    <h2 className="text-sm font-semibold text-slate-900">
-                      Delete Project
-                    </h2>
+                    <h2 className="text-sm font-semibold text-slate-900">Delete Project</h2>
                   </div>
-                  <button
-                    onClick={() => setDeleteModal(false)}
-                    className="w-7 h-7 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50"
-                  >
+                  <button onClick={() => setDeleteModal(false)} className="w-7 h-7 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50">
                     <FiX size={14} />
                   </button>
                 </div>
 
                 <p className="text-xs text-slate-600 mb-5 leading-relaxed">
                   Are you sure you want to permanently delete{" "}
-                  <span className="font-semibold">
-                    {selectedProject?.project_name ?? "this project"}
-                  </span>
-                  ? This action cannot be undone.
+                  <span className="font-semibold">{selectedProject?.project_name ?? "this project"}</span>? This action cannot be undone.
                 </p>
 
                 <div className="flex justify-end gap-2">
-                  <button
-                    className="px-3.5 py-1.5 rounded-2xl border border-slate-200 bg-white text-xs font-medium text-slate-700 hover:bg-slate-50"
-                    onClick={() => setDeleteModal(false)}
-                  >
+                  <button className="px-3.5 py-1.5 rounded-2xl border border-slate-200 bg-white text-xs font-medium text-slate-700 hover:bg-slate-50" onClick={() => setDeleteModal(false)}>
                     Cancel
                   </button>
-                  <button
-                    className="px-3.5 py-1.5 rounded-2xl bg-rose-600 text-white text-xs font-medium hover:bg-rose-700"
-                    onClick={handleDelete}
-                  >
+                  <button className="px-3.5 py-1.5 rounded-2xl bg-rose-600 text-white text-xs font-medium hover:bg-rose-700" onClick={handleDelete}>
                     Delete
                   </button>
                 </div>
@@ -920,19 +1111,11 @@ export default function ProjectList() {
           {/* Edit Modal */}
           {editModal && (
             <div className="fixed inset-0 z-40 flex items-center justify-center">
-              <div
-                className="absolute inset-0 bg-black/40"
-                onClick={() => setEditModal(false)}
-              />
+              <div className="absolute inset-0 bg-black/40" onClick={() => setEditModal(false)} />
               <div className="relative bg-white rounded-3xl shadow-xl w-[90%] max-w-md p-5">
                 <div className="flex items-center justify-between mb-3">
-                  <h2 className="text-sm font-semibold text-slate-900">
-                    Edit Project
-                  </h2>
-                  <button
-                    onClick={() => setEditModal(false)}
-                    className="w-7 h-7 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50"
-                  >
+                  <h2 className="text-sm font-semibold text-slate-900">Edit Project</h2>
+                  <button onClick={() => setEditModal(false)} className="w-7 h-7 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50">
                     <FiX size={14} />
                   </button>
                 </div>
@@ -941,9 +1124,7 @@ export default function ProjectList() {
                 <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
                   {/* Client */}
                   <div>
-                    <label className="block text-[11px] font-medium text-slate-700 mb-1">
-                      Client
-                    </label>
+                    <label className="block text-[11px] font-medium text-slate-700 mb-1">Client</label>
                     <select
                       className="w-full border border-slate-200 rounded-2xl px-3 py-2 text-sm bg-[#F8F9FF] focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none"
                       value={editForm.client_id}
@@ -956,10 +1137,7 @@ export default function ProjectList() {
                     >
                       <option value="">Select Client</option>
                       {clients.map((c) => (
-                        <option
-                          key={c.clientID ?? c.id ?? c.client_id}
-                          value={c.clientID ?? c.id ?? c.client_id}
-                        >
+                        <option key={c.clientID ?? c.id ?? c.client_id} value={c.clientID ?? c.id ?? c.client_id}>
                           {c.client_name ?? c.name}
                         </option>
                       ))}
@@ -968,9 +1146,7 @@ export default function ProjectList() {
 
                   {/* Project Name */}
                   <div>
-                    <label className="block text-[11px] font-medium text-slate-700 mb-1">
-                      Project Name
-                    </label>
+                    <label className="block text-[11px] font-medium text-slate-700 mb-1">Project Name</label>
                     <input
                       type="text"
                       className="w-full border border-slate-200 rounded-2xl px-3 py-2 text-sm bg-[#F8F9FF] focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none"
@@ -986,9 +1162,7 @@ export default function ProjectList() {
 
                   {/* Project Code */}
                   <div>
-                    <label className="block text-[11px] font-medium text-slate-700 mb-1">
-                      Project Code
-                    </label>
+                    <label className="block text-[11px] font-medium text-slate-700 mb-1">Project Code</label>
                     <input
                       type="text"
                       className="w-full border border-slate-200 rounded-2xl px-3 py-2 text-sm bg-[#F8F9FF] focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none"
@@ -1004,9 +1178,7 @@ export default function ProjectList() {
 
                   {/* Billability */}
                   <div>
-                    <label className="block text-[11px] font-medium text-slate-700 mb-1">
-                      Project Billability
-                    </label>
+                    <label className="block text-[11px] font-medium text-slate-700 mb-1">Project Billability</label>
                     <select
                       className="w-full border border-slate-200 rounded-2xl px-3 py-2 text-sm bg-[#F8F9FF] focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none"
                       value={editForm.project_billability}
@@ -1024,9 +1196,7 @@ export default function ProjectList() {
 
                   {/* Project Type */}
                   <div>
-                    <label className="block text-[11px] font-medium text-slate-700 mb-1">
-                      Project Type
-                    </label>
+                    <label className="block text-[11px] font-medium text-slate-700 mb-1">Project Type</label>
                     <input
                       type="text"
                       className="w-full border border-slate-200 rounded-2xl px-3 py-2 text-sm bg-[#F8F9FF] focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none"
@@ -1042,9 +1212,7 @@ export default function ProjectList() {
 
                   {/* Start Date */}
                   <div>
-                    <label className="block text-[11px] font-medium text-slate-700 mb-1">
-                      Start Date
-                    </label>
+                    <label className="block text-[11px] font-medium text-slate-700 mb-1">Start Date</label>
                     <input
                       type="date"
                       className="w-full border border-slate-200 rounded-2xl px-3 py-2 text-sm bg-[#F8F9FF] focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none"
@@ -1060,9 +1228,7 @@ export default function ProjectList() {
 
                   {/* End Date */}
                   <div>
-                    <label className="block text-[11px] font-medium text-slate-700 mb-1">
-                      End Date
-                    </label>
+                    <label className="block text-[11px] font-medium text-slate-700 mb-1">End Date</label>
                     <input
                       type="date"
                       className="w-full border border-slate-200 rounded-2xl px-3 py-2 text-sm bg-[#F8F9FF] focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none"
@@ -1078,16 +1244,10 @@ export default function ProjectList() {
                 </div>
 
                 <div className="flex justify-end gap-2 mt-5">
-                  <button
-                    className="px-3.5 py-1.5 rounded-2xl border border-slate-200 bg-white text-xs font-medium text-slate-700 hover:bg-slate-50"
-                    onClick={() => setEditModal(false)}
-                  >
+                  <button className="px-3.5 py-1.5 rounded-2xl border border-slate-200 bg-white text-xs font-medium text-slate-700 hover:bg-slate-50" onClick={() => setEditModal(false)}>
                     Cancel
                   </button>
-                  <button
-                    className="px-3.5 py-1.5 rounded-2xl bg-emerald-600 text-white text-xs font-medium hover:bg-emerald-700"
-                    onClick={handleEditSubmit}
-                  >
+                  <button className="px-3.5 py-1.5 rounded-2xl bg-emerald-600 text-white text-xs font-medium hover:bg-emerald-700" onClick={handleEditSubmit}>
                     Save Changes
                   </button>
                 </div>

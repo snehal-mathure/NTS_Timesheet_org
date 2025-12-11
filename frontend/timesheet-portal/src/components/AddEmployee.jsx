@@ -1,11 +1,14 @@
-// src/pages/AddEmployee.jsx
+
+// src/pages/AddEmployeePage.jsx
 import React, { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import employeeService from "../services/AdminDashboard/employeeService";
 import Sidebar from "../components/Sidebar";
 import PageHeader from "../components/PageHeader";
 
-export default function AddEmployee() {
+const SIDEBAR_STORAGE_KEY = "td_sidebar_collapsed";
+
+export default function AddEmployeePage() {
   const [loading, setLoading] = useState(false);
   const [formDataLoaded, setFormDataLoaded] = useState(false);
 
@@ -54,6 +57,26 @@ export default function AddEmployee() {
   const [passwordVisible, setPasswordVisible] = useState(false);
 
   const formRef = useRef(null);
+
+  // track sidebar collapsed state so main content margin adjusts
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(
+    () => localStorage.getItem(SIDEBAR_STORAGE_KEY) === "true"
+  );
+
+  // update layout if sidebar toggled elsewhere (same-tab event)
+  useEffect(() => {
+    const handler = () => {
+      setSidebarCollapsed(localStorage.getItem(SIDEBAR_STORAGE_KEY) === "true");
+    };
+
+    window.addEventListener("td_sidebar_change", handler);
+    window.addEventListener("storage", handler);
+
+    return () => {
+      window.removeEventListener("td_sidebar_change", handler);
+      window.removeEventListener("storage", handler);
+    };
+  }, []);
 
   // load form data from API
   useEffect(() => {
@@ -371,22 +394,26 @@ export default function AddEmployee() {
 
   const accent = "#4C6FFF";
 
+  // compute main margin:
+  // - sidebarCollapsed === true  -> show icon rail width (md:ml-20)
+  // - sidebarCollapsed === false -> show full sidebar width (md:ml-72)
+  const mainMarginClass = sidebarCollapsed ? "md:ml-20" : "md:ml-72";
+
   // SCROLL LOGIC:
   // outer: h-screen + overflow-hidden
   // sidebar: h-full + overflow-y-auto
   // main: h-full + overflow-y-auto
   return (
-    <div
-      className="h-screen flex overflow-hidden"
-      style={{ backgroundColor: "#F5F7FF" }}
-    >
-      {/* Sidebar - independent scroll */}
-      <aside className="w-64 h-full bg-white border-r border-slate-200 overflow-y-auto">
-        <Sidebar />
+    <div className="h-screen flex overflow-hidden" style={{ backgroundColor: "#F5F7FF" }}>
+      {/* FIXED SIDEBAR */}
+      <aside className="fixed left-0 top-0 bottom-0 z-30">
+        <div className={`h-screen ${sidebarCollapsed ? "w-20" : "w-72"}`}>
+          <Sidebar />
+        </div>
       </aside>
 
-      {/* Main content - independent scroll */}
-      <main className="flex-1 h-full overflow-y-auto px-4 md:px-10 py-6 md:py-2">
+      {/* MAIN CONTENT (scrollable) */}
+      <main className={`flex-1 h-full overflow-y-auto px-4 md:px-10 py-6 md:py-2 transition-all duration-200 ${mainMarginClass}`}>
         <div className="max-w-5xl w-full mx-auto mt-4 md:mt-6 space-y-5">
           {/* Page header (same style as other pages) */}
           <PageHeader
@@ -425,42 +452,18 @@ export default function AddEmployee() {
             <div className="flex items-center justify-between px-6 py-5 border-b border-[#e5e7f5] bg-white/80">
               <div className="flex items-center gap-4">
                 <div className="w-11 h-11 rounded-2xl bg-[#F3F5FF] flex items-center justify-center shadow-sm">
-                  <svg
-                    className="w-6 h-6 text-[#4C6FFF]"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                  >
-                    <path
-                      d="M5 20v-1a4 4 0 014-4h2a4 4 0 014 4v1"
-                      stroke="currentColor"
-                      strokeWidth="1.6"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    <circle
-                      cx="12"
-                      cy="8"
-                      r="3"
-                      stroke="currentColor"
-                      strokeWidth="1.6"
-                    />
+                  <svg className="w-6 h-6 text-[#4C6FFF]" viewBox="0 0 24 24" fill="none">
+                    <path d="M5 20v-1a4 4 0 014-4h2a4 4 0 014 4v1" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                    <circle cx="12" cy="8" r="3" stroke="currentColor" strokeWidth="1.6" />
                   </svg>
                 </div>
                 <div>
-                  <h2 className="text-lg font-semibold text-slate-900">
-                    Employee Details
-                  </h2>
-                  <p className="text-sm text-slate-500">
-                    Fill in the employee’s personal, employment and access
-                    details.
-                  </p>
+                  <h2 className="text-lg font-semibold text-slate-900">Employee Details</h2>
+                  <p className="text-sm text-slate-500">Fill in the employee’s personal, employment and access details.</p>
                 </div>
               </div>
 
-              <Link
-                to="/listemployee"
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl border border-[#e0e4ff] text-xs font-medium text-slate-700 bg-white hover:bg-[#f3f5ff]"
-              >
+              <Link to="/listemployee" className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl border border-[#e0e4ff] text-xs font-medium text-slate-700 bg-white hover:bg-[#f3f5ff]">
                 View All Employees
               </Link>
             </div>
@@ -468,76 +471,31 @@ export default function AddEmployee() {
             {/* Form body */}
             <div className="px-6 py-6 md:py-7">
               {!formDataLoaded ? (
-                <div className="text-center py-8 text-sm text-slate-500">
-                  Loading form data...
-                </div>
+                <div className="text-center py-8 text-sm text-slate-500">Loading form data...</div>
               ) : (
-                <form
-                  ref={formRef}
-                  onSubmit={handleSubmit}
-                  className="space-y-6"
-                >
-                  {/* Personal Information */}
+                <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
+                  {/* --- PERSONAL INFORMATION --- */}
                   <section className="rounded-2xl border border-slate-100 bg-[#F8F9FF] p-4 md:p-5">
-                    <h2 className="font-semibold mb-3 text-sm text-slate-800">
-                      Personal Information
-                    </h2>
+                    <h2 className="font-semibold mb-3 text-sm text-slate-800">Personal Information</h2>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
-                        <label className="block text-xs font-medium text-slate-600">
-                          Employee ID <span className="text-rose-600">*</span>
-                        </label>
-                        <input
-                          name="empid"
-                          value={form.empid}
-                          onChange={handleChange}
-                          className="mt-1 block w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none"
-                          placeholder="Enter employee ID"
-                          pattern="[A-Z0-9]+"
-                          title="Employee ID should contain only uppercase letters and numbers"
-                          required
-                        />
+                        <label className="block text-xs font-medium text-slate-600">Employee ID <span className="text-rose-600">*</span></label>
+                        <input name="empid" value={form.empid} onChange={handleChange} className="mt-1 block w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none" placeholder="Enter employee ID" pattern="[A-Z0-9]+" title="Employee ID should contain only uppercase letters and numbers" required />
                       </div>
 
                       <div>
-                        <label className="block text-xs font-medium text-slate-600">
-                          First Name <span className="text-rose-600">*</span>
-                        </label>
-                        <input
-                          name="fname"
-                          value={form.fname}
-                          onChange={handleChange}
-                          required
-                          className="mt-1 block w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none"
-                          placeholder="Enter first name"
-                        />
+                        <label className="block text-xs font-medium text-slate-600">First Name <span className="text-rose-600">*</span></label>
+                        <input name="fname" value={form.fname} onChange={handleChange} required className="mt-1 block w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none" placeholder="Enter first name" />
                       </div>
 
                       <div>
-                        <label className="block text-xs font-medium text-slate-600">
-                          Last Name <span className="text-rose-600">*</span>
-                        </label>
-                        <input
-                          name="lname"
-                          value={form.lname}
-                          onChange={handleChange}
-                          required
-                          className="mt-1 block w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none"
-                          placeholder="Enter last name"
-                        />
+                        <label className="block text-xs font-medium text-slate-600">Last Name <span className="text-rose-600">*</span></label>
+                        <input name="lname" value={form.lname} onChange={handleChange} required className="mt-1 block w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none" placeholder="Enter last name" />
                       </div>
 
                       <div>
-                        <label className="block text-xs font-medium text-slate-600">
-                          Gender <span className="text-rose-600">*</span>
-                        </label>
-                        <select
-                          name="gender"
-                          value={form.gender}
-                          onChange={handleChange}
-                          required
-                          className="mt-1 block w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none"
-                        >
+                        <label className="block text-xs font-medium text-slate-600">Gender <span className="text-rose-600">*</span></label>
+                        <select name="gender" value={form.gender} onChange={handleChange} required className="mt-1 block w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none">
                           <option value="">Select Gender</option>
                           <option value="Male">Male</option>
                           <option value="Female">Female</option>
@@ -547,159 +505,67 @@ export default function AddEmployee() {
                     </div>
                   </section>
 
-                  {/* Contact Information */}
+                  {/* --- CONTACT INFORMATION --- */}
                   <section className="rounded-2xl border border-slate-100 bg-[#F8F9FF] p-4 md:p-5">
-                    <h2 className="font-semibold mb-3 text-sm text-slate-800">
-                      Contact Information
-                    </h2>
+                    <h2 className="font-semibold mb-3 text-sm text-slate-800">Contact Information</h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-xs font-medium text-slate-600">
-                          Email <span className="text-rose-600">*</span>
-                        </label>
-                        <input
-                          name="email"
-                          type="email"
-                          value={form.email}
-                          onChange={handleChange}
-                          required
-                          className="mt-1 block w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none"
-                          placeholder="Enter email"
-                        />
+                        <label className="block text-xs font-medium text-slate-600">Email <span className="text-rose-600">*</span></label>
+                        <input name="email" type="email" value={form.email} onChange={handleChange} required className="mt-1 block w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none" placeholder="Enter email" />
                       </div>
 
                       <div>
-                        <label className="block text-xs font-medium text-slate-600">
-                          Mobile Number{" "}
-                          <span className="text-rose-600">*</span>
-                        </label>
-                        <input
-                          name="mobile"
-                          type="tel"
-                          value={form.mobile}
-                          onChange={handleChange}
-                          pattern="\d{10}"
-                          required
-                          className="mt-1 block w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none"
-                          placeholder="Enter 10-digit mobile number"
-                        />
+                        <label className="block text-xs font-medium text-slate-600">Mobile Number <span className="text-rose-600">*</span></label>
+                        <input name="mobile" type="tel" value={form.mobile} onChange={handleChange} pattern="\d{10}" required className="mt-1 block w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none" placeholder="Enter 10-digit mobile number" />
                       </div>
                     </div>
                   </section>
 
-                  {/* Employment Details */}
+                  {/* --- EMPLOYMENT DETAILS --- */}
                   <section className="rounded-2xl border border-slate-100 bg-[#F8F9FF] p-4 md:p-5">
-                    <h2 className="font-semibold mb-3 text-sm text-slate-800">
-                      Employment Details
-                    </h2>
+                    <h2 className="font-semibold mb-3 text-sm text-slate-800">Employment Details</h2>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      {/* Department */}
                       <div>
-                        <label className="block text-xs font-medium text-slate-600">
-                          Department <span className="text-rose-600">*</span>
-                        </label>
-                        <select
-                          name="dept_id"
-                          value={form.dept_id}
-                          onChange={(e) => handleDeptChange(e.target.value)}
-                          required
-                          className="mt-1 block w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none"
-                        >
+                        <label className="block text-xs font-medium text-slate-600">Department <span className="text-rose-600">*</span></label>
+                        <select name="dept_id" value={form.dept_id} onChange={(e) => handleDeptChange(e.target.value)} required className="mt-1 block w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none">
                           <option value="">Select department</option>
-                          {departments.map((d) => (
-                            <option key={d.id} value={d.id}>
-                              {d.dept_name}
-                            </option>
-                          ))}
+                          {departments.map((d) => (<option key={d.id} value={d.id}>{d.dept_name}</option>))}
                           <option value="custom">+ Add New Department</option>
-                          <option value="edit">
-                            ✏️ Edit Existing Department
-                          </option>
+                          <option value="edit">✏️ Edit Existing Department</option>
                         </select>
                       </div>
 
                       {isCustomDept && (
                         <div>
-                          <label className="block text-xs font-medium text-slate-600">
-                            New Department Name{" "}
-                            <span className="text-rose-600">*</span>
-                          </label>
-                          <input
-                            name="custom_dept"
-                            value={form.custom_dept}
-                            onChange={handleChange}
-                            required={isCustomDept}
-                            className="mt-1 block w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none"
-                            placeholder="Enter new department name"
-                          />
+                          <label className="block text-xs font-medium text-slate-600">New Department Name <span className="text-rose-600">*</span></label>
+                          <input name="custom_dept" value={form.custom_dept} onChange={handleChange} required={isCustomDept} className="mt-1 block w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none" placeholder="Enter new department name" />
                         </div>
                       )}
 
                       {isEditDept && (
                         <div className="space-y-2 md:col-span-2">
                           <div>
-                            <label className="block text-xs font-medium text-slate-600">
-                              Select Department to Edit{" "}
-                              <span className="text-rose-600">*</span>
-                            </label>
-                            <select
-                              name="edit_dept_id"
-                              value={form.edit_dept_id}
-                              onChange={handleChange}
-                              required={isEditDept}
-                              className="mt-1 block w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none"
-                            >
+                            <label className="block text-xs font-medium text-slate-600">Select Department to Edit <span className="text-rose-600">*</span></label>
+                            <select name="edit_dept_id" value={form.edit_dept_id} onChange={handleChange} required={isEditDept} className="mt-1 block w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none">
                               <option value="">-- Choose Department --</option>
-                              {departments.map((d) => (
-                                <option key={d.id} value={d.id}>
-                                  {d.dept_name}
-                                </option>
-                              ))}
+                              {departments.map((d) => (<option key={d.id} value={d.id}>{d.dept_name}</option>))}
                             </select>
                           </div>
                           <div>
-                            <label className="block text-xs font-medium text-slate-600">
-                              New Name for Department{" "}
-                              <span className="text-rose-600">*</span>
-                            </label>
-                            <input
-                              name="new_dept_name"
-                              value={form.new_dept_name}
-                              onChange={handleChange}
-                              required={isEditDept}
-                              className="mt-1 block w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none"
-                              placeholder="Enter new department name"
-                            />
+                            <label className="block text-xs font-medium text-slate-600">New Name for Department <span className="text-rose-600">*</span></label>
+                            <input name="new_dept_name" value={form.new_dept_name} onChange={handleChange} required={isEditDept} className="mt-1 block w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none" placeholder="Enter new department name" />
                           </div>
                         </div>
                       )}
 
                       <div>
-                        <label className="block text-xs font-medium text-slate-600">
-                          Designation <span className="text-rose-600">*</span>
-                        </label>
-                        <input
-                          name="designation"
-                          value={form.designation}
-                          onChange={handleChange}
-                          required
-                          className="mt-1 block w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none"
-                          placeholder="Enter designation"
-                        />
+                        <label className="block text-xs font-medium text-slate-600">Designation <span className="text-rose-600">*</span></label>
+                        <input name="designation" value={form.designation} onChange={handleChange} required className="mt-1 block w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none" placeholder="Enter designation" />
                       </div>
 
                       <div>
-                        <label className="block text-xs font-medium text-slate-600">
-                          Employee Type{" "}
-                          <span className="text-rose-600">*</span>
-                        </label>
-                        <select
-                          name="employee_type"
-                          value={form.employee_type}
-                          onChange={handleChange}
-                          required
-                          className="mt-1 block w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none"
-                        >
+                        <label className="block text-xs font-medium text-slate-600">Employee Type <span className="text-rose-600">*</span></label>
+                        <select name="employee_type" value={form.employee_type} onChange={handleChange} required className="mt-1 block w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none">
                           <option value="">Select Employee Type</option>
                           <option value="Employee">Employee</option>
                           <option value="Contractor">Contractor</option>
@@ -707,48 +573,18 @@ export default function AddEmployee() {
                       </div>
 
                       <div>
-                        <label className="block text-xs font-medium text-slate-600">
-                          Previous Experience (Years)
-                        </label>
-                        <input
-                          name="prev_total_exp"
-                          type="number"
-                          step="0.1"
-                          min="0"
-                          value={form.prev_total_exp}
-                          onChange={handleChange}
-                          className="mt-1 block w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none"
-                          placeholder="Enter experience in years"
-                        />
+                        <label className="block text-xs font-medium text-slate-600">Previous Experience (Years)</label>
+                        <input name="prev_total_exp" type="number" step="0.1" min="0" value={form.prev_total_exp} onChange={handleChange} className="mt-1 block w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none" placeholder="Enter experience in years" />
                       </div>
 
                       <div>
-                        <label className="block text-xs font-medium text-slate-600">
-                          Total Experience as on Date
-                        </label>
-                        <input
-                          name="calculated_total_exp"
-                          value={
-                            form.calculated_total_exp
-                              ? `${form.calculated_total_exp} years`
-                              : ""
-                          }
-                          readOnly
-                          className="mt-1 block w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm bg-slate-100"
-                        />
+                        <label className="block text-xs font-medium text-slate-600">Total Experience as on Date</label>
+                        <input name="calculated_total_exp" value={form.calculated_total_exp ? `${form.calculated_total_exp} years` : ""} readOnly className="mt-1 block w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm bg-slate-100" />
                       </div>
 
                       <div>
-                        <label className="block text-xs font-medium text-slate-600">
-                          Company <span className="text-rose-600">*</span>
-                        </label>
-                        <select
-                          name="company"
-                          value={form.company}
-                          onChange={handleChange}
-                          required
-                          className="mt-1 block w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none"
-                        >
+                        <label className="block text-xs font-medium text-slate-600">Company <span className="text-rose-600">*</span></label>
+                        <select name="company" value={form.company} onChange={handleChange} required className="mt-1 block w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none">
                           <option value="">Select Company</option>
                           <option value="NTS India">NTS India</option>
                           <option value="NTS Dubai">NTS Dubai</option>
@@ -758,16 +594,8 @@ export default function AddEmployee() {
                       </div>
 
                       <div>
-                        <label className="block text-xs font-medium text-slate-600">
-                          Location <span className="text-rose-600">*</span>
-                        </label>
-                        <select
-                          name="location"
-                          value={form.location}
-                          onChange={handleChange}
-                          required
-                          className="mt-1 block w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none"
-                        >
+                        <label className="block text-xs font-medium text-slate-600">Location <span className="text-rose-600">*</span></label>
+                        <select name="location" value={form.location} onChange={handleChange} required className="mt-1 block w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none">
                           <option value="">Select Location</option>
                           <option value="Onsite">Onsite</option>
                           <option value="Offshore">Offshore</option>
@@ -776,188 +604,79 @@ export default function AddEmployee() {
                       </div>
 
                       <div>
-                        <label className="block text-xs font-medium text-slate-600">
-                          Work Location (Country)
-                        </label>
-                        <input
-                          name="work_location"
-                          value={form.work_location}
-                          onChange={handleChange}
-                          className="mt-1 block w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none"
-                          placeholder="Enter work location"
-                        />
+                        <label className="block text-xs font-medium text-slate-600">Work Location (Country)</label>
+                        <input name="work_location" value={form.work_location} onChange={handleChange} className="mt-1 block w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none" placeholder="Enter work location" />
                       </div>
 
                       <div>
-                        <label className="block text-xs font-medium text-slate-600">
-                          City
-                        </label>
-                        <input
-                          name="city"
-                          value={form.city}
-                          onChange={handleChange}
-                          className="mt-1 block w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none"
-                          placeholder="Enter city"
-                        />
+                        <label className="block text-xs font-medium text-slate-600">City</label>
+                        <input name="city" value={form.city} onChange={handleChange} className="mt-1 block w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none" placeholder="Enter city" />
                       </div>
                     </div>
                   </section>
 
-                  {/* Skills & Expertise */}
+                  {/* --- SKILLS & EXPERTISE --- */}
                   <section className="rounded-2xl border border-slate-100 bg-[#F8F9FF] p-4 md:p-5">
-                    <h2 className="font-semibold mb-3 text-sm text-slate-800">
-                      Skills & Expertise
-                    </h2>
+                    <h2 className="font-semibold mb-3 text-sm text-slate-800">Skills & Expertise</h2>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
-                        <label className="block text-xs font-medium text-slate-600">
-                          Core Skill
-                        </label>
-                        <input
-                          name="core_skill"
-                          value={form.core_skill}
-                          onChange={handleChange}
-                          className="mt-1 block w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none"
-                          placeholder="Enter core skill"
-                        />
+                        <label className="block text-xs font-medium text-slate-600">Core Skill</label>
+                        <input name="core_skill" value={form.core_skill} onChange={handleChange} className="mt-1 block w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none" placeholder="Enter core skill" />
                       </div>
 
                       <div className="md:col-span-2">
-                        <label className="block text-xs font-medium text-slate-600">
-                          Skill Details
-                        </label>
-                        <textarea
-                          name="skill_details"
-                          value={form.skill_details}
-                          onChange={handleChange}
-                          className="mt-1 block w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none"
-                          placeholder="Enter detailed skills information"
-                          rows={3}
-                        />
+                        <label className="block text-xs font-medium text-slate-600">Skill Details</label>
+                        <textarea name="skill_details" value={form.skill_details} onChange={handleChange} className="mt-1 block w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none" placeholder="Enter detailed skills information" rows={3} />
                       </div>
                     </div>
                   </section>
 
-                  {/* Important Dates */}
+                  {/* --- IMPORTANT DATES --- */}
                   <section className="rounded-2xl border border-slate-100 bg-[#F8F9FF] p-4 md:p-5">
-                    <h2 className="font-semibold mb-3 text-sm text-slate-800">
-                      Important Dates
-                    </h2>
+                    <h2 className="font-semibold mb-3 text-sm text-slate-800">Important Dates</h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-xs font-medium text-slate-600">
-                          Date of Joining{" "}
-                          <span className="text-rose-600">*</span>
-                        </label>
-                        <input
-                          name="doj"
-                          type="date"
-                          value={form.doj}
-                          onChange={handleChange}
-                          required
-                          className="mt-1 block w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none"
-                        />
+                        <label className="block text-xs font-medium text-slate-600">Date of Joining <span className="text-rose-600">*</span></label>
+                        <input name="doj" type="date" value={form.doj} onChange={handleChange} required className="mt-1 block w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none" />
                       </div>
 
                       <div>
-                        <label className="block text-xs font-medium text-slate-600">
-                          Last Working Day
-                        </label>
-                        <input
-                          name="lwd"
-                          type="date"
-                          value={form.lwd}
-                          onChange={handleChange}
-                          className="mt-1 block w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none"
-                        />
+                        <label className="block text-xs font-medium text-slate-600">Last Working Day</label>
+                        <input name="lwd" type="date" value={form.lwd} onChange={handleChange} className="mt-1 block w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none" />
                       </div>
                     </div>
                   </section>
 
-                  {/* Access Information */}
+                  {/* --- ACCESS INFORMATION --- */}
                   <section className="rounded-2xl border border-slate-100 bg-[#F8F9FF] p-4 md:p-5">
-                    <h2 className="font-semibold mb-3 text-sm text-slate-800">
-                      Access Information
-                    </h2>
+                    <h2 className="font-semibold mb-3 text-sm text-slate-800">Access Information</h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-xs font-medium text-slate-600">
-                          Approver ID{" "}
-                          <span className="text-rose-600">*</span>
-                        </label>
-                        <input
-                          name="approver_id"
-                          value={form.approver_id}
-                          onChange={handleChange}
-                          required
-                          className="mt-1 block w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none"
-                          placeholder="Enter approver ID"
-                        />
+                        <label className="block text-xs font-medium text-slate-600">Approver ID <span className="text-rose-600">*</span></label>
+                        <input name="approver_id" value={form.approver_id} onChange={handleChange} required className="mt-1 block w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none" placeholder="Enter approver ID" />
                       </div>
 
                       <div className="relative">
-                        <label className="block text-xs font-medium text-slate-600">
-                          Set Password{" "}
-                          <span className="text-rose-600">*</span>
-                        </label>
-                        <input
-                          name="password"
-                          type={passwordVisible ? "text" : "password"}
-                          value={form.password}
-                          onChange={handleChange}
-                          required
-                          minLength={8}
-                          className="mt-1 block w-full rounded-2xl border border-slate-200 px-3 py-2 pr-12 text-sm bg-white focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none"
-                          placeholder="Enter password"
-                        />
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setPasswordVisible((p) => !p)
-                          }
-                          className="absolute right-3 top-8 text-[11px] text-slate-600"
-                          aria-label="toggle password"
-                        >
+                        <label className="block text-xs font-medium text-slate-600">Set Password <span className="text-rose-600">*</span></label>
+                        <input name="password" type={passwordVisible ? "text" : "password"} value={form.password} onChange={handleChange} required minLength={8} className="mt-1 block w-full rounded-2xl border border-slate-200 px-3 py-2 pr-12 text-sm bg-white focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none" placeholder="Enter password" />
+                        <button type="button" onClick={() => setPasswordVisible((p) => !p)} className="absolute right-3 top-8 text-[11px] text-slate-600" aria-label="toggle password">
                           {passwordVisible ? "Hide" : "Show"}
                         </button>
                       </div>
                     </div>
                   </section>
 
-                  {/* Client Assignment */}
+                  {/* --- CLIENT ASSIGNMENT --- */}
                   <section className="rounded-2xl border border-slate-100 bg-[#F8F9FF] p-4 md:p-5">
-                    <h2 className="font-semibold mb-3 text-sm text-slate-800">
-                      Client Assignment{" "}
-                      <span className="text-rose-600">*</span>
-                    </h2>
+                    <h2 className="font-semibold mb-3 text-sm text-slate-800">Client Assignment <span className="text-rose-600">*</span></h2>
                     <div className="space-y-2">
                       {clients.map((client) => {
-                        const assign = clientAssignments[client.clientID] || {
-                          checked: false,
-                          start_date: "",
-                          end_date: "",
-                        };
+                        const assign = clientAssignments[client.clientID] || { checked: false, start_date: "", end_date: "" };
                         return (
-                          <div
-                            key={client.clientID}
-                            className="rounded-2xl border border-slate-200 bg-white px-3 py-3"
-                          >
+                          <div key={client.clientID} className="rounded-2xl border border-slate-200 bg-white px-3 py-3">
                             <div className="flex items-center justify-between">
                               <label className="flex items-center gap-2 text-sm text-slate-800">
-                                <input
-                                  id={`client_${client.clientID}`}
-                                  name="clients"
-                                  type="checkbox"
-                                  value={client.clientID}
-                                  checked={assign.checked}
-                                  onChange={(e) =>
-                                    handleClientCheckbox(
-                                      client.clientID,
-                                      e.target.checked
-                                    )
-                                  }
-                                  className="rounded border-slate-300"
-                                />
+                                <input id={`client_${client.clientID}`} name="clients" type="checkbox" value={client.clientID} checked={assign.checked} onChange={(e) => handleClientCheckbox(client.clientID, e.target.checked)} className="rounded border-slate-300" />
                                 <span>{client.client_name}</span>
                               </label>
                             </div>
@@ -965,45 +684,13 @@ export default function AddEmployee() {
                             {assign.checked && (
                               <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                  <label className="block text-xs font-medium text-slate-600">
-                                    Start Date{" "}
-                                    <span className="text-rose-600">*</span>
-                                  </label>
-                                  <input
-                                    id={`start_date_${client.clientID}`}
-                                    name={`start_date_${client.clientID}`}
-                                    type="date"
-                                    value={assign.start_date}
-                                    onChange={(e) =>
-                                      handleClientDateChange(
-                                        client.clientID,
-                                        "start_date",
-                                        e.target.value
-                                      )
-                                    }
-                                    className="mt-1 block w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none"
-                                    required
-                                  />
+                                  <label className="block text-xs font-medium text-slate-600">Start Date <span className="text-rose-600">*</span></label>
+                                  <input id={`start_date_${client.clientID}`} name={`start_date_${client.clientID}`} type="date" value={assign.start_date} onChange={(e) => handleClientDateChange(client.clientID, "start_date", e.target.value)} className="mt-1 block w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none" required />
                                 </div>
 
                                 <div>
-                                  <label className="block text-xs font-medium text-slate-600">
-                                    End Date
-                                  </label>
-                                  <input
-                                    id={`end_date_${client.clientID}`}
-                                    name={`end_date_${client.clientID}`}
-                                    type="date"
-                                    value={assign.end_date}
-                                    onChange={(e) =>
-                                      handleClientDateChange(
-                                        client.clientID,
-                                        "end_date",
-                                        e.target.value
-                                      )
-                                    }
-                                    className="mt-1 block w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none"
-                                  />
+                                  <label className="block text-xs font-medium text-slate-600">End Date</label>
+                                  <input id={`end_date_${client.clientID}`} name={`end_date_${client.clientID}`} type="date" value={assign.end_date} onChange={(e) => handleClientDateChange(client.clientID, "end_date", e.target.value)} className="mt-1 block w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none" />
                                 </div>
                               </div>
                             )}
@@ -1013,32 +700,14 @@ export default function AddEmployee() {
                     </div>
                   </section>
 
-                  {/* Assign Leaves */}
+                  {/* --- ASSIGN LEAVES --- */}
                   <section className="rounded-2xl border border-slate-100 bg-[#F8F9FF] p-4 md:p-5">
-                    <h2 className="font-semibold mb-3 text-sm text-slate-800">
-                      Assign Leaves
-                    </h2>
+                    <h2 className="font-semibold mb-3 text-sm text-slate-800">Assign Leaves</h2>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       {leaveTypes.map((leave) => (
                         <div key={leave.leave_id}>
-                          <label className="block text-xs font-medium text-slate-600">
-                            {leave.leave_type}{" "}
-                            <span className="text-rose-600">*</span>
-                          </label>
-                          <input
-                            type="number"
-                            min="0"
-                            name={`leave_${leave.leave_id}`}
-                            value={leaveBalances[leave.leave_id] || "0"}
-                            onChange={(e) =>
-                              handleLeaveChange(
-                                leave.leave_id,
-                                e.target.value
-                              )
-                            }
-                            className="mt-1 block w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none"
-                            placeholder={`Enter ${leave.leave_type} balance`}
-                          />
+                          <label className="block text-xs font-medium text-slate-600">{leave.leave_type} <span className="text-rose-600">*</span></label>
+                          <input type="number" min="0" name={`leave_${leave.leave_id}`} value={leaveBalances[leave.leave_id] || "0"} onChange={(e) => handleLeaveChange(leave.leave_id, e.target.value)} className="mt-1 block w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none" placeholder={`Enter ${leave.leave_type} balance`} />
                         </div>
                       ))}
                     </div>
@@ -1046,20 +715,8 @@ export default function AddEmployee() {
 
                   {/* Actions */}
                   <div className="flex justify-end gap-3 pt-2 border-t border-[#e5e7f5] mt-2">
-                    <Link
-                      to="/listemployee"
-                      className="inline-flex items-center px-4 py-2 rounded-2xl text-xs font-medium border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
-                    >
-                      Cancel
-                    </Link>
-                    <button
-                      type="submit"
-                      disabled={loading}
-                      className="inline-flex items-center px-4 py-2 rounded-2xl text-xs font-semibold text-white shadow-[0_14px_40px_rgba(76,111,255,0.55)] focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[rgba(76,111,255,0.35)]"
-                      style={{
-                        background: `linear-gradient(135deg, ${accent}, #6C5CE7)`,
-                      }}
-                    >
+                    <Link to="/listemployee" className="inline-flex items-center px-4 py-2 rounded-2xl text-xs font-medium border border-slate-200 bg-white text-slate-700 hover:bg-slate-50">Cancel</Link>
+                    <button type="submit" disabled={loading} className="inline-flex items-center px-4 py-2 rounded-2xl text-xs font-semibold text-white shadow-[0_14px_40px_rgba(76,111,255,0.55)] focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[rgba(76,111,255,0.35)]" style={{ background: `linear-gradient(135deg, ${accent}, #6C5CE7)` }}>
                       {loading ? "Saving..." : "Add Employee"}
                     </button>
                   </div>

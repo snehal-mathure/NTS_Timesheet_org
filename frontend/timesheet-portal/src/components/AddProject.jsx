@@ -6,6 +6,8 @@ import Sidebar from "../components/Sidebar";
 import PageHeader from "../components/PageHeader";
 import projectService from "../services/AdminDashboard/projectService";
 
+const SIDEBAR_STORAGE_KEY = "td_sidebar_collapsed";
+
 export default function AddProject() {
   const navigate = useNavigate();
 
@@ -25,9 +27,25 @@ export default function AddProject() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
+  // layout: track sidebar collapsed state so main content margin adjusts
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(
+    typeof window !== "undefined" && localStorage.getItem(SIDEBAR_STORAGE_KEY) === "true"
+  );
+
   useEffect(() => {
     projectService.getClients().then((res) => setClients(res || []));
     projectService.getProjects().then((res) => setExistingProjects(res || []));
+
+    // listen for same-tab toggles and storage events
+    const handler = () => {
+      setSidebarCollapsed(localStorage.getItem(SIDEBAR_STORAGE_KEY) === "true");
+    };
+    window.addEventListener("td_sidebar_change", handler);
+    window.addEventListener("storage", handler);
+    return () => {
+      window.removeEventListener("td_sidebar_change", handler);
+      window.removeEventListener("storage", handler);
+    };
   }, []);
 
   const handleChange = (e) => {
@@ -41,8 +59,7 @@ export default function AddProject() {
     if (!form.project_billability) return "Please select project billability.";
 
     const nameExists = existingProjects.some(
-      (p) =>
-        p.project_name?.toLowerCase() === form.project_name.toLowerCase()
+      (p) => p.project_name?.toLowerCase() === form.project_name.toLowerCase()
     );
     if (nameExists) return "Project name already exists.";
 
@@ -82,16 +99,21 @@ export default function AddProject() {
     }
   };
 
-  return (
-    <div
-      className="min-h-screen flex"
-      style={{ backgroundColor: "#F5F7FF" }}
-    >
-      {/* Sidebar (same as other pages) */}
-      <Sidebar />
+  // main margin classes mirror sidebar widths: collapsed -> md:ml-20 (icons only); expanded -> md:ml-72
+  const mainMarginClass = sidebarCollapsed ? "md:ml-20" : "md:ml-72";
 
-      {/* MAIN */}
-      <main className="flex-1 px-4 md:px-10 py-6 md:py-2">
+  return (
+    <div className="min-h-screen flex" style={{ backgroundColor: "#F5F7FF" }}>
+      {/* FIXED SIDEBAR (independent scroll) */}
+      <aside className="hidden md:block fixed inset-y-0 left-0 z-40">
+        <Sidebar />
+      </aside>
+
+      {/* MAIN content shifts to avoid overlap with fixed sidebar */}
+      <main
+        className={`flex-1 transition-all duration-200 ${mainMarginClass} px-4 md:px-10 py-6 md:py-2`}
+        style={{ minHeight: "100vh" }}
+      >
         <div className="max-w-5xl w-full mx-auto mt-4 md:mt-6 space-y-5">
           {/* Header with shared PageHeader component */}
           <PageHeader
@@ -220,10 +242,7 @@ export default function AddProject() {
                     Start Date <span className="text-rose-600">*</span>
                   </label>
                   <div className="relative">
-                    <FiCalendar
-                      className="absolute left-3 top-2.5 text-slate-400"
-                      size={15}
-                    />
+                    <FiCalendar className="absolute left-3 top-2.5 text-slate-400" size={15} />
                     <input
                       type="date"
                       name="start_date"
@@ -239,10 +258,7 @@ export default function AddProject() {
                     End Date (Optional)
                   </label>
                   <div className="relative">
-                    <FiCalendar
-                      className="absolute left-3 top-2.5 text-slate-400"
-                      size={15}
-                    />
+                    <FiCalendar className="absolute left-3 top-2.5 text-slate-400" size={15} />
                     <input
                       type="date"
                       name="end_date"
