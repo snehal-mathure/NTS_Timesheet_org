@@ -135,7 +135,7 @@ export default function ApplyLeave() {
     const current = new Date(fromDate);
 
     while (current <= toDate) {
-      const iso = current.toISOString().slice(0, 10);
+      const iso = current.toLocaleDateString("en-CA"); // YYYY-MM-DD without timezone shift
       const day = current.getDay();
 
       if (day >= 1 && day <= 5 && !isPublicHoliday(iso)) {

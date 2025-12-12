@@ -26,6 +26,14 @@ export default {
       body: JSON.stringify({ timesheet_ids: ids, action, comments })
     });
     return res.json();
+  },
+
+  //  NEW: Fetch details for TimesheetDetails component
+  async fetchTimesheetDetails(id) {
+    const res = await fetch(`${API}/timesheet/review_modal/${id}`, {
+      credentials: "include"
+    });
+    return res.json();
   }
 };
  

@@ -1,4 +1,338 @@
 
+// // src/pages/ApproveTimesheets.jsx
+// import React, { useEffect, useState, useRef } from "react";
+// import UserDashboardSidebar from "../components/UserDashboardSidebar";
+// import PageHeader from "../components/PageHeader";
+// import approveService from "../services/AdminDashboard/approveTimesheetsService";
+
+// const SIDEBAR_KEY = "td_sidebar_collapsed";
+// const accent = "#4C6FFF";
+
+// export default function ApproveTimesheets() {
+//   const [timesheets, setTimesheets] = useState([]);
+//   const [selected, setSelected] = useState([]);
+//   const [expanded, setExpanded] = useState({});
+//   const [modal, setModal] = useState({
+//     open: false,
+//     type: "", // 'approve' | 'reject'
+//     id: null,
+//     comments: ""
+//   });
+
+//   const [bulkModal, setBulkModal] = useState({
+//     open: false,
+//     type: "",
+//     comments: ""
+//   });
+
+//   const [loading, setLoading] = useState(true);
+//   const [sidebarCollapsed, setSidebarCollapsed] = useState(localStorage.getItem(SIDEBAR_KEY) === "true");
+
+//   const successRef = useRef(null);
+
+//   useEffect(() => {
+//     loadTimesheets();
+//     // listen to sidebar change events
+//     const onCustom = () => setSidebarCollapsed(localStorage.getItem(SIDEBAR_KEY) === "true");
+//     const onStorage = (e) => {
+//       if (e?.key === SIDEBAR_KEY) setSidebarCollapsed(e.newValue === "true");
+//     };
+//     window.addEventListener("td_sidebar_change", onCustom);
+//     window.addEventListener("storage", onStorage);
+//     return () => {
+//       window.removeEventListener("td_sidebar_change", onCustom);
+//       window.removeEventListener("storage", onStorage);
+//       if (successRef.current) clearTimeout(successRef.current);
+//     };
+//     // eslint-disable-next-line react-hooks/exhaustive-deps
+//   }, []);
+
+//   async function loadTimesheets() {
+//     setLoading(true);
+//     const data = await approveService.getTimesheets();
+//     setTimesheets(Array.isArray(data) ? data : (data || []));
+//     setLoading(false);
+//   }
+
+//   function toggleSelect(id) {
+//     setSelected(prev => (prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]));
+//   }
+
+//   function toggleExpand(id) {
+//     setExpanded(prev => ({ ...prev, [id]: !prev[id] }));
+//   }
+
+//   function openModal(id, type) {
+//     setModal({ open: true, id, type, comments: "" });
+//   }
+
+//   async function handleSingleAction() {
+//     try {
+//       await approveService.singleAction(modal.id, modal.type, modal.comments);
+//       setModal({ open: false, id: null, type: "", comments: "" });
+//       await loadTimesheets();
+//     } catch (err) {
+//       console.error(err);
+//       setModal({ open: false, id: null, type: "", comments: "" });
+//       await loadTimesheets();
+//     }
+//   }
+
+//   async function handleBulkAction() {
+//     try {
+//       await approveService.bulkAction(selected, bulkModal.type, bulkModal.comments);
+//       setBulkModal({ open: false, type: "", comments: "" });
+//       setSelected([]);
+//       await loadTimesheets();
+//     } catch (err) {
+//       console.error(err);
+//       setBulkModal({ open: false, type: "", comments: "" });
+//       setSelected([]);
+//       await loadTimesheets();
+//     }
+//   }
+
+//   // compute main margin responsive to sidebarCollapsed
+//   const mainMarginClass = sidebarCollapsed ? "md:ml-20" : "md:ml-64";
+
+//   return (
+//     <div className="min-h-screen flex" style={{ backgroundColor: "#F5F7FF" }}>
+//       <UserDashboardSidebar />
+
+//       <main className={`flex-1 px-4 md:px-10 py-6 md:py-4 transition-all duration-200 ${mainMarginClass}`}>
+//         <div className="max-w-6xl mx-auto mt-4 md:mt-6 space-y-5">
+//           <PageHeader
+//             section="Approvals"
+//             title="Timesheet Approvals"
+//             description="Review and approve or reject submitted timesheets."
+//           />
+
+//           <div className="bg-white/90 border border-[#e5e7f5] rounded-3xl shadow-[0_24px_60px_rgba(15,23,42,0.12)] overflow-hidden">
+//             {/* Header Bar */}
+//             <div className="flex items-center justify-between px-6 py-5 border-b border-[#e5e7f5] bg-white/80">
+//               <div className="flex items-center gap-4">
+//                 <div className="w-12 h-12 rounded-2xl bg-[#F3F5FF] flex items-center justify-center shadow-sm">
+//                   <svg className="w-6 h-6 text-[#4C6FFF]" fill="none" viewBox="0 0 24 24">
+//                     <path d="M12 2v4M6 6h12M5 10h14v8a2 2 0 01-2 2H7a2 2 0 01-2-2v-8z" stroke="currentColor" strokeWidth="1.4" />
+//                   </svg>
+//                 </div>
+
+//                 <div>
+//                   <h2 className="text-lg font-semibold text-slate-900">Timesheet Approvals</h2>
+//                   <p className="text-sm text-slate-500">Approve or reject submitted timesheets.</p>
+//                 </div>
+//               </div>
+
+//               <div className="flex items-center gap-3">
+//                 <a
+//                   href="/approvalhistory"
+//                   className="inline-flex items-center gap-2 px-3 py-2 rounded-2xl text-sm font-semibold text-white shadow-[0_14px_40px_rgba(76,111,255,0.55)]"
+//                   style={{ background: `linear-gradient(135deg, ${accent}, #6C5CE7)` }}
+//                 >
+//                   <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none">
+//                     <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="1.4" />
+//                   </svg>
+//                   Approval History
+//                 </a>
+//               </div>
+//             </div>
+
+//             {/* Table / Controls */}
+//             <div className="px-6 py-5">
+//               {/* Bulk buttons */}
+//               {timesheets.length > 0 && (
+//                 <div className="flex items-center gap-4 mb-4">
+//                   <button
+//                     disabled={selected.length === 0}
+//                     onClick={() => setBulkModal({ open: true, type: "approve", comments: "" })}
+//                     className="px-4 py-2 rounded-2xl bg-emerald-50 text-emerald-700 border border-emerald-100 disabled:opacity-40"
+//                   >
+//                     Approve Selected
+//                   </button>
+
+//                   <button
+//                     disabled={selected.length === 0}
+//                     onClick={() => setBulkModal({ open: true, type: "reject", comments: "" })}
+//                     className="px-4 py-2 rounded-2xl bg-rose-50 text-rose-700 border border-rose-100 disabled:opacity-40"
+//                   >
+//                     Reject Selected
+//                   </button>
+
+//                   <div className="text-sm text-slate-600">{selected.length} selected</div>
+//                 </div>
+//               )}
+
+//               {/* Table */}
+//               <div className="overflow-x-auto">
+//                 <table className="min-w-full text-sm divide-y divide-[#e5e7f5]">
+//                   <thead className="bg-[#F3F5FF]">
+//                     <tr className="text-slate-600">
+//                       <th className="py-3 px-4 text-left font-medium">
+//                         <input
+//                           type="checkbox"
+//                           checked={selected.length > 0 && selected.length === timesheets.length}
+//                           onChange={e => setSelected(e.target.checked ? timesheets.map(ts => ts.id) : [])}
+//                         />
+//                       </th>
+//                       <th className="py-3 px-4 text-left font-medium">Employee</th>
+//                       <th className="py-3 px-4 text-left font-medium">Week</th>
+//                       <th className="py-3 px-4 text-left font-medium">Submitted</th>
+//                       <th className="py-3 px-4 text-left font-medium">Total Hours</th>
+//                       <th className="py-3 px-4 text-left font-medium">Status</th>
+//                       <th className="py-3 px-4 text-left font-medium">Actions</th>
+//                     </tr>
+//                   </thead>
+
+//                   <tbody>
+//                     {loading ? (
+//                       <tr>
+//                         <td colSpan="7" className="py-6 text-center text-slate-500">Loading...</td>
+//                       </tr>
+//                     ) : timesheets.length === 0 ? (
+//                       <tr>
+//                         <td colSpan="7" className="py-6 text-center text-slate-500">No timesheets found.</td>
+//                       </tr>
+//                     ) : (
+//                       timesheets.map(ts => (
+//                         <React.Fragment key={ts.id}>
+//                           <tr className="hover:bg-[#F8F9FF] transition" onClick={() => toggleExpand(ts.id)}>
+//                             <td className="py-3 px-4">{/* checkbox column */}
+//                               <input
+//                                 type="checkbox"
+//                                 checked={selected.includes(ts.id)}
+//                                 onClick={e => e.stopPropagation()}
+//                                 onChange={() => toggleSelect(ts.id)}
+//                               />
+//                             </td>
+
+//                             <td className="py-3 px-4 font-medium text-slate-800">{ts.employee_name}</td>
+//                             <td className="py-3 px-4 text-slate-700">{ts.week_start_date}</td>
+//                             <td className="py-3 px-4 text-slate-600">{ts.submitted_date || "—"}</td>
+//                             <td className="py-3 px-4 text-slate-700">{Number(ts.total_hours).toFixed(2)}</td>
+
+//                             <td className="py-3 px-4">
+//                               <span className={`px-3 py-1 rounded text-xs font-semibold ${
+//                                 ts.status === "Approved" ? "bg-emerald-600 text-white" :
+//                                 ts.status === "Submitted" ? "bg-[#4C6FFF] text-white" :
+//                                 "bg-rose-500 text-white"
+//                               }`}>
+//                                 {ts.status}
+//                               </span>
+//                             </td>
+
+//                             <td className="py-3 px-4">
+//                               <div className="flex items-center gap-2">
+//                                 <button
+//                                   onClick={e => { e.stopPropagation(); openModal(ts.id, "approve"); }}
+//                                   className="px-3 py-2 rounded-2xl bg-emerald-50 text-emerald-700 border border-emerald-100"
+//                                 >
+//                                   Approve
+//                                 </button>
+
+//                                 <button
+//                                   onClick={e => { e.stopPropagation(); openModal(ts.id, "reject"); }}
+//                                   className="px-3 py-2 rounded-2xl bg-rose-50 text-rose-700 border border-rose-100"
+//                                 >
+//                                   Reject
+//                                 </button>
+//                               </div>
+//                             </td>
+//                           </tr>
+
+//                           {/* expanded details */}
+//                           {expanded[ts.id] && (
+//                             <tr>
+//                               <td colSpan="7" className="p-4 bg-white">
+//                                 <TimesheetDetails id={ts.id} />
+//                               </td>
+//                             </tr>
+//                           )}
+//                         </React.Fragment>
+//                       ))
+//                     )}
+//                   </tbody>
+//                 </table>
+//               </div>
+//             </div>
+
+//             <div className="px-6 py-4 border-t border-[#e5e7f5] bg-[#F3F5FF]">
+//               <p className="text-[11px] md:text-xs text-slate-500">Tip: Click a row to view timesheet details. Use bulk actions to approve or reject multiple timesheets.</p>
+//             </div>
+//           </div>
+
+//           {/* Single Action Modal */}
+//           {modal.open && (
+//             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20">
+//               <div className="bg-white rounded-2xl shadow-lg p-6 w-96">
+//                 <h3 className="text-lg font-semibold mb-3">
+//                   {modal.type === "approve" ? "Approve Timesheet" : "Reject Timesheet"}
+//                 </h3>
+
+//                 <textarea
+//                   value={modal.comments}
+//                   onChange={e => setModal({ ...modal, comments: e.target.value })}
+//                   placeholder={modal.type === "reject" ? "Reason for rejection (optional)" : "Optional comments"}
+//                   className="w-full border rounded p-2 mb-4 text-sm"
+//                   rows={4}
+//                 />
+
+//                 <div className="flex justify-end gap-3">
+//                   <button onClick={() => setModal({ open: false, id: null, type: "", comments: "" })} className="px-4 py-2 rounded-2xl bg-slate-100">Cancel</button>
+//                   <button onClick={handleSingleAction} className="px-4 py-2 rounded-2xl text-white" style={{ background: `linear-gradient(135deg, ${accent}, #6C5CE7)` }}>Confirm</button>
+//                 </div>
+//               </div>
+//             </div>
+//           )}
+
+//           {/* Bulk Modal */}
+//           {bulkModal.open && (
+//             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20">
+//               <div className="bg-white rounded-2xl shadow-lg p-6 w-96">
+//                 <h3 className="text-lg font-semibold mb-3">Bulk {bulkModal.type === "approve" ? "Approve" : "Reject"}</h3>
+
+//                 <textarea
+//                   value={bulkModal.comments}
+//                   onChange={e => setBulkModal({ ...bulkModal, comments: e.target.value })}
+//                   placeholder={bulkModal.type === "reject" ? "Reason for rejection (optional)" : "Optional comments"}
+//                   className="w-full border rounded p-2 mb-4 text-sm"
+//                   rows={4}
+//                 />
+
+//                 <div className="flex justify-end gap-3">
+//                   <button onClick={() => setBulkModal({ open: false, type: "", comments: "" })} className="px-4 py-2 rounded-2xl bg-slate-100">Cancel</button>
+//                   <button onClick={handleBulkAction} className="px-4 py-2 rounded-2xl text-white" style={{ background: `linear-gradient(135deg, ${accent}, #6C5CE7)` }}>Confirm</button>
+//                 </div>
+//               </div>
+//             </div>
+//           )}
+//         </div>
+//       </main>
+//     </div>
+//   );
+// }
+
+// /** Small details panel - fetches modal html and renders */
+// function TimesheetDetails({ id }) {
+//   const [html, setHtml] = useState("<div>Loading...</div>");
+
+//   useEffect(() => {
+//     let mounted = true;
+//     fetch(`/timesheet/review_modal/${id}`)
+//       .then((r) => r.json())
+//       .then((data) => {
+//         if (!mounted) return;
+//         setHtml(data.html || "<div>No details</div>");
+//       })
+//       .catch(() => {
+//         if (!mounted) return;
+//         setHtml("<div>Unable to load details</div>");
+//       });
+//     return () => { mounted = false; };
+//   }, [id]);
+
+//   return <div className="p-3 bg-white border rounded" dangerouslySetInnerHTML={{ __html: html }} />;
+// }
+
 
 // src/pages/ApproveTimesheets.jsx
 import React, { useEffect, useState, useRef } from "react";
@@ -404,24 +738,122 @@ export default function ApproveTimesheets() {
   );
 }
 
-/** Small details panel - fetches modal html and renders */
 function TimesheetDetails({ id }) {
-  const [html, setHtml] = useState("<div>Loading...</div>");
+  const [data, setData] = useState(null);
 
   useEffect(() => {
-    let mounted = true;
-    fetch(`/timesheet/review_modal/${id}`)
-      .then((r) => r.json())
-      .then((data) => {
-        if (!mounted) return;
-        setHtml(data.html || "<div>No details</div>");
+    approveService.fetchTimesheetDetails(id)
+      .then((json) => {
+        if (json.success) setData(json);
+        else setData({ error: json.error });
       })
-      .catch(() => {
-        if (!mounted) return;
-        setHtml("<div>Unable to load details</div>");
-      });
-    return () => { mounted = false; };
+      .catch(() => setData({ error: "Unable to load details" }));
   }, [id]);
 
-  return <div className="p-3 bg-white border rounded" dangerouslySetInnerHTML={{ __html: html }} />;
+  if (!data) return <div className="p-4 text-sm">Loading...</div>;
+  if (data.error) return <div className="p-4 text-red-600">{data.error}</div>;
+
+  const dayOrder = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
+
+  const {
+    employee_name,
+    hours_by_project,
+    day_labels,
+    total_hours,
+    week_total
+  } = data;
+
+  return (
+  <div className="rounded-2xl bg-gradient-to-b from-white to-slate-50 p-8 
+    shadow-2xl shadow-slate-300 ring-1 ring-slate-200 border border-slate-300">
+
+    <h2 className="text-xl font-semibold mb-4 text-slate-800">
+      {employee_name}
+    </h2>
+
+    <div className="overflow-x-auto p-2">
+      <table className="min-w-full text-sm rounded-xl overflow-hidden border border-slate-200 bg-white">
+        <thead className="bg-slate-200 text-slate-800">
+          <tr>
+            <th className="px-4 py-3 text-left font-semibold border-r border-slate-300 w-40">
+              Client
+            </th>
+
+            <th className="px-4 py-3 text-left font-semibold border-r border-slate-300 w-40">
+              Project
+            </th>
+
+            {dayOrder.map((key) => (
+              <th
+                key={key}
+                className="px-4 py-3 text-center font-semibold border-r border-slate-300"
+              >
+                <div>{day_labels[key].label}</div>
+                <div className="text-[11px] text-slate-600">{day_labels[key].date}</div>
+              </th>
+            ))}
+
+            <th className="px-4 py-3 text-center font-semibold">Total</th>
+          </tr>
+        </thead>
+
+        <tbody className="divide-y divide-slate-100">
+          {Object.entries(hours_by_project).map(([code, proj], idx) => (
+            <tr
+              key={code}
+              className={`transition-all duration-150 ${
+                idx % 2 === 0 ? "bg-white" : "bg-slate-50"
+              } hover:bg-slate-100 hover:shadow-sm`}
+            >
+              <td className="px-4 py-3 font-medium text-slate-800 border-r border-slate-200">
+                {proj.client_name}
+              </td>
+
+              <td className="px-4 py-3 text-slate-700 border-r border-slate-200">
+                {proj.project_name}
+              </td>
+
+              {dayOrder.map((key) => (
+                <td
+                  key={key}
+                  className="px-4 py-3 text-center text-slate-700 border-r border-slate-200"
+                >
+                  {proj.hours[key] || 0}
+                </td>
+              ))}
+
+              <td className="px-4 py-3 text-center font-semibold text-slate-800">
+                {proj.total}
+              </td>
+            </tr>
+          ))}
+
+          <tr className="bg-slate-200 font-semibold text-slate-800">
+            <td className="px-4 py-3 border-r border-slate-300" colSpan={2}>
+              Daily Total
+            </td>
+
+            {dayOrder.map((key) => (
+              <td
+                key={key}
+                className="px-4 py-3 text-center border-r border-slate-300"
+              >
+                {total_hours[key] || 0}
+              </td>
+            ))}
+
+            <td className="px-4 py-3 text-center">{week_total}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div className="mt-4 text-slate-700 font-semibold text-sm">
+      Total Hours (Week): {week_total}
+    </div>
+  </div>
+);
+
 }
+
+
