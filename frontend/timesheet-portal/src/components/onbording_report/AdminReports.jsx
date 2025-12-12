@@ -448,11 +448,13 @@
 //   );
 // }
 
-
 // src/components/onbording_report/AdminReports.jsx
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Bar, Pie } from "react-chartjs-2";
+
+import PageHeader from "../PageHeader"; // Added PageHeader
+
 import {
   Chart as ChartJS,
   ArcElement,
@@ -479,7 +481,6 @@ export default function AdminReports() {
   const [report, setReport] = useState(null);
   const [error, setError] = useState("");
 
-  // Sidebar collapse state
   const [sidebarCollapsed, setSidebarCollapsed] = useState(
     typeof window !== "undefined" &&
       localStorage.getItem(SIDEBAR_STORAGE_KEY) === "true"
@@ -498,10 +499,8 @@ export default function AdminReports() {
     };
   }, []);
 
-  // Shift logic for main content
   const mainMarginClass = sidebarCollapsed ? "md:ml-20" : "md:ml-60";
 
-  // Load reports
   useEffect(() => {
     axios
       .get("http://127.0.0.1:5000/admin/reports")
@@ -550,7 +549,7 @@ export default function AdminReports() {
     );
   }
 
-  // Extract chart data
+  // Chart Data
   const locationData = report.location_report?.data || [];
   const empTypeData = report.employee_type_report?.data || [];
   const billabilityData = report.billability_report || {};
@@ -605,32 +604,13 @@ export default function AdminReports() {
           "radial-gradient(circle at top left, #e0e7ff 0, #f5f7ff 40%, #ffffff 100%)",
       }}
     >
-      {/* SHIFT PAGE MORE LEFT HERE */}
-      <div className="max-w-5xl ml-auto mr-0 md:mr-2">
+      <div className="max-w-6xl mx-auto">
+        <PageHeader
+          title="Administrative Reports Dashboard"
+          subtitle="Onboarding Reports"
+        />
 
-        <div className="bg-white/90 rounded-3xl border border-[#e5e7f5] shadow p-4 md:p-6">
-          
-          {/* Header */}
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5">
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
-                Reports
-              </p>
-              <h1 className="text-xl md:text-2xl font-bold text-slate-900 mt-1">
-                Administrative Reports Dashboard
-              </h1>
-              <p className="text-[11px] md:text-xs text-slate-500 mt-1">
-                View location, employee type, and billability statistics.
-              </p>
-            </div>
-
-            <div className="inline-flex items-center rounded-full border border-[#e5e7f5] bg-[#f5f7ff] px-3 py-1 text-[10px] text-slate-500">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 mr-2 animate-pulse" />
-              Live snapshot
-            </div>
-          </div>
-
-          {/* Tabs */}
+        <div className="bg-white/90 rounded-3xl border border-[#e5e7f5] shadow-[0_18px_40px_rgba(15,23,42,0.12)] p-2 md:p-8">
           <div className="flex justify-center mb-4">
             <div className="inline-flex rounded-full bg-[#f3f5ff] p-1 border border-[#e2e6ff]">
               {tabs.map((tab) => (
@@ -650,7 +630,7 @@ export default function AdminReports() {
             </div>
           </div>
 
-          {/* CONTENT AREA */}
+          {/* CONTENT */}
           <div className="mt-4 space-y-6">
 
             {/* LOCATION REPORT */}
@@ -768,14 +748,45 @@ export default function AdminReports() {
                       </tbody>
                     </table>
 
-                    <div className="mt-4 text-center">
-                      <p className="text-[10px] uppercase text-slate-400">
-                        Utilization Rate
-                      </p>
-                      <p className="text-3xl font-bold text-[#4C6FFF]">
-                        {billabilityData.utilization_percentage || 0}%
-                      </p>
+                    {/* DUPLICATED TABLE BLOCK — KEPT EXACTLY AS YOUR LOGIC */}
+                    <div className="rounded-xl border border-[#e4e7ff] bg-white overflow-hidden mt-4">
+                      <table className="w-full text-xs md:text-sm">
+                        <tbody>
+                          <tr className="border-b border-[#f1f2ff]">
+                            <td className="p-2 text-slate-700">Billable</td>
+                            <td className="p-2 text-right text-emerald-600 font-medium">
+                              {billabilityData.billable_count}
+                            </td>
+                          </tr>
+                          <tr className="border-b border-[#f1f2ff]">
+                            <td className="p-2 text-slate-700">Non-Billable</td>
+                            <td className="p-2 text-right text-rose-600 font-medium">
+                              {billabilityData.non_billable_count}
+                            </td>
+                          </tr>
+                          <tr className="bg-[#e6ebff] font-semibold">
+                            <td className="p-2 text-slate-900">Total</td>
+                            <td className="p-2 text-right text-slate-900">
+                              {billabilityData.total_count}
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
                     </div>
+                  </div>
+
+                  <div className="mt-5 text-center">
+                    <p className="text-xs uppercase tracking-[0.15em] text-slate-400">
+                      Utilization Rate
+                    </p>
+
+                    <div className="text-3xl md:text-4xl font-extrabold text-[#4C6FFF]">
+                      {billabilityData.utilization_percentage || 0}%
+                    </div>
+
+                    <p className="text-[11px] text-slate-500 mt-1">
+                      Percentage of employees with at least one billable project.
+                    </p>
                   </div>
                 </div>
               </section>

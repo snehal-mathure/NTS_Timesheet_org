@@ -3567,6 +3567,60 @@ def client_reports():
 # ============================
 # Department Billability
 
+# @app.route('/admin/department_billability', methods=['GET'])
+# def get_department_billability():
+#     start_date_str = request.args.get('start_date')
+#     end_date_str = request.args.get('end_date')
+
+#     try:
+#         start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date() if start_date_str else None
+#         end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date() if end_date_str else None
+#     except ValueError:
+#         return jsonify({"error": "Invalid date format. Please use YYYY-MM-DD."}), 400
+
+#     all_departments = Department.query.order_by(Department.dept_name).all()
+#     department_billability = []
+
+#     for dept in all_departments:
+#         dept_empids = [emp.empid for emp in dept.employees]
+#         total_count = len(dept_empids)
+#         billable_count = 0
+#         non_billable_count = 0
+
+#         for empid in dept_empids:
+
+#             project_query = db.session.query(Project_Info.project_billability).join(
+#                 TimesheetEntry, Project_Info.id == TimesheetEntry.project_id
+#             ).filter(TimesheetEntry.empid == empid)
+
+#             if start_date:
+#                 project_query = project_query.filter(TimesheetEntry.date >= start_date)
+#             if end_date:
+#                 project_query = project_query.filter(TimesheetEntry.date <= end_date)
+
+#             project_billabilities = {row[0] for row in project_query.distinct().all()}
+
+#             if "Billable" in project_billabilities:
+#                 billable_count += 1
+#             else:
+#                 non_billable_count += 1
+
+#         department_billability.append({
+#             "department": dept.dept_name,
+#             "billable_count": billable_count,
+#             "non_billable_count": non_billable_count,
+#             "total_count": total_count
+#         })
+
+#     return jsonify({
+#         "start_date": start_date_str,
+#         "end_date": end_date_str,
+#         "data": department_billability
+#     }), 200
+
+
+# Department Billability + Experience
+
 @app.route('/admin/department_billability', methods=['GET'])
 def get_department_billability():
     start_date_str = request.args.get('start_date')
@@ -3578,20 +3632,56 @@ def get_department_billability():
     except ValueError:
         return jsonify({"error": "Invalid date format. Please use YYYY-MM-DD."}), 400
 
+    today = date.today()
+
     all_departments = Department.query.order_by(Department.dept_name).all()
     department_billability = []
 
     for dept in all_departments:
-        dept_empids = [emp.empid for emp in dept.employees]
-        total_count = len(dept_empids)
+
+        # BASE COUNTS
+        total_employees = len(dept.employees)
+
         billable_count = 0
         non_billable_count = 0
+        total_experience_years = 0
 
-        for empid in dept_empids:
+        # NEW COUNTS
+        fresher_count = 0
+        fresher_billable = 0
+        fresher_non_billable = 0
 
+        experienced_count = 0
+        experienced_billable = 0
+        experienced_non_billable = 0
+
+        # LOOP EMPLOYEES
+        for emp in dept.employees:
+
+            # EXPERIENCE CALCULATION
+            prev_exp = emp.prev_total_exp if emp.prev_total_exp else 0
+
+            if emp.doj:
+                days_after_joining = (today - emp.doj).days
+                exp_after_joining = days_after_joining / 365
+            else:
+                exp_after_joining = 0
+
+            total_exp = prev_exp + exp_after_joining
+            total_experience_years += total_exp
+
+            # CATEGORY CHECK
+            is_fresher = total_exp < 2
+
+            if is_fresher:
+                fresher_count += 1
+            else:
+                experienced_count += 1
+
+            # BILLABILITY CHECK
             project_query = db.session.query(Project_Info.project_billability).join(
                 TimesheetEntry, Project_Info.id == TimesheetEntry.project_id
-            ).filter(TimesheetEntry.empid == empid)
+            ).filter(TimesheetEntry.empid == emp.empid)
 
             if start_date:
                 project_query = project_query.filter(TimesheetEntry.date >= start_date)
@@ -3600,16 +3690,49 @@ def get_department_billability():
 
             project_billabilities = {row[0] for row in project_query.distinct().all()}
 
-            if "Billable" in project_billabilities:
+            is_billable = "Billable" in project_billabilities
+
+            # OLD TOTAL COUNTS
+            if is_billable:
                 billable_count += 1
             else:
                 non_billable_count += 1
 
+            # NEW CATEGORY COUNTS
+            if is_fresher:
+                if is_billable:
+                    fresher_billable += 1
+                else:
+                    fresher_non_billable += 1
+            else:
+                if is_billable:
+                    experienced_billable += 1
+                else:
+                    experienced_non_billable += 1
+
+        # FINAL STRUCTURE
         department_billability.append({
             "department": dept.dept_name,
+
+            # GENERAL
+            "total_employees": total_employees,
             "billable_count": billable_count,
             "non_billable_count": non_billable_count,
-            "total_count": total_count
+            "total_experience_years": round(total_experience_years, 2),
+
+            # FRESHER DATA
+            "fresher_count": fresher_count,
+            "fresher_billable": fresher_billable,
+            "fresher_non_billable": fresher_non_billable,
+
+            # EXPERIENCED DATA
+            "experienced_count": experienced_count,
+            "experienced_billable": experienced_billable,
+            "experienced_non_billable": experienced_non_billable,
+
+            # 🔵 NEW FIELDS ADDED (ONLY THESE TWO)
+            "total_fresher": fresher_count,
+            "total_experienced": experienced_count
         })
 
     return jsonify({
