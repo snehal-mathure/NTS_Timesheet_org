@@ -1,12 +1,12 @@
-
-
-// src/pages/AddProjectInTimesheet.jsx
+// // src/pages/AddProjectInTimesheet.jsx
 // import React, { useEffect, useMemo, useState } from "react";
 // import Sidebar from "../components/Sidebar";
 // import PageHeader from "../components/PageHeader";
 // import chargeCodeService from "../services/UserDashboard/chargeCodeService";
 // import { FiSearch, FiRotateCw, FiCheckCircle, FiX } from "react-icons/fi";
 // import UserDashboardSidebar from "./UserDashboardSidebar";
+
+// const SIDEBAR_STORAGE_KEY = "td_sidebar_collapsed";
 
 // export default function AddProjectInTimesheet() {
 //   const [clients, setClients] = useState([]);
@@ -20,6 +20,14 @@
 //   const [success, setSuccess] = useState("");
 //   const [projectQuery, setProjectQuery] = useState("");
 
+//   // track sidebar collapsed state so main content margin adjusts
+//   const [sidebarCollapsed, setSidebarCollapsed] = useState(
+//     localStorage.getItem(SIDEBAR_STORAGE_KEY) === "true"
+//   );
+
+//   // -----------------------
+//   // Load initial data
+//   // -----------------------
 //   useEffect(() => {
 //     async function loadData() {
 //       setLoading(true);
@@ -42,6 +50,22 @@
 //     loadData();
 //   }, []);
 
+//   // listen for sidebar toggle events (same-tab custom event or storage event from other tabs)
+//   useEffect(() => {
+//     const handler = () => {
+//       setSidebarCollapsed(localStorage.getItem(SIDEBAR_STORAGE_KEY) === "true");
+//     };
+//     window.addEventListener("td_sidebar_change", handler);
+//     window.addEventListener("storage", handler);
+//     return () => {
+//       window.removeEventListener("td_sidebar_change", handler);
+//       window.removeEventListener("storage", handler);
+//     };
+//   }, []);
+
+//   // -----------------------
+//   // Client selection
+//   // -----------------------
 //   // When user clicks a client, show its projects and pre-check assigned ones
 //   const handleClientSelect = (clientID) => {
 //     setSelectedClient(clientID);
@@ -57,6 +81,9 @@
 //     setError("");
 //   };
 
+//   // -----------------------
+//   // Project selection helpers
+//   // -----------------------
 //   const toggleProject = (id) =>
 //     setSelectedProjects((prev) => {
 //       const nxt = new Set(prev);
@@ -71,6 +98,7 @@
 
 //   const clearSelectionForClient = () => setSelectedProjects(new Set());
 
+//   // Filter projects by query (memoized)
 //   const filteredProjects = useMemo(() => {
 //     if (!selectedClient) return [];
 //     const list = clientProjects[selectedClient] || [];
@@ -83,6 +111,9 @@
 //     );
 //   }, [clientProjects, selectedClient, projectQuery]);
 
+//   // -----------------------
+//   // Persist changes
+//   // -----------------------
 //   const handleUpdate = async () => {
 //     if (!selectedClient) return;
 //     setSaving(true);
@@ -111,6 +142,9 @@
 //     }
 //   };
 
+//   // -----------------------
+//   // Reset / reload data
+//   // -----------------------
 //   const handleReset = async () => {
 //     setLoading(true);
 //     setError("");
@@ -131,7 +165,9 @@
 //     }
 //   };
 
-//   // Auto-hide toast after a short duration
+//   // -----------------------
+//   // Toast auto-hide
+//   // -----------------------
 //   useEffect(() => {
 //     let t;
 //     if (success || error) {
@@ -143,11 +179,21 @@
 //     return () => clearTimeout(t);
 //   }, [success, error]);
 
-//   // Simple toast component (inline)
+//   // -----------------------
+//   // Toast component (inline)
+//   // -----------------------
 //   const Toast = ({ type = "success", message = "", onClose }) => {
 //     if (!message) return null;
-//     const bg = type === "success" ? "bg-white border-l-4 border-green-500" : "bg-white border-l-4 border-rose-500";
-//     const icon = type === "success" ? <FiCheckCircle className="text-green-500" /> : <FiX className="text-rose-500" />;
+//     const bg =
+//       type === "success"
+//         ? "bg-white border-l-4 border-green-500"
+//         : "bg-white border-l-4 border-rose-500";
+//     const icon =
+//       type === "success" ? (
+//         <FiCheckCircle className="text-green-500" />
+//       ) : (
+//         <FiX className="text-rose-500" />
+//       );
 //     return (
 //       <div className={`pointer-events-auto ${bg} shadow-md rounded-md p-3 max-w-sm w-full flex items-start gap-3`}>
 //         <div className="mt-0.5">{icon}</div>
@@ -162,11 +208,19 @@
 //     );
 //   };
 
+//   // compute main margin:
+//   // - sidebarCollapsed === true  -> show icon rail width (md:ml-20)
+//   // - sidebarCollapsed === false -> show full sidebar width (md:ml-72)
+//   const mainMarginClass = sidebarCollapsed ? "md:ml-20" : "md:ml-72";
+
+//   // -----------------------
+//   // Render
+//   // -----------------------
 //   return (
 //     <div className="min-h-screen flex" style={{ backgroundColor: "#F5F7FF" }}>
 //       <UserDashboardSidebar />
 
-//       <main className="flex-1 px-6 md:px-10 py-8">
+//       <main className={`flex-1 px-6 md:px-10 py-8 transition-all duration-200 ${mainMarginClass}`}>
 //         <div className="max-w-6xl w-full mx-auto space-y-6">
 //           {/* HEADER GRADIENT CARD */}
 //           <div className="bg-gradient-to-r from-[#4C6FFF] via-[#6C5CE7] to-[#8B5CF6] rounded-3xl p-[2px] shadow-[0_18px_45px_rgba(15,23,42,0.12)]">
@@ -189,7 +243,9 @@
 //             {/* top form row: client select + optional actions (matches AddProject layout) */}
 //             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 items-end">
 //               <div className="md:col-span-2">
-//                 <label className="block text-xs font-medium text-slate-600 mb-2">Select Client <span className="text-rose-600">*</span></label>
+//                 <label className="block text-xs font-medium text-slate-600 mb-2">
+//                   Select Client <span className="text-rose-600">*</span>
+//                 </label>
 //                 <select
 //                   value={selectedClient ?? ""}
 //                   onChange={(e) => handleClientSelect(e.target.value || null)}
@@ -218,20 +274,10 @@
 
 //             {/* Toast container (top-right) */}
 //             <div className="fixed top-5 right-5 z-50">
-//               {success && (
-//                 <Toast
-//                   type="success"
-//                   message={success}
-//                   onClose={() => setSuccess("")}
-//                 />
-//               )}
+//               {success && <Toast type="success" message={success} onClose={() => setSuccess("")} />}
 //               {error && (
 //                 <div className="mt-3">
-//                   <Toast
-//                     type="error"
-//                     message={error}
-//                     onClose={() => setError("")}
-//                   />
+//                   <Toast type="error" message={error} onClose={() => setError("")} />
 //                 </div>
 //               )}
 //             </div>
@@ -344,13 +390,18 @@
 // }
 
 
+
+
+
+
 // src/pages/AddProjectInTimesheet.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import Sidebar from "../components/Sidebar";
 import PageHeader from "../components/PageHeader";
 import chargeCodeService from "../services/UserDashboard/chargeCodeService";
-import { FiSearch, FiRotateCw, FiCheckCircle, FiX } from "react-icons/fi";
 import UserDashboardSidebar from "./UserDashboardSidebar";
+import { FiSearch, FiRotateCw, FiCheckCircle, FiX } from "react-icons/fi";
+import logoSmall from "../assets/logo.jpg"; // used as the reset-only logo
 
 const SIDEBAR_STORAGE_KEY = "td_sidebar_collapsed";
 
@@ -608,12 +659,13 @@ export default function AddProjectInTimesheet() {
               </div>
 
               <div className="flex items-center gap-3 justify-end">
+                {/* RESET button: now shows only the logo (no text). still calls handleReset */}
                 <button
                   type="button"
                   onClick={handleReset}
                   className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl border border-slate-200 bg-slate-50 text-xs font-medium text-slate-700 hover:bg-slate-100"
                 >
-                  <FiRotateCw /> Reset
+                  Reset
                 </button>
               </div>
             </div>
@@ -656,15 +708,13 @@ export default function AddProjectInTimesheet() {
                     <button
                       type="button"
                       onClick={selectAllForClient}
-                      className="px-3 py-2 rounded-2xl border border-slate-200 bg-slate-50 text-xs font-medium hover:bg-slate-100"
-                    >
+                      className="px-3.5 py-1.5 rounded-2xl border border-slate-200 bg-white text-xs font-medium text-slate-700 hover:bg-slate-50"                    >
                       Select all
                     </button>
                     <button
                       type="button"
                       onClick={clearSelectionForClient}
-                      className="px-3 py-2 rounded-2xl border border-slate-200 bg-white text-xs font-medium hover:bg-slate-50"
-                    >
+                      className="px-3.5 py-1.5 rounded-2xl border border-slate-200 bg-white text-xs font-medium text-slate-700 hover:bg-slate-50"                    >
                       Clear
                     </button>
                   </div>
@@ -707,15 +757,7 @@ export default function AddProjectInTimesheet() {
 
                 {/* Actions */}
                 <div className="mt-6 flex items-center justify-end gap-3">
-                  <button
-                    type="button"
-                    onClick={handleReset}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl border border-slate-200 bg-slate-50 text-xs font-medium text-slate-700 hover:bg-slate-100"
-                    disabled={loading}
-                  >
-                    Reset
-                  </button>
-
+                  {/* NOTE: Bottom Reset button removed to avoid duplicate reset controls */}
                   <button
                     type="button"
                     onClick={handleUpdate}

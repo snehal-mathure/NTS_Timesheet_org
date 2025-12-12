@@ -16,6 +16,7 @@ import { FiEye, FiEdit3 } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 
 
+import Pagination from "../components/Pagination";
 
 const SIDEBAR_STORAGE_KEY = "td_sidebar_collapsed";
 
@@ -51,6 +52,10 @@ export default function ListEmployee() {
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [clientDetails, setClientDetails] = useState([]);
   const [alert, setAlert] = useState(null);
+
+  // pagination state
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   // layout: track sidebar collapsed so main content margin adjusts
   const [sidebarCollapsed, setSidebarCollapsed] = useState(
@@ -103,6 +108,8 @@ export default function ListEmployee() {
       };
       const data = await employeeService.getEmployees(params);
       setEmployees(Array.isArray(data) ? data : []);
+      // reset pagination when server data refreshed
+      setPage(1);
     } catch (err) {
       console.error(err);
       setAlert({ type: "error", message: "Failed to load employees." });
@@ -168,6 +175,20 @@ export default function ListEmployee() {
       return match;
     });
   }, [employees, searchText, statusFilter]);
+
+  // PAGINATION: slice the filteredEmployees for the current page
+  const totalItems = filteredEmployees.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  // ensure page is valid if filters changed
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pageSize, totalItems, totalPages]);
+
+  const pagedEmployees = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filteredEmployees.slice(start, start + pageSize);
+  }, [filteredEmployees, page, pageSize]);
 
   // view details
   const viewEmployee = async (empid) => {
@@ -249,13 +270,10 @@ export default function ListEmployee() {
           {/* DETAIL VIEW */}
           {selectedEmployee ? (
             <div className="bg-white/90 rounded-3xl shadow-xl border border-[#e5e7f5] overflow-hidden">
-
               {/* ===== TOP HEADER (COMPACT) ===== */}
               <div
                 className="relative px-6 py-4 md:px-8 md:py-5 rounded-t-3xl border-b border-slate-200 bg-white"
               >
-
-                {/* Back Button - moved slightly downward */}
                 <button
                   onClick={backToList}
                   className="absolute left-4 top-6 inline-flex items-center justify-center 
@@ -265,8 +283,6 @@ export default function ListEmployee() {
                 </button>
 
                 <div className="flex items-center gap-4 ml-16">
-
-                  {/* Avatar */}
                   <div className="w-12 h-12 rounded-2xl bg-[#F3F5FF] border border-slate-200 
                     flex items-center justify-center text-sm font-semibold text-slate-700">
                     {selectedEmployee.fname?.[0]}
@@ -286,9 +302,7 @@ export default function ListEmployee() {
 
               {/* ===== MAIN CONTENT ===== */}
               <div className="p-6 md:p-8 space-y-8">
-
                 {/* --- FIELD COMPONENT FOR LABEL + VALUE --- */}
-                {/** Must be inside render scope */}
                 {(() => {
                   function Field({ label, children }) {
                     return (
@@ -303,7 +317,6 @@ export default function ListEmployee() {
                     <>
                       {/* ===== INFO GRID ===== */}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
                         {/* PERSONAL */}
                         <section className="rounded-2xl border border-slate-200 bg-white/70 p-5 shadow-sm">
                           <h3 className="text-[11px] font-semibold text-slate-600 tracking-wide mb-3">
@@ -613,9 +626,17 @@ export default function ListEmployee() {
 
               {/* TABLE (styled like View Clients) */}
               <div className="px-6 pb-6 pt-3">
-                <p className="text-[11px] text-slate-400 mb-2">
-                  {filteredEmployees.length} record(s) found
-                </p>
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-[11px] text-slate-400">
+                    {filteredEmployees.length} record(s) found
+                  </p>
+                  <p className="text-[11px] text-slate-400">
+                    Showing{" "}
+                    {totalItems === 0 ? 0 : (page - 1) * pageSize + 1} -{" "}
+                    {Math.min(page * pageSize, totalItems)} of {totalItems}
+                  </p>
+                </div>
+
                 <div className="overflow-x-auto">
                   <table className="min-w-full text-xs divide-y divide-[#e5e7f5]">
                     <thead className="bg-[#F3F5FF]">
@@ -639,8 +660,8 @@ export default function ListEmployee() {
                             Loading employees...
                           </td>
                         </tr>
-                      ) : filteredEmployees.length ? (
-                        filteredEmployees.map((emp) => {
+                      ) : pagedEmployees.length ? (
+                        pagedEmployees.map((emp) => {
                           const isInactive = emp.lwd && new Date(emp.lwd) <= new Date();
                           return (
                             <tr
@@ -703,6 +724,18 @@ export default function ListEmployee() {
                     </tbody>
                   </table>
                 </div>
+
+                {/* Pagination controls */}
+                <Pagination
+                  totalItems={totalItems}
+                  page={page}
+                  pageSize={pageSize}
+                  onPageChange={(p) => setPage(p)}
+                  onPageSizeChange={(s) => {
+                    setPageSize(s);
+                    setPage(1); // reset to first page when size changes
+                  }}
+                />
               </div>
             </div>
           )}
