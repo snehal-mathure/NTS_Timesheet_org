@@ -1,71 +1,147 @@
-import React from "react";
+
+// src/components/OnboardingSidebar.jsx
+import React, { useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 
+import {
+  FiLayers,
+  FiBriefcase,
+  FiPieChart,
+  FiBarChart2,
+  FiChevronLeft,
+  FiChevronDown,
+} from "react-icons/fi";
+
+const STORAGE_KEY = "td_sidebar_collapsed"; // SAME KEY as Sidebar.jsx
+
 const links = [
-    { to: "departmentBillability", label: "Department Billability" },
-    { to: "clientReports", label: "Client Reports" },
-    { to: "clientDepartmentDistribution", label: "Client Dept Distribution" },
-    { to: "adminReports", label: "Admin Report" },
+  { to: "departmentBillability", label: "Department Billability", icon: FiLayers },
+  { to: "clientReports", label: "Client Reports", icon: FiBriefcase },
+  { to: "clientDepartmentDistribution", label: "Client Dept Distribution", icon: FiPieChart },
+  { to: "adminReports", label: "Admin Report", icon: FiBarChart2 },
 ];
 
 export default function OnboardingSidebar() {
-    const navigate = useNavigate();
+  const navigate = useNavigate();
 
-    return (
-        <aside className="w-64 hidden md:block">
-            <div className="h-full">
-                <div className="bg-white/90 rounded-3xl border border-[#e5e7f5] shadow-[0_18px_40px_rgba(15,23,42,0.12)] p-4 h-full flex flex-col">
+  // collapse state EXACTLY same as Sidebar.jsx
+  const [collapsed, setCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem(STORAGE_KEY) === "true";
+    } catch {
+      return false;
+    }
+  });
 
-                    {/* 🔙 Back Button */}
-                    <button
-                        onClick={() => navigate("/dashboard")}
-                        className="mb-4 flex items-center gap-2 px-4 py-2 bg-[#F3F5FF] text-[#4C6FFF] rounded-2xl text-xs font-medium shadow-sm hover:bg-[#e7eaff] transition"
-                    >
-                        <svg
-                            className="w-4 h-4"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M15 6l-6 6 6 6"
-                            />
-                        </svg>
-                        Back to Dashboard
-                    </button>
+  // persist collapse state
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, collapsed ? "true" : "false");
+      window.dispatchEvent(new Event("td_sidebar_change"));
+    } catch {}
+  }, [collapsed]);
 
-                    {/* Sidebar Header */}
-                    <div className="mb-4">
-                        <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-                            Onboarding Reports
-                        </p>
-                    </div>
+  const softBlueBg = "#F3F5FF";
+  const iconClass = "text-[#4C6FFF]";
 
-                    {/* Links */}
-                    <nav className="space-y-2 flex-1">
-                        {links.map((item) => (
-                            <NavLink
-                                key={item.to}
-                                to={item.to}
-                                className={({ isActive }) =>
-                                    [
-                                        "block px-4 py-2 rounded-2xl text-xs font-medium transition-all",
-                                        "hover:translate-x-[1px]",
-                                        isActive
-                                            ? "bg-[#e4e9ff] text-[#4C6FFF] shadow-sm"
-                                            : "text-slate-600 hover:bg-[#f3f5ff]",
-                                    ].join(" ")
-                                }
-                            >
-                                {item.label}
-                            </NavLink>
-                        ))}
-                    </nav>
-                </div>
-            </div>
-        </aside>
-    );
+  return (
+    <aside
+      className={`
+        fixed inset-y-0 left-0 z-40 
+        transition-all duration-200 
+        ${collapsed ? "w-16" : "w-56"}  // ← EXACT SAME WIDTH as Sidebar.jsx
+      `}
+    >
+      <div
+        className={`
+          h-full bg-white rounded-r-3xl border border-[#e5e7f5] 
+          shadow-[0_24px_60px_rgba(15,23,42,0.12)] 
+          flex flex-col overflow-hidden
+          transition-all duration-200
+        `}
+      >
+
+        {/* HEADER + BACK BUTTON */}
+        <div
+          className={`px-3 py-4 flex items-center justify-between ${
+            collapsed ? "justify-center" : ""
+          }`}
+        >
+          {/* Back button */}
+          <button
+            onClick={() => navigate("/dashboard")}
+            className={`
+              flex items-center gap-2 text-[11px] font-medium 
+              bg-[#F3F5FF] hover:bg-[#e7eaff] rounded-xl shadow-sm
+              transition-all px-3 py-2
+              ${collapsed ? "w-10 h-10 justify-center p-0" : ""}
+            `}
+          >
+            <FiChevronLeft className="text-[#4C6FFF]" size={14} />
+
+            {!collapsed && <span className="text-[11px]">Back to Dashboard</span>}
+          </button>
+
+          {/* Collapse toggle (same as Sidebar.jsx) */}
+          {!collapsed && (
+            <button
+              onClick={() => setCollapsed(true)}
+              className="hidden md:flex p-1 rounded-full border border-[#e5e7f5] hover:bg-[#f3f4ff]"
+            >
+              <FiChevronLeft className="text-slate-500" size={14} />
+            </button>
+          )}
+          {collapsed && (
+            <button
+              onClick={() => setCollapsed(false)}
+              className="hidden md:flex p-1 rounded-full border border-[#e5e7f5] hover:bg-[#f3f4ff]"
+            >
+              <FiChevronLeft className="text-slate-500 rotate-180" size={14} />
+            </button>
+          )}
+        </div>
+
+        {/* Section Title */}
+        {!collapsed && (
+          <div className="px-4 pb-2">
+            <p className="text-[11px] font-semibold text-slate-400 tracking-wide">
+              Onboarding Reports
+            </p>
+          </div>
+        )}
+
+        {/* NAV LINKS */}
+        <nav
+          className={`
+            flex-1 px-2 pb-4 space-y-1 overflow-y-auto
+            ${collapsed ? "mt-2" : ""}
+          `}
+        >
+          {links.map(({ to, label, icon: Icon }) => (
+            <NavLink
+              key={to}
+              to={to}
+              className={({ isActive }) =>
+                [
+                  "flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] font-medium transition-all",
+                  "hover:bg-[#eef1ff]",
+                  isActive ? "bg-[#e4e9ff] text-[#4C6FFF] shadow-sm" : "text-slate-600",
+                  collapsed ? "justify-center px-2" : "",
+                ].join(" ")
+              }
+            >
+              <div
+                className="w-7 h-7 flex items-center justify-center rounded-lg"
+                style={{ backgroundColor: softBlueBg }}
+              >
+                <Icon className={iconClass} size={14} />
+              </div>
+
+              {!collapsed && <span>{label}</span>}
+            </NavLink>
+          ))}
+        </nav>
+      </div>
+    </aside>
+  );
 }

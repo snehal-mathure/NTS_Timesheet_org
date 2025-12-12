@@ -192,7 +192,7 @@ export default function AddClient() {
                   </div>
                 </div>
 
-                <div>
+                {/* <div>
                   <label htmlFor="dailyHours" className="block text-xs font-semibold text-slate-600 mb-1.5">
                     Daily Hours <span className="text-rose-500">*</span>
                   </label>
@@ -214,7 +214,7 @@ export default function AddClient() {
                   <p className="mt-2 text-xs text-slate-500">
                     Enter working hours per day (0 – 24). Decimals allowed (e.g. 7.5).
                   </p>
-                </div>
+                </div> */}
 
                 <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 mt-4">
                   <Link
