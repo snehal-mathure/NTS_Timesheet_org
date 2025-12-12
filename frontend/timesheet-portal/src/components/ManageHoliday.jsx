@@ -1,3 +1,4 @@
+
 // // src/pages/ManageHoliday.jsx
 // import React, { useEffect, useState, useRef } from "react";
 // import {
@@ -60,14 +61,17 @@
 //     }
 //   };
 
-//   // layout: track sidebar collapsed state so main content margin adjusts
+//   // layout: track sidebar collapsed state
 //   const [sidebarCollapsed, setSidebarCollapsed] = useState(
-//     typeof window !== "undefined" && localStorage.getItem(SIDEBAR_STORAGE_KEY) === "true"
+//     typeof window !== "undefined" &&
+//       localStorage.getItem(SIDEBAR_STORAGE_KEY) === "true"
 //   );
 
 //   useEffect(() => {
 //     const handler = () => {
-//       setSidebarCollapsed(localStorage.getItem(SIDEBAR_STORAGE_KEY) === "true");
+//       setSidebarCollapsed(
+//         localStorage.getItem(SIDEBAR_STORAGE_KEY) === "true"
+//       );
 //     };
 
 //     window.addEventListener("td_sidebar_change", handler);
@@ -79,7 +83,6 @@
 //     };
 //   }, []);
 
-//   // main margin classes mirror sidebar widths: collapsed -> md:ml-20 (icons only); expanded -> md:ml-72
 //   const mainMarginClass = sidebarCollapsed ? "md:ml-20" : "md:ml-72";
 
 //   return (
@@ -87,18 +90,17 @@
 //       className="min-h-screen flex"
 //       style={{ backgroundColor: "#f5f7fb" }}
 //     >
-//       {/* FIXED SIDEBAR (independent scroll) */}
-//       <aside className="hidden md:block fixed inset-y-0 left-0 z-40 w-72 md:w-72 lg:w-72">
+//       {/* FIXED SIDEBAR */}
+//       <aside className="hidden md:block fixed inset-y-0 left-0 z-40 w-72">
 //         <Sidebar />
 //       </aside>
 
-//       {/* mobile placeholder / accessibility */}
-//       <div className="md:hidden" />
-
-//       {/* Main area – independent scroll, aligned like other pages */}
-//       <main className={`flex-1 transition-all duration-200 ${mainMarginClass} overflow-y-auto`} style={{ minHeight: "100vh" }}>
+//       {/* MAIN */}
+//       <main
+//         className={`flex-1 transition-all duration-200 ${mainMarginClass} overflow-y-auto`}
+//         style={{ minHeight: "100vh" }}
+//       >
 //         <div className="max-w-6xl mx-auto px-6 lg:px-10 py-8">
-//           {/* Header (PageHeader style) */}
 //           <PageHeader
 //             title="Manage Holidays"
 //             subtitle="Add, review and maintain company holiday calendar."
@@ -106,12 +108,13 @@
 //             statValue={holidays?.length ?? 0}
 //           />
 
-//           {/* Main Card */}
+//           {/* MAIN CARD */}
 //           <div className="bg-white border border-slate-200 rounded-[32px] shadow-sm overflow-hidden min-h-[60vh] flex flex-col mt-4">
 //             <div className="px-6 lg:px-8 py-8 space-y-8 flex-1">
-//               {/* Form + Quick Actions */}
+//               {/* FORM + QUICK ACTIONS */}
 //               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-//                 {/* Form Card */}
+
+//                 {/* FORM CARD */}
 //                 <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-100 p-6 lg:p-7 shadow-sm">
 //                   <h3 className="text-[15px] font-semibold mb-1 text-slate-800">
 //                     Add New Holiday
@@ -166,19 +169,19 @@
 //                       </div>
 //                     </div>
 
-//                       <div className="md:col-span-2">
-//                         <label className="block text-xs font-medium text-slate-700 mb-1">
-//                           Description
-//                         </label>
-//                         <input
-//                           type="text"
-//                           name="holiday_desc"
-//                           value={form.holiday_desc}
-//                           onChange={handleChange}
-//                           className="w-full border border-slate-200 rounded-full px-3 py-2 text-xs bg-slate-50 focus:ring-2 focus:ring-indigo-200 focus:border-indigo-300"
-//                           placeholder="Reason / description"
-//                         />
-//                       </div>
+//                     {/* DESCRIPTION */}
+//                     <div>
+//                       <label className="block text-xs font-medium text-slate-700 mb-1">
+//                         Description
+//                       </label>
+//                       <input
+//                         type="text"
+//                         name="holiday_desc"
+//                         value={form.holiday_desc}
+//                         onChange={handleChange}
+//                         className="w-full border border-slate-200 rounded-full px-3 py-2 text-xs bg-slate-50 focus:ring-2 focus:ring-indigo-200 focus:border-indigo-300"
+//                         placeholder="Reason / description"
+//                       />
 //                     </div>
 
 //                     <div className="flex flex-wrap items-center gap-3 mt-2">
@@ -196,11 +199,10 @@
 //                             start_date: "",
 //                             end_date: "",
 //                             holiday_type: "RH",
-//                             dc: "",
 //                             holiday_desc: "",
 //                           })
 //                         }
-//                         className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-slate-200 bg-white text-xs text-slate-700 hover:bg-slate-50"
+//                         className="px-3.5 py-1.5 rounded-2xl border border-slate-200 bg-white text-xs font-medium text-slate-700 hover:bg-slate-50"
 //                       >
 //                         Reset
 //                       </button>
@@ -208,7 +210,7 @@
 //                   </form>
 //                 </div>
 
-//                 {/* Quick Actions Card */}
+//                 {/* QUICK ACTIONS */}
 //                 <div className="bg-white rounded-2xl border border-slate-100 p-6 lg:p-7 shadow-sm">
 //                   <h3 className="text-[15px] font-semibold mb-2 text-slate-800">
 //                     Quick Actions
@@ -220,7 +222,7 @@
 //                   <div className="flex flex-col gap-3">
 //                     <button
 //                       onClick={loadData}
-//                       className="w-full inline-flex items-center justify-between gap-2 px-4 py-2 rounded-full border border-slate-200 bg-slate-50 text-xs text-slate-700 hover:bg-slate-100"
+//                       className="w-full inline-flex items-center justify-between px-4 py-2 rounded-full border border-slate-200 bg-slate-50 text-xs text-slate-700 hover:bg-slate-100"
 //                     >
 //                       <span>Refresh List</span>
 //                       <span className="text-[10px] text-slate-500 uppercase tracking-wide">
@@ -229,13 +231,13 @@
 //                     </button>
 
 //                     <button
-//                       onClick={() => {
+//                       onClick={() =>
 //                         tableRef.current?.scrollIntoView({
 //                           behavior: "smooth",
 //                           block: "start",
-//                         });
-//                       }}
-//                       className="w-full inline-flex items-center justify-between gap-2 px-4 py-2 rounded-full border border-slate-200 bg-slate-50 text-xs text-slate-700 hover:bg-slate-100"
+//                         })
+//                       }
+//                       className="w-full inline-flex items-center justify-between px-4 py-2 rounded-full border border-slate-200 bg-slate-50 text-xs text-slate-700 hover:bg-slate-100"
 //                     >
 //                       <span>View All Holidays</span>
 //                       <span className="text-[10px] text-slate-500 uppercase tracking-wide">
@@ -246,7 +248,7 @@
 //                 </div>
 //               </div>
 
-//               {/* Table Card */}
+//               {/* HOLIDAY TABLE */}
 //               <div
 //                 ref={tableRef}
 //                 className="bg-white rounded-2xl border border-slate-100 p-6 lg:p-7 shadow-sm"
@@ -295,11 +297,8 @@
 //                             <td className="px-4 py-3 whitespace-nowrap">
 //                               {h.holiday_type}
 //                             </td>
-//                             <td className="px-4 py-3">
-//                               <span className="line-clamp-2">
-//                                 {h.holiday_desc}
-//                               </span>
-//                             </td>
+//                             <td className="px-4 py-3">{h.holiday_desc}</td>
+
 //                             <td className="px-4 py-3">
 //                               <button
 //                                 onClick={() => handleDelete(h.id)}
@@ -328,7 +327,7 @@
 //                       ) : (
 //                         <tr>
 //                           <td
-//                             colSpan={6}
+//                             colSpan={5}
 //                             className="px-4 py-8 text-center text-slate-500 text-xs"
 //                           >
 //                             No holidays found.
@@ -339,16 +338,15 @@
 //                   </table>
 //                 </div>
 //               </div>
-//               {/* end table card */}
+//               {/* TABLE END */}
 //             </div>
 //           </div>
-//           {/* end main card */}
+//           {/* CARD END */}
 //         </div>
 //       </main>
 //     </div>
 //   );
 // }
-
 
 
 // src/pages/ManageHoliday.jsx
@@ -360,6 +358,9 @@ import {
 } from "../services/AdminDashboard/manageHoliday";
 import Sidebar from "../components/Sidebar";
 import PageHeader from "../components/PageHeader";
+
+// ❗ Pagination import
+import Pagination from "../components/Pagination";
 
 const SIDEBAR_STORAGE_KEY = "td_sidebar_collapsed";
 
@@ -375,9 +376,18 @@ export default function ManageHoliday() {
 
   const tableRef = useRef(null);
 
+  // pagination state
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
   const loadData = async () => {
     const data = await getHolidays();
-    if (data) setHolidays(data);
+    if (data) {
+      setHolidays(data);
+      setPage(1); // reset to first page on fresh load
+    } else {
+      setHolidays([]);
+    }
   };
 
   useEffect(() => {
@@ -393,7 +403,7 @@ export default function ManageHoliday() {
     const res = await addHoliday(form);
     if (res?.status === "success") {
       alert("Holiday Added Successfully");
-      loadData();
+      await loadData();
       setForm({
         start_date: "",
         end_date: "",
@@ -409,7 +419,7 @@ export default function ManageHoliday() {
     const res = await deleteHoliday(id);
     if (res?.status === "success") {
       alert("Holiday deleted");
-      loadData();
+      await loadData();
     }
   };
 
@@ -436,6 +446,19 @@ export default function ManageHoliday() {
   }, []);
 
   const mainMarginClass = sidebarCollapsed ? "md:ml-20" : "md:ml-72";
+
+  // clamp page when holidays or pageSize change
+  useEffect(() => {
+    const totalPages = Math.max(1, Math.ceil((holidays?.length || 0) / pageSize));
+    if (page > totalPages) setPage(totalPages);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [holidays, pageSize]);
+
+  // compute displayed slice
+  const totalItems = holidays?.length || 0;
+  const startIndex = (page - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const displayedHolidays = (holidays || []).slice(startIndex, endIndex);
 
   return (
     <div
@@ -465,7 +488,6 @@ export default function ManageHoliday() {
             <div className="px-6 lg:px-8 py-8 space-y-8 flex-1">
               {/* FORM + QUICK ACTIONS */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
                 {/* FORM CARD */}
                 <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-100 p-6 lg:p-7 shadow-sm">
                   <h3 className="text-[15px] font-semibold mb-1 text-slate-800">
@@ -637,8 +659,8 @@ export default function ManageHoliday() {
                     </thead>
 
                     <tbody className="bg-white divide-y divide-slate-100">
-                      {holidays?.length ? (
-                        holidays.map((h) => (
+                      {displayedHolidays?.length ? (
+                        displayedHolidays.map((h) => (
                           <tr key={h.id} className="hover:bg-slate-50">
                             <td className="px-4 py-3 whitespace-nowrap">
                               {h.start_date}
@@ -688,6 +710,22 @@ export default function ManageHoliday() {
                       )}
                     </tbody>
                   </table>
+                </div>
+
+                {/* Pagination */}
+                <div className="mt-4">
+                  <Pagination
+                    totalItems={totalItems}
+                    page={page}
+                    pageSize={pageSize}
+                    onPageChange={(newPage) => setPage(newPage)}
+                    onPageSizeChange={(newSize) => {
+                      setPageSize(newSize);
+                      setPage(1);
+                    }}
+                    pageSizeOptions={[5, 10, 20, 50]}
+                    maxButtons={7}
+                  />
                 </div>
               </div>
               {/* TABLE END */}

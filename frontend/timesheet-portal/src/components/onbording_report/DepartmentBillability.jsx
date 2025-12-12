@@ -1,3 +1,4 @@
+
 // // src/components/onbording_report/DepartmentBillability.jsx
 // import React, { useEffect, useState } from "react";
 // import {
@@ -12,8 +13,8 @@
 //   const [data, setData] = useState([]);
 //   const [startDate, setStartDate] = useState("");
 //   const [endDate, setEndDate] = useState("");
-//   const [selectedDept, setSelectedDept] = useState("");
 //   const [searchTerm, setSearchTerm] = useState("");
+//   const [selectedDept, setSelectedDept] = useState(""); // NEW
 
 //   const [sidebarCollapsed, setSidebarCollapsed] = useState(
 //     typeof window !== "undefined" &&
@@ -49,24 +50,19 @@
 //     loadData();
 //   }, []);
 
+//   // Build unique department list for dropdown
+//   const departmentList = [...new Set(data.map((d) => d.department))];
+
+//   // FILTER LOGIC (Search + Department + Date)
 //   const filteredData = data.filter((row) => {
 //     const dept = row.department || "";
 //     const searchMatch = dept.toLowerCase().includes(searchTerm.toLowerCase());
+//     const deptMatch = selectedDept === "" || row.department === selectedDept;
 
-//     const rowDate = row.date ? new Date(row.date) : null;
-//     const start = startDate ? new Date(startDate) : null;
-//     const end = endDate ? new Date(endDate) : null;
-
-//     const dateMatch =
-//       (!start || (rowDate && rowDate >= start)) &&
-//       (!end || (rowDate && rowDate <= end));
-
-//     return searchMatch && dateMatch;
+//     return searchMatch && deptMatch;
 //   });
 
-//   const handleFilter = (e) => {
-//     e.preventDefault();
-//   };
+//   const handleFilter = (e) => e.preventDefault();
 
 //   return (
 //     <div
@@ -75,16 +71,13 @@
 //     >
 //       <div className="max-w-5xl mx-auto">
 
-//         {/* ⭐ PAGE HEADER FIXED — subtitle shown below title */}
-//         <PageHeader
-//           title="By Department"      
-//           subtitle="Onboarding Reports"        
-//         />
+//         {/* HEADER */}
+//         <PageHeader title="By Department" subtitle="Onboarding Reports" />
 
-//         {/* Main card */}
+//         {/* MAIN CARD */}
 //         <div className="bg-white/90 border border-[#e5e7f5] rounded-3xl shadow-[0_24px_60px_rgba(15,23,42,0.12)] overflow-hidden">
-          
-//           {/* Card header */}
+
+//           {/* CARD HEADER */}
 //           <div className="flex items-center justify-between px-6 py-5 border-b border-[#e5e7f5] bg-white/80">
 //             <div className="flex items-center gap-4">
 //               <div className="w-11 h-11 rounded-2xl bg-[#F3F5FF] flex items-center justify-center shadow-sm">
@@ -106,6 +99,7 @@
 //                   />
 //                 </svg>
 //               </div>
+
 //               <div>
 //                 <h2 className="text-base md:text-lg font-semibold text-slate-900">
 //                   Billability by Department
@@ -117,61 +111,84 @@
 //             </div>
 //           </div>
 
-//           {/* Card body */}
+//           {/* CARD BODY */}
 //           <div className="px-6 py-6 md:py-7 space-y-6">
 
+//             {/* FILTERS */}
 //             <form
 //               onSubmit={handleFilter}
 //               className="rounded-2xl border border-[#e1e4f3] bg-[#F8F9FF] px-4 py-4 md:px-5 md:py-5"
 //             >
-//               <div className="rounded-2xl border border-[#e1e4f3] bg-[#F8F9FF] px-4 py-4 md:px-5 md:py-5">
-//                 <h3 className="text-sm md:text-base font-semibold text-slate-800 mb-3">
-//                   Filter by Date Range
-//                 </h3>
+//               <h3 className="text-sm md:text-base font-semibold text-slate-800 mb-3">
+//                 Filter by Date Range
+//               </h3>
 
-//                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+//               {/* ⭐ UPDATED: 4 Columns now */}
+//               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
 
-//                   <div>
-//                     <label className="block mb-1.5 text-xs font-semibold text-slate-600">
-//                       Start Date
-//                     </label>
-//                     <input
-//                       type="date"
-//                       value={startDate}
-//                       onChange={(e) => setStartDate(e.target.value)}
-//                       className="border border-[#d9dcef] bg-white rounded-2xl w-full px-3 py-2 text-sm"
-//                     />
-//                   </div>
+//                 {/* Start Date */}
+//                 <div>
+//                   <label className="block mb-1.5 text-xs font-semibold text-slate-600">
+//                     Start Date
+//                   </label>
+//                   <input
+//                     type="date"
+//                     value={startDate}
+//                     onChange={(e) => setStartDate(e.target.value)}
+//                     className="border border-[#d9dcef] bg-white rounded-2xl w-full px-3 py-2 text-sm"
+//                   />
+//                 </div>
 
-//                   <div>
-//                     <label className="block mb-1.5 text-xs font-semibold text-slate-600">
-//                       End Date
-//                     </label>
-//                     <input
-//                       type="date"
-//                       value={endDate}
-//                       onChange={(e) => setEndDate(e.target.value)}
-//                       className="border border-[#d9dcef] bg-white rounded-2xl w-full px-3 py-2 text-sm"
-//                     />
-//                   </div>
+//                 {/* End Date */}
+//                 <div>
+//                   <label className="block mb-1.5 text-xs font-semibold text-slate-600">
+//                     End Date
+//                   </label>
+//                   <input
+//                     type="date"
+//                     value={endDate}
+//                     onChange={(e) => setEndDate(e.target.value)}
+//                     className="border border-[#d9dcef] bg-white rounded-2xl w-full px-3 py-2 text-sm"
+//                   />
+//                 </div>
 
-//                   <div className="flex items-end">
-//                     <button
-//                       type="button"
-//                       onClick={() => {
-//                         setStartDate("");
-//                         setEndDate("");
-//                       }}
-//                       className="px-3.5 py-2.5 rounded-2xl border border-slate-200 bg-white text-xs font-medium text-slate-700 hover:bg-slate-50"
-//                     >
-//                       Reset
-//                     </button>
-//                   </div>
+//                 {/* ⭐ NEW: Department Dropdown */}
+//                 <div>
+//                   <label className="block mb-1.5 text-xs font-semibold text-slate-600">
+//                     Department
+//                   </label>
+//                   <select
+//                     value={selectedDept}
+//                     onChange={(e) => setSelectedDept(e.target.value)}
+//                     className="border border-[#d9dcef] bg-white rounded-2xl w-full px-3 py-2 text-sm"
+//                   >
+//                     <option value="">All Departments</option>
+//                     {departmentList.map((dept, i) => (
+//                       <option key={i} value={dept}>
+//                         {dept}
+//                       </option>
+//                     ))}
+//                   </select>
+//                 </div>
 
+//                 {/* Reset Button */}
+//                 <div className="flex items-end">
+//                   <button
+//                     type="button"
+//                     onClick={() => {
+//                       setStartDate("");
+//                       setEndDate("");
+//                       setSelectedDept("");
+//                     }}
+//                     className="px-3.5 py-2.5 rounded-2xl border border-slate-200 bg-white text-xs font-medium text-slate-700 hover:bg-slate-50"
+//                   >
+//                     Reset
+//                   </button>
 //                 </div>
 //               </div>
 //             </form>
 
+//             {/* Search + Export */}
 //             <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
 //               <input
 //                 type="text"
@@ -200,6 +217,7 @@
 //               </button>
 //             </div>
 
+//             {/* TABLE */}
 //             <div className="overflow-x-auto rounded-2xl border border-[#e1e4f3] bg-white">
 //               <table className="w-full text-sm">
 //                 <thead className="bg-[#F3F5FF]">
@@ -262,8 +280,6 @@
 // export default DepartmentBillability;
 
 
-
-
 // src/components/onbording_report/DepartmentBillability.jsx
 import React, { useEffect, useState } from "react";
 import {
@@ -271,6 +287,9 @@ import {
   exportDepartmentBillability,
 } from "../../services/AdminDashboard/departmentService";
 import PageHeader from "../PageHeader";
+
+// ❗ NEW: Pagination component import (one level up from onbording_report)
+import Pagination from "../Pagination";
 
 const SIDEBAR_STORAGE_KEY = "td_sidebar_collapsed";
 
@@ -285,6 +304,10 @@ const DepartmentBillability = () => {
     typeof window !== "undefined" &&
       localStorage.getItem(SIDEBAR_STORAGE_KEY) === "true"
   );
+
+  // ❗ NEW: pagination state
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   useEffect(() => {
     const handler = () => {
@@ -306,6 +329,7 @@ const DepartmentBillability = () => {
     try {
       const response = await getDepartmentBillability();
       setData(response.data || []);
+      setPage(1); // reset page on fresh load
     } catch (err) {
       console.error("API Error:", err);
     }
@@ -324,8 +348,35 @@ const DepartmentBillability = () => {
     const searchMatch = dept.toLowerCase().includes(searchTerm.toLowerCase());
     const deptMatch = selectedDept === "" || row.department === selectedDept;
 
-    return searchMatch && deptMatch;
+    // date filtering (if dates provided)
+    let dateMatch = true;
+    if (startDate) {
+      // assume row may have a date field like row.date; if not present, include by default
+      // If the API doesn't supply per-row dates, date filter will simply not exclude rows.
+      const rowDate = row.date ? row.date.slice(0, 10) : null;
+      if (rowDate && startDate) dateMatch = dateMatch && rowDate >= startDate;
+    }
+    if (endDate) {
+      const rowDate = row.date ? row.date.slice(0, 10) : null;
+      if (rowDate && endDate) dateMatch = dateMatch && rowDate <= endDate;
+    }
+
+    return searchMatch && deptMatch && dateMatch;
   });
+
+  // ❗ NEW: clamp page when filteredData or pageSize change
+  useEffect(() => {
+    const totalPages = Math.max(1, Math.ceil(filteredData.length / pageSize));
+    if (page > totalPages) setPage(totalPages);
+    // if filters change, we may want to go back to page 1 — already done where filters change or on load.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filteredData, pageSize]);
+
+  // ❗ NEW: compute displayed rows for current page
+  const totalItems = filteredData.length;
+  const startIndex = (page - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const displayedData = filteredData.slice(startIndex, endIndex);
 
   const handleFilter = (e) => e.preventDefault();
 
@@ -335,13 +386,11 @@ const DepartmentBillability = () => {
       style={{ backgroundColor: "#F5F7FF", minHeight: "100vh" }}
     >
       <div className="max-w-5xl mx-auto">
-
         {/* HEADER */}
         <PageHeader title="By Department" subtitle="Onboarding Reports" />
 
         {/* MAIN CARD */}
         <div className="bg-white/90 border border-[#e5e7f5] rounded-3xl shadow-[0_24px_60px_rgba(15,23,42,0.12)] overflow-hidden">
-
           {/* CARD HEADER */}
           <div className="flex items-center justify-between px-6 py-5 border-b border-[#e5e7f5] bg-white/80">
             <div className="flex items-center gap-4">
@@ -378,7 +427,6 @@ const DepartmentBillability = () => {
 
           {/* CARD BODY */}
           <div className="px-6 py-6 md:py-7 space-y-6">
-
             {/* FILTERS */}
             <form
               onSubmit={handleFilter}
@@ -390,7 +438,6 @@ const DepartmentBillability = () => {
 
               {/* ⭐ UPDATED: 4 Columns now */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-
                 {/* Start Date */}
                 <div>
                   <label className="block mb-1.5 text-xs font-semibold text-slate-600">
@@ -399,7 +446,10 @@ const DepartmentBillability = () => {
                   <input
                     type="date"
                     value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
+                    onChange={(e) => {
+                      setStartDate(e.target.value);
+                      setPage(1);
+                    }}
                     className="border border-[#d9dcef] bg-white rounded-2xl w-full px-3 py-2 text-sm"
                   />
                 </div>
@@ -412,7 +462,10 @@ const DepartmentBillability = () => {
                   <input
                     type="date"
                     value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
+                    onChange={(e) => {
+                      setEndDate(e.target.value);
+                      setPage(1);
+                    }}
                     className="border border-[#d9dcef] bg-white rounded-2xl w-full px-3 py-2 text-sm"
                   />
                 </div>
@@ -424,7 +477,10 @@ const DepartmentBillability = () => {
                   </label>
                   <select
                     value={selectedDept}
-                    onChange={(e) => setSelectedDept(e.target.value)}
+                    onChange={(e) => {
+                      setSelectedDept(e.target.value);
+                      setPage(1);
+                    }}
                     className="border border-[#d9dcef] bg-white rounded-2xl w-full px-3 py-2 text-sm"
                   >
                     <option value="">All Departments</option>
@@ -444,6 +500,8 @@ const DepartmentBillability = () => {
                       setStartDate("");
                       setEndDate("");
                       setSelectedDept("");
+                      setSearchTerm("");
+                      setPage(1);
                     }}
                     className="px-3.5 py-2.5 rounded-2xl border border-slate-200 bg-white text-xs font-medium text-slate-700 hover:bg-slate-50"
                   >
@@ -460,7 +518,10 @@ const DepartmentBillability = () => {
                 placeholder="Search departments..."
                 className="border border-[#d9dcef] bg-[#F8F9FF] rounded-2xl px-3 py-2 text-sm w-full md:w-72"
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setPage(1);
+                }}
               />
 
               <button
@@ -494,8 +555,8 @@ const DepartmentBillability = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredData.length > 0 ? (
-                    filteredData.map((row, index) => (
+                  {displayedData.length > 0 ? (
+                    displayedData.map((row, index) => (
                       <tr
                         key={index}
                         className="border-t border-[#f1f2fb] hover:bg-[#F8F9FF] transition"
@@ -528,6 +589,19 @@ const DepartmentBillability = () => {
               </table>
             </div>
 
+            {/* ❗ NEW: Pagination component (applies to filtered results) */}
+            <Pagination
+              totalItems={totalItems}
+              page={page}
+              pageSize={pageSize}
+              onPageChange={(newPage) => setPage(newPage)}
+              onPageSizeChange={(newSize) => {
+                setPageSize(newSize);
+                setPage(1);
+              }}
+              pageSizeOptions={[5, 10, 20, 50]}
+              maxButtons={7}
+            />
           </div>
 
           <div className="px-6 py-4 border-t border-[#e5e7f5] bg-[#F3F5FF]">
@@ -535,7 +609,6 @@ const DepartmentBillability = () => {
               Tip: Use the date range & search together to refine the department view.
             </p>
           </div>
-
         </div>
       </div>
     </div>

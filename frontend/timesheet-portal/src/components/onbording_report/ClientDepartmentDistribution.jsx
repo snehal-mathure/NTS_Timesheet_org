@@ -1,9 +1,12 @@
+
 // // src/components/onbording_report/ClientDepartmentDistribution.jsx
 // import React, { useEffect, useState } from "react";
 // import {
 //   getClientDepartmentDistribution,
 //   exportClientDepartmentDistribution,
 // } from "../../services/AdminDashboard/clientDeptService";
+
+// import PageHeader from "../PageHeader";   // ✅ Added header
 
 // const SIDEBAR_STORAGE_KEY = "td_sidebar_collapsed";
 
@@ -17,7 +20,6 @@
 //   const [loading, setLoading] = useState(false);
 //   const [error, setError] = useState(null);
 
-//   // ⭐ Sidebar collapse margin logic (same as AddClient.jsx)
 //   const [sidebarCollapsed, setSidebarCollapsed] = useState(
 //     typeof window !== "undefined" &&
 //       localStorage.getItem(SIDEBAR_STORAGE_KEY) === "true"
@@ -61,7 +63,6 @@
 //     loadData();
 //   }, []);
 
-//   // Search Filter
 //   const filteredData = data.filter((row) =>
 //     (row.department || "").toLowerCase().includes(searchTerm.toLowerCase())
 //   );
@@ -77,18 +78,16 @@
 //       style={{ backgroundColor: "#F5F7FF", minHeight: "100vh" }}
 //     >
 //       <div className="max-w-5xl mx-auto">
-//         {/* Heading */}
-//         <div className="mb-5">
-//           <p className="text-[11px] font-semibold tracking-wide text-slate-400 uppercase">
-//             Onboarding Reports
-//           </p>
-//           <h1 className="mt-1 text-xl md:text-2xl font-semibold text-slate-900">
-//             Client-wise Department Distribution
-//           </h1>
-//         </div>
+
+//         {/* ⭐ PAGE HEADER APPLIED */}
+//         <PageHeader
+//           title="By Department Distribution"   // BIG TITLE
+//           subtitle="Onboarding Reports"        // SMALL TEXT
+//         />
 
 //         {/* Main card */}
 //         <div className="bg-white/90 border border-[#e5e7f5] rounded-3xl shadow-[0_24px_60px_rgba(15,23,42,0.12)] overflow-hidden">
+          
 //           {/* Card header */}
 //           <div className="flex items-center justify-between px-6 py-5 border-b border-[#e5e7f5] bg-white/80">
 //             <div className="flex items-center gap-4">
@@ -135,7 +134,6 @@
 
 //           {/* Card body */}
 //           <div className="px-6 py-6 md:py-7 space-y-6">
-//             {/* Error */}
 //             {error && (
 //               <div className="rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm text-rose-800">
 //                 {error}
@@ -158,7 +156,7 @@
 //                   </label>
 //                   <input
 //                     type="date"
-//                     className="border border-[#d9dcef] bg-white rounded-2xl w-full px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[rgba(76,111,255,0.25)] focus:border-[#4C6FFF]"
+//                     className="border border-[#d9dcef] bg-white rounded-2xl w-full px-3 py-2 text-sm"
 //                     value={startDate}
 //                     onChange={(e) => setStartDate(e.target.value)}
 //                   />
@@ -170,7 +168,7 @@
 //                   </label>
 //                   <input
 //                     type="date"
-//                     className="border border-[#d9dcef] bg-white rounded-2xl w-full px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[rgba(76,111,255,0.25)] focus:border-[#4C6FFF]"
+//                     className="border border-[#d9dcef] bg-white rounded-2xl w-full px-3 py-2 text-sm"
 //                     value={endDate}
 //                     onChange={(e) => setEndDate(e.target.value)}
 //                   />
@@ -179,7 +177,7 @@
 //                 <div className="flex items-end gap-2">
 //                   <button
 //                     type="submit"
-//                     className="px-4 py-2.5 rounded-2xl bg-[#4C6FFF] text-white text-xs md:text-sm shadow-md hover:bg-[#3f57d9]"
+//                     className="px-4 py-2.5 rounded-2xl bg-[#4C6FFF] text-white text-xs md:text-sm"
 //                   >
 //                     Apply
 //                   </button>
@@ -191,7 +189,7 @@
 //                       setEndDate("");
 //                       loadData();
 //                     }}
-//                     className="px-4 py-2.5 rounded-2xl border border-[#e0e4ff] bg-white text-xs md:text-sm hover:bg-[#f3f5ff]"
+//                     className="px-4 py-2.5 rounded-2xl border bg-white text-xs md:text-sm"
 //                   >
 //                     Reset
 //                   </button>
@@ -204,7 +202,7 @@
 //               <input
 //                 type="text"
 //                 placeholder="Search department..."
-//                 className="border border-[#d9dcef] bg-[#F8F9FF] rounded-2xl px-3 py-2 text-sm w-full md:w-72 focus:outline-none focus:ring-2 focus:ring-[rgba(76,111,255,0.25)] focus:border-[#4C6FFF]"
+//                 className="border border-[#d9dcef] bg-[#F8F9FF] rounded-2xl px-3 py-2 text-sm w-full md:w-72"
 //                 value={searchTerm}
 //                 onChange={(e) => setSearchTerm(e.target.value)}
 //               />
@@ -221,10 +219,7 @@
 //                       <th className="p-4 border-b font-semibold">Department</th>
 
 //                       {clientList.map((client, i) => (
-//                         <th
-//                           key={i}
-//                           className="p-4 border-b text-center font-semibold"
-//                         >
+//                         <th key={i} className="p-4 border-b text-center font-semibold">
 //                           {client}
 //                         </th>
 //                       ))}
@@ -242,10 +237,7 @@
 //                   <tbody className="text-slate-700">
 //                     {filteredData.length > 0 ? (
 //                       filteredData.map((row, index) => (
-//                         <tr
-//                           key={index}
-//                           className="hover:bg-[#F8F9FF] transition-colors border-t border-[#f1f2fb]"
-//                         >
+//                         <tr key={index} className="hover:bg-[#F8F9FF] transition-colors border-t border-[#f1f2fb]">
 //                           <td className="p-4 font-medium text-slate-800">
 //                             {row.department}
 //                           </td>
@@ -285,13 +277,13 @@
 //             )}
 //           </div>
 
-//           {/* Card footer */}
+//           {/* Footer */}
 //           <div className="px-6 py-4 border-t border-[#e5e7f5] bg-[#F3F5FF]">
 //             <p className="text-[11px] md:text-xs text-slate-500">
-//               Tip: Use this matrix to compare department utilization across
-//               different clients and identify imbalances.
+//               Tip: Use this matrix to compare department utilization across different clients.
 //             </p>
 //           </div>
+
 //         </div>
 //       </div>
 //     </div>
@@ -308,7 +300,8 @@ import {
   exportClientDepartmentDistribution,
 } from "../../services/AdminDashboard/clientDeptService";
 
-import PageHeader from "../PageHeader";   // ✅ Added header
+import PageHeader from "../PageHeader"; // ✅ Added header
+import Pagination from "../Pagination"; // ❗ Pagination import
 
 const SIDEBAR_STORAGE_KEY = "td_sidebar_collapsed";
 
@@ -326,6 +319,10 @@ const ClientDepartmentDistribution = () => {
     typeof window !== "undefined" &&
       localStorage.getItem(SIDEBAR_STORAGE_KEY) === "true"
   );
+
+  // Pagination state
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   useEffect(() => {
     const handler = () =>
@@ -351,6 +348,7 @@ const ClientDepartmentDistribution = () => {
       const res = await getClientDepartmentDistribution(startDate, endDate);
       setData(res.client_department_counts || []);
       setClientList(res.client_list || []);
+      setPage(1); // reset to first page on fresh load
     } catch (err) {
       console.error("API Error:", err);
       setError("Failed to load data");
@@ -363,14 +361,30 @@ const ClientDepartmentDistribution = () => {
 
   useEffect(() => {
     loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Filtered data (search by department)
   const filteredData = data.filter((row) =>
     (row.department || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // clamp page when filteredData or pageSize change
+  useEffect(() => {
+    const totalPages = Math.max(1, Math.ceil(filteredData.length / pageSize));
+    if (page > totalPages) setPage(totalPages);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filteredData, pageSize]);
+
+  // displayed slice for current page
+  const totalItems = filteredData.length;
+  const startIndex = (page - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const displayedData = filteredData.slice(startIndex, endIndex);
+
   const handleFilter = (e) => {
     e.preventDefault();
+    // loadData will reset page to 1
     loadData();
   };
 
@@ -380,16 +394,14 @@ const ClientDepartmentDistribution = () => {
       style={{ backgroundColor: "#F5F7FF", minHeight: "100vh" }}
     >
       <div className="max-w-5xl mx-auto">
-
         {/* ⭐ PAGE HEADER APPLIED */}
         <PageHeader
-          title="By Department Distribution"   // BIG TITLE
-          subtitle="Onboarding Reports"        // SMALL TEXT
+          title="By Department Distribution" // BIG TITLE
+          subtitle="Onboarding Reports" // SMALL TEXT
         />
 
         {/* Main card */}
         <div className="bg-white/90 border border-[#e5e7f5] rounded-3xl shadow-[0_24px_60px_rgba(15,23,42,0.12)] overflow-hidden">
-          
           {/* Card header */}
           <div className="flex items-center justify-between px-6 py-5 border-b border-[#e5e7f5] bg-white/80">
             <div className="flex items-center gap-4">
@@ -460,7 +472,10 @@ const ClientDepartmentDistribution = () => {
                     type="date"
                     className="border border-[#d9dcef] bg-white rounded-2xl w-full px-3 py-2 text-sm"
                     value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
+                    onChange={(e) => {
+                      setStartDate(e.target.value);
+                      setPage(1);
+                    }}
                   />
                 </div>
 
@@ -472,7 +487,10 @@ const ClientDepartmentDistribution = () => {
                     type="date"
                     className="border border-[#d9dcef] bg-white rounded-2xl w-full px-3 py-2 text-sm"
                     value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
+                    onChange={(e) => {
+                      setEndDate(e.target.value);
+                      setPage(1);
+                    }}
                   />
                 </div>
 
@@ -506,7 +524,10 @@ const ClientDepartmentDistribution = () => {
                 placeholder="Search department..."
                 className="border border-[#d9dcef] bg-[#F8F9FF] rounded-2xl px-3 py-2 text-sm w-full md:w-72"
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setPage(1);
+                }}
               />
             </div>
 
@@ -514,68 +535,92 @@ const ClientDepartmentDistribution = () => {
             {loading ? (
               <p className="text-sm text-slate-600">Loading distribution data…</p>
             ) : (
-              <div className="overflow-x-auto rounded-2xl border border-[#e1e4f3] bg-white">
-                <table className="w-full text-sm">
-                  <thead className="bg-[#F3F5FF]">
-                    <tr className="text-left text-xs font-semibold text-slate-600">
-                      <th className="p-4 border-b font-semibold">Department</th>
+              <>
+                <div className="overflow-x-auto rounded-2xl border border-[#e1e4f3] bg-white">
+                  <table className="w-full text-sm">
+                    <thead className="bg-[#F3F5FF]">
+                      <tr className="text-left text-xs font-semibold text-slate-600">
+                        <th className="p-4 border-b font-semibold">Department</th>
 
-                      {clientList.map((client, i) => (
-                        <th key={i} className="p-4 border-b text-center font-semibold">
-                          {client}
+                        {clientList.map((client, i) => (
+                          <th
+                            key={i}
+                            className="p-4 border-b text-center font-semibold"
+                          >
+                            {client}
+                          </th>
+                        ))}
+
+                        <th className="p-4 border-b text-center font-semibold">
+                          Non-Billable
                         </th>
-                      ))}
 
-                      <th className="p-4 border-b text-center font-semibold">
-                        Non-Billable
-                      </th>
+                        <th className="p-4 border-b text-center font-semibold">
+                          Total Count
+                        </th>
+                      </tr>
+                    </thead>
 
-                      <th className="p-4 border-b text-center font-semibold">
-                        Total Count
-                      </th>
-                    </tr>
-                  </thead>
-
-                  <tbody className="text-slate-700">
-                    {filteredData.length > 0 ? (
-                      filteredData.map((row, index) => (
-                        <tr key={index} className="hover:bg-[#F8F9FF] transition-colors border-t border-[#f1f2fb]">
-                          <td className="p-4 font-medium text-slate-800">
-                            {row.department}
-                          </td>
-
-                          {clientList.map((client, i) => (
-                            <td key={i} className="p-4 text-center">
-                              {row[client] || 0}
+                    <tbody className="text-slate-700">
+                      {displayedData.length > 0 ? (
+                        displayedData.map((row, index) => (
+                          <tr
+                            key={index}
+                            className="hover:bg-[#F8F9FF] transition-colors border-t border-[#f1f2fb]"
+                          >
+                            <td className="p-4 font-medium text-slate-800">
+                              {row.department}
                             </td>
-                          ))}
 
-                          <td className="p-4 text-center">
-                            <span className="bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-xs font-medium">
-                              {row.non_billable_count}
-                            </span>
-                          </td>
+                            {clientList.map((client, i) => (
+                              <td key={i} className="p-4 text-center">
+                                {row[client] || 0}
+                              </td>
+                            ))}
 
-                          <td className="p-4 text-center">
-                            <span className="bg-purple-50 text-purple-700 px-3 py-1 rounded-full text-xs font-semibold">
-                              {row.total_count}
-                            </span>
+                            <td className="p-4 text-center">
+                              <span className="bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-xs font-medium">
+                                {row.non_billable_count}
+                              </span>
+                            </td>
+
+                            <td className="p-4 text-center">
+                              <span className="bg-purple-50 text-purple-700 px-3 py-1 rounded-full text-xs font-semibold">
+                                {row.total_count}
+                              </span>
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td
+                            colSpan={clientList.length + 3}
+                            className="p-6 text-center text-slate-500 text-sm"
+                          >
+                            No data available for selected filters.
                           </td>
                         </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td
-                          colSpan={clientList.length + 3}
-                          className="p-6 text-center text-slate-500 text-sm"
-                        >
-                          No data available for selected filters.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Pagination */}
+                <div className="mt-4">
+                  <Pagination
+                    totalItems={totalItems}
+                    page={page}
+                    pageSize={pageSize}
+                    onPageChange={(newPage) => setPage(newPage)}
+                    onPageSizeChange={(newSize) => {
+                      setPageSize(newSize);
+                      setPage(1);
+                    }}
+                    pageSizeOptions={[5, 10, 20, 50]}
+                    maxButtons={7}
+                  />
+                </div>
+              </>
             )}
           </div>
 
@@ -585,7 +630,6 @@ const ClientDepartmentDistribution = () => {
               Tip: Use this matrix to compare department utilization across different clients.
             </p>
           </div>
-
         </div>
       </div>
     </div>
