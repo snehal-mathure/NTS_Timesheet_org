@@ -624,7 +624,7 @@ import {
   fetchTimesheetReports,
   downloadCSV,
 } from "../../services/AdminDashboard/TimesheetReports";
-import { getDepartments } from "../../services/authService";
+import { getDepartments } from "../../services/authservice";
 import axiosInstance from "../../services/AdminDashboard/axiosInstance";
 import { useNavigate } from "react-router-dom";
 import { FiFileText } from "react-icons/fi";
