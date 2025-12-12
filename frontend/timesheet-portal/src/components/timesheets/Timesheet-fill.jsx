@@ -352,7 +352,7 @@ export default function TimesheetDashboard() {
 
   // compute main margin responsive to sidebarCollapsed
   const mainMarginClass = sidebarCollapsed ? "md:ml-20" : "md:ml-72";
-
+  const accent = "#4C6FFF";
   return (
     <div className="flex min-h-screen bg-[#F3F6FF]">
       <UserDashboardSidebar />
@@ -362,71 +362,92 @@ export default function TimesheetDashboard() {
         className={`flex-1 p-5 md:p-8 transition-all duration-200 ${mainMarginClass}`}
       >
         {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 mb-6">
-          <div>
-            <h1
-              className="text-2xl md:text-3xl font-extrabold leading-tight"
-              style={{ color: "#17408A" }}
-            >
-              Weekly Timesheet
-            </h1>
-            <p className="text-xs md:text-sm text-slate-500 mt-1">
-              Employee:{" "}
-              <span className="font-medium" style={{ color: "#1f3b66" }}>
-                {emp_name}
-              </span>
-            </p>
-          </div>
+      {/* Compact Gradient Timesheet Header */}
+      
+<div className="
+  w-full 
+  rounded-2xl 
+  bg-gradient-to-r from-[#4C6FFF] to-[#8A7DFF]
+  shadow-[0_8px_20px_rgba(76,111,255,0.18)]
+  px-5 py-3               /* ← REDUCED HEIGHT */
+  flex items-center gap-3
+  text-white
+">
+  {/* Icon */}
+  <div className="
+    w-9 h-9               /* ← SMALLER ICON BOX */
+    rounded-xl 
+    bg-white/20 
+    backdrop-blur-md 
+    flex items-center justify-center
+    border border-white/20
+  ">
+    <svg
+      className="w-5 h-5 text-white"   /* ← SMALLER ICON */
+      fill="none"
+      viewBox="0 0 24 24"
+      strokeWidth="1.7"
+      stroke="currentColor"
+    >
+      <path d="M4 4h16v16H4z" />
+      <path d="M4 9h16" />
+    </svg>
+  </div>
 
-          <div className="flex items-center gap-2 md:gap-3">
-            <div className="text-[11px] md:text-xs text-slate-500 mr-1 md:mr-2">
-              Week
-            </div>
-            <div className="flex items-center bg-white rounded-xl shadow px-2.5 py-1.5 gap-2">
-              <button
-                className="px-2 py-0.5 rounded-md hover:bg-slate-50 transition text-sm"
-                onClick={() =>
-                  confirmNavigate(() => {
-                    const prev = new Date(weekStart);
-                    prev.setDate(prev.getDate() - 7);
-                    setWeekStart(prev);
-                  })
-                }
-                aria-label="Previous week"
-              >
-                ‹
-              </button>
+  {/* Text */}
+  <div className="leading-tight">
+    <h1 className="text-sm md:text-base font-semibold"> {/* ← SMALLER FONT */}
+      Weekly Timesheet
+    </h1>
 
-              <div
-                className="text-xs md:text-sm font-medium"
-                style={{ color: "#17408A" }}
-              >
-                {formatDate(weekStart)} → {formatDate(weekEnd)}
-              </div>
+    <p className="text-[11px] md:text-xs text-white/80"> {/* ← SMALLER SUBTITLE */}
+      Employee: <span className="font-medium">{emp_name}</span>
+    </p>
+  </div>
 
-              <button
-                className="px-2 py-0.5 rounded-md hover:bg-slate-50 transition text-sm"
-                onClick={() =>
-                  confirmNavigate(() => {
-                    const next = new Date(weekStart);
-                    next.setDate(next.getDate() + 7);
-                    setWeekStart(next);
-                  })
-                }
-                aria-label="Next week"
-              >
-                ›
-              </button>
-            </div>
+  {/* Push week nav to right */}
+  <div className="flex-1" />
 
-            <button
-              onClick={handleSaveAndReview}
-              className="ml-1 md:ml-3 inline-flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-1.5 rounded-lg bg-gradient-to-r from-[#4C6FFF] to-[#6C5CE7] text-white text-xs md:text-sm shadow hover:opacity-95"
-            >
-              Save & Review
-            </button>
-          </div>
-        </div>
+  {/* Week Navigation */}
+  <div className="
+    flex items-center gap-2 
+    bg-white/20 backdrop-blur-md 
+    px-2.5 py-1.5            /* ← REDUCED SIZE */
+    rounded-xl
+    border border-white/20
+  ">
+    <button
+      className="px-2 py-0.5 rounded-md hover:bg-white/20 text-xs"
+      onClick={() =>
+        confirmNavigate(() => {
+          const prev = new Date(weekStart);
+          prev.setDate(prev.getDate() - 7);
+          setWeekStart(prev);
+        })
+      }
+    >
+      ‹
+    </button>
+
+    <span className="text-xs font-medium"> {/* ← SMALLER TEXT */}
+      {formatDate(weekStart)} → {formatDate(weekEnd)}
+    </span>
+
+    <button
+      className="px-2 py-0.5 rounded-md hover:bg-white/20 text-xs"
+      onClick={() =>
+        confirmNavigate(() => {
+          const next = new Date(weekStart);
+          next.setDate(next.getDate() + 7);
+          setWeekStart(next);
+        })
+      }
+    >
+      ›
+    </button>
+  </div>
+</div>
+
 
         {/* Board */}
         <div className="space-y-5">
@@ -434,39 +455,43 @@ export default function TimesheetDashboard() {
             <div className="overflow-x-auto">
               {/* compact rows similar to screenshot */}
               <table className="min-w-full table-fixed border-separate border-spacing-y-1.5">
-                <thead
-                  style={{ backgroundColor: "#E7F0FF", color: "#17408A" }}
-                  className="text-[12px] md:text-sm"
-                >
-                  <tr>
-                    <th className="w-[16%] p-2.5 text-left font-semibold">
-                      Client
-                    </th>
-                    <th className="w-[16%] p-2.5 text-left font-semibold">
-                      Project
-                    </th>
-                    <th className="w-[8.5%] p-2.5 font-semibold">Mon</th>
-                    <th className="w-[8.5%] p-2.5 font-semibold">Tue</th>
-                    <th className="w-[8.5%] p-2.5 font-semibold">Wed</th>
-                    <th className="w-[8.5%] p-2.5 font-semibold">Thu</th>
-                    <th className="w-[8.5%] p-2.5 font-semibold">Fri</th>
-                    <th
-                      className="w-[8.5%] p-2.5 font-semibold"
-                      style={{ color: "#17408A" }}
-                    >
-                      Sat
-                    </th>
-                    <th
-                      className="w-[8.5%] p-2.5 font-semibold"
-                      style={{ color: "#17408A" }}
-                    >
-                      Sun
-                    </th>
-                    <th className="w-[7%] p-2.5 font-semibold">Total</th>
-                  </tr>
-                </thead>
+               <thead
+  className="text-[12px] md:text-sm bg-[#F3F5FF] text-slate-700"  // <-- GREY HEADER
+>
+  <tr>
+    <th className="w-[16%] p-1.5 text-left font-semibold">Client</th>
+    <th className="w-[16%] p-1.5 text-left font-semibold">Project</th>
 
-                <tbody className="bg-[#FAFAF7] text-[11px] md:text-xs">
+    {/* Show Day + Date */}
+    <th className="w-[8.5%] p-1.5 font-semibold">
+      Mon <br /> <span className="text-[10px] text-slate-500">{weekDates.mon}</span>
+    </th>
+    <th className="w-[8.5%] p-1.5 font-semibold">
+      Tue <br /> <span className="text-[10px] text-slate-500">{weekDates.tue}</span>
+    </th>
+    <th className="w-[8.5%] p-1.5 font-semibold">
+      Wed <br /> <span className="text-[10px] text-slate-500">{weekDates.wed}</span>
+    </th>
+    <th className="w-[8.5%] p-1.5 font-semibold">
+      Thu <br /> <span className="text-[10px] text-slate-500">{weekDates.thu}</span>
+    </th>
+    <th className="w-[8.5%] p-1.5 font-semibold">
+      Fri <br /> <span className="text-[10px] text-slate-500">{weekDates.fri}</span>
+    </th>
+    <th className="w-[8.5%] p-1.5 font-semibold">
+      Sat <br /> <span className="text-[10px] text-slate-500">{weekDates.sat}</span>
+    </th>
+    <th className="w-[8.5%] p-1.5 font-semibold">
+      Sun <br /> <span className="text-[10px] text-slate-500">{weekDates.sun}</span>
+    </th>
+
+    <th className="w-[7%] p-1.5 font-semibold">Total</th>
+  </tr>
+</thead>
+
+               <tbody className="bg-white text-[11px] md:text-xs">   
+
+
 
                   {rows.map((row, idx) => {
                     const rowTotal = Object.values(row.hours).reduce(

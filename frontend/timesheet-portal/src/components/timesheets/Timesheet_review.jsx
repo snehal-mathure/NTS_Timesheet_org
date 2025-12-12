@@ -195,13 +195,16 @@ export default function TimesheetReview() {
   const loadReviewData = async () => {
     try {
       const data = await getReviewTimesheet(weekStart);
-
+      console.log(data)
+      console.log("here i am",data.emp_name)
       setRows(data.rows || []);
       setTimesheetId(data.timesheet_id);
 
       setEmpName(data.emp_name || "");
       setWeekEnd(data.end_of_week || "");
       setStatus(data.ts_status || "");
+      console.log("hiii",empName)
+
     } catch (error) {
       console.error("Error loading review timesheet:", error);
     } finally {
@@ -253,7 +256,29 @@ export default function TimesheetReview() {
     String(status).toLowerCase() === "approved";
 
   // layout margin matches sidebar collapsed/expanded widths used across the app
-  const mainMarginClass = sidebarCollapsed ? "md:ml-20" : "md:ml-72";
+ const mainMarginClass = sidebarCollapsed ? "md:ml-12" : "md:ml-56";
+
+
+  // Generate all 7 dates of the selected week
+const getWeekDates = (start) => {
+  const dates = [];
+  const startDate = new Date(start);
+
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(startDate);
+    d.setDate(startDate.getDate() + i);
+    dates.push(d.toISOString().split("T")[0]); // YYYY-MM-DD
+  }
+  return dates;
+};
+
+// Format to day number only (24, 25, 26...)
+const formatDate = (dateStr) => {
+  return new Date(dateStr).getDate();
+};
+
+const weekDates = getWeekDates(weekStart);
+
 
   return (
     <div className="flex min-h-screen bg-[#F3F6FF]">
@@ -262,145 +287,244 @@ export default function TimesheetReview() {
       {/* Main content respects sidebar width so it lines up/overlaps consistently */}
       <main className={`flex-1 p-10 transition-all duration-200 ${mainMarginClass}`}>
         {/* Header */}
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-800">Timesheet Review</h1>
-            <p className="text-sm text-slate-500 mt-1">
-              Employee: <span className="font-medium text-slate-700">{empName}</span>
-            </p>
-            <p className="text-sm text-slate-500 mt-0.5">
-              Week: <span className="font-medium text-slate-700">{weekStart} → {weekEnd}</span>
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="text-xs text-slate-500">Status</div>
-            <div>
-              {status ? (
-                <span
-                  className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-semibold
-                    ${String(status).toLowerCase() === "approved" ? "bg-emerald-100 text-emerald-800 border border-emerald-200" :
-                    String(status).toLowerCase() === "submitted" ? "bg-blue-100 text-blue-800 border border-blue-200" :
-                    "bg-slate-100 text-slate-700 border border-slate-200"}`}
-                >
-                  {status}
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200 text-sm font-semibold">
-                  Not Submitted
-                </span>
-              )}
+        {/* Gradient Header */}
+        <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden mb-6">
+          <div className="
+            w-full 
+            rounded-2xl 
+            bg-gradient-to-r from-[#4C6FFF] to-[#8A7DFF]
+            shadow-[0_8px_20px_rgba(76,111,255,0.18)]
+            px-5 py-3
+            flex items-center gap-3
+            text-white
+          ">
+            <div className="
+              w-9 h-9 rounded-xl bg-white/20 
+              backdrop-blur-md border border-white/20
+              flex items-center justify-center
+            ">
+              <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24">
+                <path d="M4 4h16v16H4z" stroke="currentColor" strokeWidth="1.7" />
+                <path d="M4 9h16" stroke="currentColor" strokeWidth="1.7" />
+              </svg>
             </div>
+
+            <h1 className="text-sm md:text-base font-semibold">Timesheet Review</h1>
           </div>
         </div>
+
+              {/* Details Below Header */}
+        <div className="w-full bg-white rounded-2xl shadow-md border border-slate-200 px-6 py-5 mb-6 space-y-3">
+
+  {/* Employee */}
+  <div className="flex items-center gap-2 text-sm">
+    <span className="text-slate-500">Employee:</span>
+    <span className="text-slate-900 font-semibold">{empName}</span>
+  </div>
+
+  {/* Week */}
+  <div className="flex items-center gap-2 text-sm">
+    <span className="text-slate-500">Week:</span>
+    <span className="text-slate-900 font-semibold">
+      {weekStart} → {weekEnd}
+    </span>
+  </div>
+
+  {/* Status */}
+  <div className="flex items-center gap-2 text-sm">
+    <span className="text-slate-500">Status:</span>
+    <span
+      className={`
+        inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border
+        ${
+          String(status).toLowerCase() === "approved"
+            ? "bg-emerald-100 text-emerald-700 border-emerald-200"
+            : String(status).toLowerCase() === "submitted"
+            ? "bg-blue-100 text-blue-700 border-blue-200"
+            : "bg-slate-100 text-slate-700 border-slate-300"
+        }
+      `}
+    >
+      {status || "Not Submitted"}
+    </span>
+  </div>
+
+</div>
+
 
         {/* Table Card */}
         <div className="bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="min-w-full">
-              <thead className="bg-slate-800 text-white">
-                <tr>
-                  <th className="p-4 text-left">Client</th>
-                  <th className="p-4 text-left">Project</th>
-                  <th className="p-3 text-center">Mon</th>
-                  <th className="p-3 text-center">Tue</th>
-                  <th className="p-3 text-center">Wed</th>
-                  <th className="p-3 text-center">Thu</th>
-                  <th className="p-3 text-center">Fri</th>
-                  <th className="p-3 text-center bg-yellow-50 text-slate-800">Sat</th>
-                  <th className="p-3 text-center bg-yellow-50 text-slate-800">Sun</th>
-                  <th className="p-3 text-center">Total</th>
+            <table className="min-w-full text-sm divide-y divide-[#e5e7f5]">
+              {/* HEADER */}
+              <thead className="bg-[#F3F5FF]">
+                <tr className="text-[11px] text-slate-600">
+                  <th className="px-3 py-2 text-left font-medium">Client</th>
+                  <th className="px-3 py-2 text-left font-medium">Project</th>
+                  <th className="px-3 py-2 text-center font-medium">
+                      Mon <br /> {formatDate(weekDates[0])}
+                    </th>
+                    <th className="px-3 py-2 text-center font-medium">
+                      Tue <br /> {formatDate(weekDates[1])}
+                    </th>
+                    <th className="px-3 py-2 text-center font-medium">
+                      Wed <br /> {formatDate(weekDates[2])}
+                    </th>
+                    <th className="px-3 py-2 text-center font-medium">
+                      Thu <br /> {formatDate(weekDates[3])}
+                    </th>
+                    <th className="px-3 py-2 text-center font-medium">
+                      Fri <br /> {formatDate(weekDates[4])}
+                    </th>
+                    <th className="px-3 py-2 text-center font-medium">
+                      Sat <br /> {formatDate(weekDates[5])}
+                    </th>
+                    <th className="px-3 py-2 text-center font-medium">
+                      Sun <br /> {formatDate(weekDates[6])}
+                    </th>
+
+                  <th className="px-3 py-2 text-center font-medium">Total</th>
                 </tr>
               </thead>
 
-              <tbody className="bg-[#FBFDFF]">
-                {rows && rows.length > 0 ? (
+              {/* BODY */}
+              <tbody className="bg-white">
+                {loading ? (
+                  <tr>
+                    <td colSpan={10} className="px-3 py-6 text-center text-slate-500">
+                      Loading...
+                    </td>
+                  </tr>
+                ) : rows.length ? (
                   rows.map((row, idx) => (
-                    <tr key={idx} className="border-b last:border-b-0">
-                      <td className="p-3 text-left">{row.client_name}</td>
-                      <td className="p-3 text-left">{row.project_name}</td>
-                      <td className="p-3 text-center">{row.hours?.mon ?? 0}</td>
-                      <td className="p-3 text-center">{row.hours?.tue ?? 0}</td>
-                      <td className="p-3 text-center">{row.hours?.wed ?? 0}</td>
-                      <td className="p-3 text-center">{row.hours?.thu ?? 0}</td>
-                      <td className="p-3 text-center">{row.hours?.fri ?? 0}</td>
-                      <td className="p-3 text-center bg-yellow-50">{row.hours?.sat ?? 0}</td>
-                      <td className="p-3 text-center bg-yellow-50">{row.hours?.sun ?? 0}</td>
-                      <td className="p-3 text-center font-semibold">{row.total_hours ?? (
-                        (Number(row.hours?.mon || 0) +
-                          Number(row.hours?.tue || 0) +
-                          Number(row.hours?.wed || 0) +
-                          Number(row.hours?.thu || 0) +
-                          Number(row.hours?.fri || 0) +
-                          Number(row.hours?.sat || 0) +
-                          Number(row.hours?.sun || 0)).toFixed(1)
-                      )}</td>
+                    <tr
+                      key={idx}
+                      className="hover:bg-[#F8F9FF] transition border-b border-slate-100"
+                    >
+                      {/* CLIENT */}
+                      <td className="px-3 py-2 align-middle">
+                        {row.client_name}
+                      </td>
+
+                      {/* PROJECT */}
+                      <td className="px-3 py-2 align-middle">
+                        {row.project_name}
+                      </td>
+
+                      {/* WEEKDAY HOURS */}
+                      <td className="px-3 py-2 text-center align-middle">{row.hours?.mon ?? 0}</td>
+                      <td className="px-3 py-2 text-center align-middle">{row.hours?.tue ?? 0}</td>
+                      <td className="px-3 py-2 text-center align-middle">{row.hours?.wed ?? 0}</td>
+                      <td className="px-3 py-2 text-center align-middle">{row.hours?.thu ?? 0}</td>
+                      <td className="px-3 py-2 text-center align-middle">{row.hours?.fri ?? 0}</td>
+
+                      {/* WEEKENDS */}
+                      <td className="px-3 py-2 text-center align-middle bg-yellow-50">
+                        {row.hours?.sat ?? 0}
+                      </td>
+                      <td className="px-3 py-2 text-center align-middle bg-yellow-50">
+                        {row.hours?.sun ?? 0}
+                      </td>
+
+                      {/* TOTAL */}
+                      <td className="px-3 py-2 text-center align-middle font-semibold text-slate-800">
+                        {row.total_hours ?? (
+                          (
+                            Number(row.hours?.mon || 0) +
+                            Number(row.hours?.tue || 0) +
+                            Number(row.hours?.wed || 0) +
+                            Number(row.hours?.thu || 0) +
+                            Number(row.hours?.fri || 0) +
+                            Number(row.hours?.sat || 0) +
+                            Number(row.hours?.sun || 0)
+                          ).toFixed(1)
+                        )}
+                      </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="10" className="p-6 text-center text-slate-500">
+                    <td colSpan={10} className="px-3 py-6 text-center text-slate-500">
                       No rows to review.
                     </td>
                   </tr>
                 )}
               </tbody>
 
-              {/* Totals footer */}
-              <tfoot className="bg-slate-100">
-                <tr className="font-semibold text-slate-800">
-                  <td colSpan="2" className="p-3 text-right">Grand Total</td>
-                  <td className="p-3 text-center">
-                    {rows.reduce((s, r) => s + (Number(r.hours?.mon || 0)), 0).toFixed(1)}
+              {/* FOOTER */}
+              <tfoot className="bg-[#F3F5FF] border-t border-slate-200">
+                <tr className="font-semibold text-slate-700">
+                  <td colSpan="2" className="px-3 py-2 text-right">Grand Total</td>
+
+                  <td className="px-3 py-2 text-center">
+                    {rows.reduce((s, r) => s + Number(r.hours?.mon || 0), 0).toFixed(1)}
                   </td>
-                  <td className="p-3 text-center">
-                    {rows.reduce((s, r) => s + (Number(r.hours?.tue || 0)), 0).toFixed(1)}
+                  <td className="px-3 py-2 text-center">
+                    {rows.reduce((s, r) => s + Number(r.hours?.tue || 0), 0).toFixed(1)}
                   </td>
-                  <td className="p-3 text-center">
-                    {rows.reduce((s, r) => s + (Number(r.hours?.wed || 0)), 0).toFixed(1)}
+                  <td className="px-3 py-2 text-center">
+                    {rows.reduce((s, r) => s + Number(r.hours?.wed || 0), 0).toFixed(1)}
                   </td>
-                  <td className="p-3 text-center">
-                    {rows.reduce((s, r) => s + (Number(r.hours?.thu || 0)), 0).toFixed(1)}
+                  <td className="px-3 py-2 text-center">
+                    {rows.reduce((s, r) => s + Number(r.hours?.thu || 0), 0).toFixed(1)}
                   </td>
-                  <td className="p-3 text-center">
-                    {rows.reduce((s, r) => s + (Number(r.hours?.fri || 0)), 0).toFixed(1)}
+                  <td className="px-3 py-2 text-center">
+                    {rows.reduce((s, r) => s + Number(r.hours?.fri || 0), 0).toFixed(1)}
                   </td>
-                  <td className="p-3 text-center bg-yellow-100">
-                    {rows.reduce((s, r) => s + (Number(r.hours?.sat || 0)), 0).toFixed(1)}
+
+                  <td className="px-3 py-2 text-center bg-yellow-100">
+                    {rows.reduce((s, r) => s + Number(r.hours?.sat || 0), 0).toFixed(1)}
                   </td>
-                  <td className="p-3 text-center bg-yellow-100">
-                    {rows.reduce((s, r) => s + (Number(r.hours?.sun || 0)), 0).toFixed(1)}
+                  <td className="px-3 py-2 text-center bg-yellow-100">
+                    {rows.reduce((s, r) => s + Number(r.hours?.sun || 0), 0).toFixed(1)}
                   </td>
-                  <td className="p-3 text-center">{grandTotal.toFixed(1)}</td>
+
+                  <td className="px-3 py-2 text-center text-slate-900">
+                    {grandTotal.toFixed(1)}
+                  </td>
                 </tr>
               </tfoot>
+
             </table>
+
           </div>
         </div>
 
         {/* Actions */}
-        <div className="mt-6 flex items-center justify-between gap-4">
-          <button
-            onClick={handleBackToEdit}
-            className="px-6 py-3 bg-white border border-slate-200 text-slate-700 rounded-xl shadow hover:bg-slate-50"
-            type="button"
-          >
-            ← Back to Edit
-          </button>
+       <div className="mt-6 flex items-center justify-between gap-3">
 
-          <div className="flex items-center gap-3">
-            <div className="text-sm text-slate-500 mr-2">Ready to submit?</div>
+            {/* Smaller Back Button */}
             <button
-              onClick={handleSubmit}
-              className={`px-6 py-3 rounded-xl text-white shadow
-                ${isAlreadySubmitted ? "bg-gray-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"}`}
-              disabled={isAlreadySubmitted}
+              onClick={handleBackToEdit}
+              className="px-4 py-2 bg-white border border-slate-300 text-slate-700 
+                        rounded-lg shadow-sm hover:bg-slate-100 text-sm"
               type="button"
             >
-              Submit Timesheet
+              ← Back to Edit
             </button>
+
+            {/* Submit Section */}
+            <div className="flex items-center gap-2">
+              <div className="text-xs text-slate-500 mr-1">Ready to submit?</div>
+
+              {/* Gradient Submit Button */}
+              <button
+                onClick={handleSubmit}
+                className={`
+                  px-4 py-2 rounded-lg text-white text-sm font-medium shadow 
+                  ${isAlreadySubmitted 
+                    ? "bg-gray-400 cursor-not-allowed" 
+                    : "bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
+                  }`}
+                disabled={isAlreadySubmitted}
+                type="button"
+              >
+                Submit 
+              </button>
+            </div>
+
           </div>
-        </div>
+
       </main>
     </div>
   );

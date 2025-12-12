@@ -10,7 +10,11 @@ export const getReviewTimesheet = async (weekStartDate) => {
    const rows = Object.values(data.hours_by_project || {});
    console.log("Converted rows:", rows);
    return {
-    rows, timesheet_id: data.timesheet_id}
+    rows, timesheet_id: data.timesheet_id,
+      emp_name: data.emp_name,
+      end_of_week: data.end_of_week,
+      ts_status: data.ts_status,
+      start_of_week: data.start_of_week,}
     ; 
 
 
