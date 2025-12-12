@@ -39,6 +39,7 @@ import TimesheetReview from "./components/timesheets/Timesheet_review";
 import MyTimesheets from "./components/timesheets/MyTimesheet";
 import EditEmployeePage from "./components/EditEmployeePage";
 import UtilizationReport from "./components/UtilizationReport";
+import LeaveApprover from "./components/leave_report/LeaveApprover";
 
 function App() {
   return (
@@ -101,6 +102,8 @@ function App() {
         <Route path="/timesheet-defaulters" element={<TimesheetDefaulters />} />
         <Route path="/timesheet-approvers" element={<TimesheetApprovers />} />
         <Route path="/leave-reports-admin" element={<LeaveReportsAdmin />} />
+        <Route path="/leave-approvers-admin" element={<LeaveApprover />} />
+
       </Routes>
     </Router>
   );
