@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { getClientReports } from "../../services/AdminDashboard/clientServiceOnboarding";
 import PageHeader from "../PageHeader";
-
+import Pagination from "../Pagination";
 const SIDEBAR_STORAGE_KEY = "td_sidebar_collapsed";
 
 export default function ClientReports() {

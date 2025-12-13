@@ -237,20 +237,7 @@ const ClientDepartmentDistribution = () => {
 
               </div>
             </form>
-
-            {/* Search */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-              <input
-                type="text"
-                placeholder="Search department..."
-                className="border border-[#d9dcef] bg-[#F8F9FF] rounded-2xl px-3 py-2 text-sm w-full md:w-72"
-                value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  setPage(1);
-                }}
-              />
-            </div>
+            
 
             {/* Table */}
             {loading ? (
