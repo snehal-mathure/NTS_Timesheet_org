@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 
 // // src/components/onbording_report/DepartmentBillability.jsx
 // import React, { useEffect, useState } from "react";
@@ -280,6 +281,8 @@
 // export default DepartmentBillability;
 
 
+=======
+>>>>>>> Stashed changes
 // src/components/onbording_report/DepartmentBillability.jsx
 import React, { useEffect, useState } from "react";
 import {
@@ -298,7 +301,10 @@ const DepartmentBillability = () => {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedDept, setSelectedDept] = useState(""); // NEW
+  const [selectedDept, setSelectedDept] = useState("");
+
+  // ⭐ NEW – Experience Filter
+  const [experienceFilter, setExperienceFilter] = useState("all");
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(
     typeof window !== "undefined" &&
@@ -328,8 +334,13 @@ const DepartmentBillability = () => {
   const loadData = async () => {
     try {
       const response = await getDepartmentBillability();
+<<<<<<< Updated upstream
       setData(response.data || []);
       setPage(1); // reset page on fresh load
+=======
+      // If response wraps object like { data: [...] } keep it; otherwise handle gracefully
+      setData(response?.data || response || []);
+>>>>>>> Stashed changes
     } catch (err) {
       console.error("API Error:", err);
     }
@@ -339,15 +350,16 @@ const DepartmentBillability = () => {
     loadData();
   }, []);
 
-  // Build unique department list for dropdown
   const departmentList = [...new Set(data.map((d) => d.department))];
 
-  // FILTER LOGIC (Search + Department + Date)
+  // ⭐ UPDATED FILTER LOGIC (Search + Dept + Experience)
   const filteredData = data.filter((row) => {
     const dept = row.department || "";
+
     const searchMatch = dept.toLowerCase().includes(searchTerm.toLowerCase());
     const deptMatch = selectedDept === "" || row.department === selectedDept;
 
+<<<<<<< Updated upstream
     // date filtering (if dates provided)
     let dateMatch = true;
     if (startDate) {
@@ -377,6 +389,45 @@ const DepartmentBillability = () => {
   const startIndex = (page - 1) * pageSize;
   const endIndex = startIndex + pageSize;
   const displayedData = filteredData.slice(startIndex, endIndex);
+=======
+    // Experience filtering: show row if selected filter has any count (or include 0 rows too if you prefer)
+    let experienceMatch = true;
+    if (experienceFilter === "fresher") {
+      // treat rows with fresher_count > 0 as match
+      experienceMatch = Number(row.fresher_count) > 0;
+    } else if (experienceFilter === "experienced") {
+      experienceMatch = Number(row.experienced_count) > 0;
+    } else {
+      experienceMatch = true;
+    }
+
+    return searchMatch && deptMatch && experienceMatch;
+  });
+
+  // Helper to pick which numbers to show based on experienceFilter
+  const getRowValues = (row) => {
+    if (experienceFilter === "fresher") {
+      return {
+        billable: row.fresher_billable ?? 0,
+        nonBillable: row.fresher_non_billable ?? 0,
+        total: row.fresher_count ?? 0,
+      };
+    } else if (experienceFilter === "experienced") {
+      return {
+        billable: row.experienced_billable ?? 0,
+        nonBillable: row.experienced_non_billable ?? 0,
+        total: row.experienced_count ?? 0,
+      };
+    } else {
+      // "all"
+      return {
+        billable: row.billable_count ?? 0,
+        nonBillable: row.non_billable_count ?? 0,
+        total: row.total_employees ?? 0,
+      };
+    }
+  };
+>>>>>>> Stashed changes
 
   const handleFilter = (e) => e.preventDefault();
 
@@ -386,12 +437,19 @@ const DepartmentBillability = () => {
       style={{ backgroundColor: "#F5F7FF", minHeight: "100vh" }}
     >
       <div className="max-w-5xl mx-auto">
+<<<<<<< Updated upstream
         {/* HEADER */}
+=======
+
+>>>>>>> Stashed changes
         <PageHeader title="By Department" subtitle="Onboarding Reports" />
 
-        {/* MAIN CARD */}
         <div className="bg-white/90 border border-[#e5e7f5] rounded-3xl shadow-[0_24px_60px_rgba(15,23,42,0.12)] overflow-hidden">
+<<<<<<< Updated upstream
           {/* CARD HEADER */}
+=======
+
+>>>>>>> Stashed changes
           <div className="flex items-center justify-between px-6 py-5 border-b border-[#e5e7f5] bg-white/80">
             <div className="flex items-center gap-4">
               <div className="w-11 h-11 rounded-2xl bg-[#F3F5FF] flex items-center justify-center shadow-sm">
@@ -430,14 +488,74 @@ const DepartmentBillability = () => {
             {/* FILTERS */}
             <form
               onSubmit={handleFilter}
-              className="rounded-2xl border border-[#e1e4f3] bg-[#F8F9FF] px-4 py-4 md:px-5 md:py-5"
+              className="rounded-2xl border border-[#e1e4f3] bg-[#F8F9FF] px-4 py-4 md:px-5 md:py-5 relative"
             >
+              {/* RESET BUTTON – MOVED TO TOP RIGHT */}
+              {/* TOP RIGHT BUTTONS */}
+              <div className="absolute right-4 top-4 flex items-center gap-3">
+
+                {/* RESET BUTTON */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStartDate("");
+                    setEndDate("");
+                    setSelectedDept("");
+                    setExperienceFilter("all");
+                    setSearchTerm("");
+                  }}
+                  className="px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-xs font-medium text-slate-700 hover:bg-slate-50"
+                >
+                  Reset
+                </button>
+
+                {/* EXPORT CSV BUTTON WITH TOOLTIP */}
+                <div className="relative group overflow-visible">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      exportDepartmentBillability(startDate, endDate, experienceFilter)
+                    }
+                    className="w-10 h-10 rounded-2xl bg-emerald-50 flex items-center justify-center 
+                              hover:bg-emerald-100 transition shadow-sm"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="w-5 h-5 text-emerald-700"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth="2"
+                      stroke="currentColor"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M7 10l5 5m0 0l5-5m-5 5V4" />
+                    </svg>
+                  </button>
+
+                  {/* Tooltip */}
+                  <div
+                    className="absolute -top-9 right-0 opacity-0 group-hover:opacity-100 
+                              bg-slate-800 text-white text-[10px] px-2 py-1 rounded-md shadow 
+                              transition-all duration-200 whitespace-nowrap"
+                  >
+                    Export CSV
+                  </div>
+                </div>
+
+              </div>
+
               <h3 className="text-sm md:text-base font-semibold text-slate-800 mb-3">
                 Filter by Date Range
               </h3>
 
+<<<<<<< Updated upstream
               {/* ⭐ UPDATED: 4 Columns now */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+=======
+              {/* ⭐ ALL FILTERS IN ONE LINE */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-5 items-end">
+
+>>>>>>> Stashed changes
                 {/* Start Date */}
                 <div>
                   <label className="block mb-1.5 text-xs font-semibold text-slate-600">
@@ -470,7 +588,7 @@ const DepartmentBillability = () => {
                   />
                 </div>
 
-                {/* ⭐ NEW: Department Dropdown */}
+                {/* Department Filter */}
                 <div>
                   <label className="block mb-1.5 text-xs font-semibold text-slate-600">
                     Department
@@ -492,6 +610,7 @@ const DepartmentBillability = () => {
                   </select>
                 </div>
 
+<<<<<<< Updated upstream
                 {/* Reset Button */}
                 <div className="flex items-end">
                   <button
@@ -504,13 +623,28 @@ const DepartmentBillability = () => {
                       setPage(1);
                     }}
                     className="px-3.5 py-2.5 rounded-2xl border border-slate-200 bg-white text-xs font-medium text-slate-700 hover:bg-slate-50"
+=======
+                {/* ⭐ Experience Filter (Same styling, now inline) */}
+                <div>
+                  <label className="block mb-1.5 text-xs font-semibold text-slate-600">
+                    Experience
+                  </label>
+                  <select
+                    value={experienceFilter}
+                    onChange={(e) => setExperienceFilter(e.target.value)}
+                    className="border border-[#d9dcef] bg-white rounded-2xl w-full px-3 py-2 text-sm"
+>>>>>>> Stashed changes
                   >
-                    Reset
-                  </button>
+                    <option value="all">All</option>
+                    <option value="fresher">Fresher</option>
+                    <option value="experienced">Experienced</option>
+                  </select>
                 </div>
+
               </div>
             </form>
 
+<<<<<<< Updated upstream
             {/* Search + Export */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
               <input
@@ -543,6 +677,8 @@ const DepartmentBillability = () => {
               </button>
             </div>
 
+=======
+>>>>>>> Stashed changes
             {/* TABLE */}
             <div className="overflow-x-auto rounded-2xl border border-[#e1e4f3] bg-white">
               <table className="w-full text-sm">
@@ -555,6 +691,7 @@ const DepartmentBillability = () => {
                   </tr>
                 </thead>
                 <tbody>
+<<<<<<< Updated upstream
                   {displayedData.length > 0 ? (
                     displayedData.map((row, index) => (
                       <tr
@@ -575,6 +712,31 @@ const DepartmentBillability = () => {
                         </td>
                       </tr>
                     ))
+=======
+                  {filteredData.length > 0 ? (
+                    filteredData.map((row, index) => {
+                      const { billable, nonBillable, total } = getRowValues(row);
+                      return (
+                        <tr
+                          key={index}
+                          className="border-t border-[#f1f2fb] hover:bg-[#F8F9FF] transition"
+                        >
+                          <td className="px-4 py-3 text-slate-800">
+                            {row.department}
+                          </td>
+                          <td className="px-4 py-3 text-center text-slate-700">
+                            {billable}
+                          </td>
+                          <td className="px-4 py-3 text-center text-slate-700">
+                            {nonBillable}
+                          </td>
+                          <td className="px-4 py-3 text-center font-semibold text-slate-900">
+                            {total}
+                          </td>
+                        </tr>
+                      );
+                    })
+>>>>>>> Stashed changes
                   ) : (
                     <tr>
                       <td
