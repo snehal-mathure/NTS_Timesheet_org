@@ -40,7 +40,7 @@ import MyTimesheets from "./components/timesheets/MyTimesheet";
 import EditEmployeePage from "./components/EditEmployeePage";
 import UtilizationReport from "./components/UtilizationReport";
 import LeaveApprover from "./components/leave_report/LeaveApprover";
-
+import ApproverEmployees from "./components/Approver'sEmployeeList";
 function App() {
   return (
     
@@ -77,6 +77,8 @@ function App() {
 
          <Route path="/editemployee/" element={<EditEmployeePage />} />
          <Route path="/utilization" element={<UtilizationReport />} />
+
+         <Route path="/approver'sEmployees" element={<ApproverEmployees />} />
 
         {/* Onboarding reports mini-app (sub sidebar + pages) */}
         <Route path="/onboarding-reports" element={<OnboardingReports />}>

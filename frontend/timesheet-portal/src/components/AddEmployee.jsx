@@ -206,6 +206,8 @@ export default function AddEmployeePage() {
       "company",
       "doj",
       "approver_id",
+      "secondary_approver_id",
+
       "password",
     ];
 
@@ -354,6 +356,7 @@ export default function AddEmployeePage() {
           doj: "",
           lwd: "",
           approver_id: "",
+          secondary_approver_id: "",
           password: "",
         });
 
@@ -668,6 +671,20 @@ export default function AddEmployeePage() {
                         <label className="block text-xs font-medium text-slate-600">Approver ID <span className="text-rose-600">*</span></label>
                         <input name="approver_id" value={form.approver_id} onChange={handleChange} required className="mt-1 block w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none" placeholder="Enter approver ID" />
                       </div>
+                      <div>
+                          <label className="block text-xs font-medium text-slate-600">
+                            Secondary Approver ID <span className="text-slate-400">(Optional)</span>
+                          </label>
+                          <input
+                            name="secondary_approver_id"
+                            value={form.secondary_approver_id}
+                            onChange={handleChange}
+                            className="mt-1 block w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm bg-white 
+                                      focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none"
+                            placeholder="Enter secondary approver ID (optional)"
+                          />
+                        </div>
+
 
                       <div className="relative">
                         <label className="block text-xs font-medium text-slate-600">Set Password <span className="text-rose-600">*</span></label>

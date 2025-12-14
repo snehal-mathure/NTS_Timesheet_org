@@ -13,31 +13,44 @@ export default function Login() {
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    if (!email || !password) {
-      setMessage("⚠️ Please enter both email and password");
-      return;
-    }
+  if (!email || !password) {
+    setMessage("⚠️ Please enter both email and password");
+    return;
+  }
 
-    setLoading(true);
-    setMessage("");
+  setLoading(true);
+  setMessage("");
 
-    try {
-      const user = await loginUser(email, password);
-      setMessage("✅ Login successful!");
+  try {
+    const res = await loginUser(email, password);  
+    const { user } = res;
 
-      const isAdmin = Number(user.is_admin) === 1 || user.empid === "N0482";
-      setTimeout(() => {
-        navigate(isAdmin ? "/dashboard" : "/userdashboard");
-      }, 600);
-    } catch (error) {
-      setMessage(error.message || "❌ Invalid credentials");
-    } finally {
-      setLoading(false);
-      setTimeout(() => setMessage(""), 4000);
-    }
-  };
+    setMessage("✅ Login successful!");
+
+    // ROLE (already saved in loginUser, so no need to save again)
+    const role = user.role?.toLowerCase() || "employee";
+
+    // update sidebar
+    window.dispatchEvent(new Event("td_sidebar_change"));
+
+    // redirect
+    let redirect = "/userdashboard";
+
+    if (role === "admin") redirect = "/dashboard";
+    else if (role === "approver") redirect = "/approvetimesheets";
+
+    setTimeout(() => navigate(redirect), 600);
+
+  } catch (err) {
+    setMessage(err.message || "❌ Invalid credentials");
+  } finally {
+    setLoading(false);
+    setTimeout(() => setMessage(""), 4000);
+  }
+};
+
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#e6edff] via-white to-[#e8e0ff] p-4">

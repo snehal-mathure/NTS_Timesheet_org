@@ -12,15 +12,24 @@ export const loginUser = async (email, password) => {
 
     if (response.data && response.data.message === "successful") {
       const user = response.data.user || {};
+      const permissions = user.permissions || {};
+
 
       localStorage.setItem("empid", user.empid || "");
       localStorage.setItem("fname", user.fname || "");
       localStorage.setItem("lname", user.lname || "");
       localStorage.setItem("email", user.email || "");
-      localStorage.setItem("is_admin", String(user.is_admin ?? 0));
+       localStorage.setItem("role", user.role || "");
+       localStorage.setItem("dept_id", user.dept_id || "");
+
+      // Save permissions
+      localStorage.setItem("is_admin", permissions.is_admin ? "1" : "0");
+      localStorage.setItem("is_manager", permissions.is_manager ? "1" : "0");
+      localStorage.setItem("is_approver", permissions.is_approver ? "1" : "0");
+      localStorage.setItem("is_employee", permissions.is_employee ? "1" : "0");
 
       console.log("✅ Login successful:", user);
-      return user;
+      return {user,permissions};
     } else {
       throw new Error(response.data?.message || "Invalid credentials");
     }

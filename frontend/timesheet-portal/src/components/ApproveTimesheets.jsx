@@ -353,10 +353,19 @@ export default function ApproveTimesheets() {
   const [loading, setLoading] = useState(true);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(localStorage.getItem(SIDEBAR_KEY) === "true");
   const successRef = useRef(null);
+  const [assignPopup, setAssignPopup] = useState(false);
+
+
+
+
+
+
+
 
   // Pagination state (client-side)
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+const deptId = localStorage.getItem("dept_id");
 
   useEffect(() => {
     loadTimesheets();
@@ -528,6 +537,8 @@ export default function ApproveTimesheets() {
                   >
                     Reject Selected
                   </button>
+                  
+
 
                   <div className="text-sm text-slate-600">{selected.length} selected</div>
 
@@ -733,6 +744,9 @@ export default function ApproveTimesheets() {
             </div>
           )}
         </div>
+        {/* Assign Secondary Approver Popup */}
+
+
       </main>
     </div>
   );
