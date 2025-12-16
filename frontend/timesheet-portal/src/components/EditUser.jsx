@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import employeeService from "../services/AdminDashboard/employeeService";
-import Sidebar from "../components/Sidebar";
+import UserDashboardSidebar from "../components/UserDashboardSidebar";
 import PageHeader from "../components/PageHeader";
 import { FiArrowLeft, FiX } from "react-icons/fi";
 
@@ -203,7 +203,7 @@ export default function EditEmployeePage() {
       {/* FIXED SIDEBAR MATCHING AddEmployeePage */}
       <aside className="fixed left-0 top-0 bottom-0 z-30">
         <div className={`h-screen ${sidebarCollapsed ? "w-20" : "w-60"}`}>
-          <Sidebar />
+          <UserDashboardSidebar />
         </div>
       </aside>
 

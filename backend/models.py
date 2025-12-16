@@ -34,6 +34,11 @@ class Employee_Info(db.Model):
 
     password = db.Column(db.String(120), nullable=False)
     approver_id = db.Column(db.String(50), db.ForeignKey('employee_info.empid', name='fk_approver_id'), nullable=True)
+    secondary_approver_id = db.Column(
+    db.String(50),
+    db.ForeignKey('employee_info.empid', name='fk_secondary_approver_id'),
+    nullable=True
+)
 
     # Remaining columns...
     mobile = db.Column(db.String(15), nullable=True)
@@ -51,6 +56,7 @@ class Employee_Info(db.Model):
     doj = db.Column(db.Date, nullable=True)
     lwd = db.Column(db.Date, nullable=True)
     prev_total_exp = db.Column(db.Float, nullable=True)
+    role = db.Column(db.String(20), nullable=False, default="Employee")
 
     # Relationship to department
     department = db.relationship('Department', back_populates='employees')
@@ -80,11 +86,10 @@ class Project_Info(db.Model):
     end_date = db.Column(db.Date, nullable=True)
     project_billability = db.Column(db.String(20), nullable=True, default="Billable")
     project_type = db.Column(db.String(50), nullable=True)
+    daily_hours = db.Column(db.Float, nullable=True)
 
     def __repr__(self):
-        return (f'<Project {self.client.client_name} - {self.project_name} (Code: {self.project_code}), '
-                f'Start: {self.start_date}, End: {self.end_date}, '
-                f'Billability: {self.project_billability}, Type: {self.project_type}>')
+        return (f'<Project {self.client.client_name} - {self.project_name} (Code: {self.project_code}), 'f'Start: {self.start_date}, End: {self.end_date}, 'f'Billability: {self.project_billability}, Type: {self.project_type},'f'Daily Hours: {self.daily_hours}>')
 
 
 # Association table for many-to-many relationship between Employee_Info and Project_Info
@@ -106,12 +111,11 @@ class Client_Info(db.Model):
     client_name = db.Column(db.String(100), nullable=False)  # Client Name
     start_date = db.Column(db.Date, nullable=True)  # Start Date
     end_date = db.Column(db.Date, nullable=True)  # End Date (nullable, as the client relationship might be ongoing)
-    daily_hours = db.Column(db.Float, nullable=True)  # New column for daily hours
+    # daily_hours = db.Column(db.Float, nullable=True)  # New column for daily hours
  
     def __repr__(self):
         return (f'<Client {self.client_name} (ID: {self.clientID}), '
-                f'Start: {self.start_date}, End: {self.end_date}, '
-                f'Daily Hours: {self.daily_hours}>')
+                f'Start: {self.start_date}, End: {self.end_date}>')
  
 # Association table for many-to-many relationship between Employee_Info and Client_Info
 class Client_Employee(db.Model):

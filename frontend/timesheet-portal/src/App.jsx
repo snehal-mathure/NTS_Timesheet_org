@@ -41,6 +41,7 @@ import EditEmployeePage from "./components/EditEmployeePage";
 import UtilizationReport from "./components/UtilizationReport";
 import LeaveApprover from "./components/leave_report/LeaveApprover";
 import ApproverEmployees from "./components/Approver'sEmployeeList";
+import EditUser from "./components/EditUser"
 function App() {
   return (
     
@@ -75,7 +76,7 @@ function App() {
           <Route path="/dashboard/my_timesheets" element={<MyTimesheets/>}/>
           <Route path="/editemployee/:empid" element={<EditEmployeePage />} />
 
-         <Route path="/editemployee/" element={<EditEmployeePage />} />
+         <Route path="/edituser/:empid" element={<EditUser />} />
          <Route path="/utilization" element={<UtilizationReport />} />
 
          <Route path="/approver'sEmployees" element={<ApproverEmployees />} />

@@ -144,9 +144,46 @@ def register():
     return jsonify({"message": "success"}), 201
 
 
+# @app.route("/login", methods=["POST"])
+# def login():
+#     data = request.get_json()  # ✅ Receive JSON from React
+#     email = data.get("email")
+#     password = data.get("password")
+
+#     if not email or not password:
+#         return jsonify({"error": "Please enter both email and password"}), 400
+
+#     user = Employee_Info.query.filter_by(email=email).first()
+
+#     # if user and check_password_hash(user.password, password):
+#     if user and (user.password == password or check_password_hash(user.password, password)):
+#         # Store in session (optional)
+#         session["user_id"] = user.empid
+#         session["user_fname"] = user.fname
+#         session["user_lname"] = user.lname
+#         session["user_email"] = user.email
+
+#         # Check role
+#         # is_admin = 1 if user.empid == '1' else 0
+#         is_admin = 1 if user.empid == 'N0482' else 0
+
+#         # ✅ Return JSON response instead of redirect
+#         return jsonify({
+#             "message": "successful",
+#             "user": {
+#                 "empid": user.empid,
+#                 "fname": user.fname,
+#                 "lname": user.lname,
+#                 "email": user.email,
+#                 "is_admin": is_admin
+#             }
+#         }), 200
+#     else:
+#         return jsonify({"error": "Invalid credentials"}), 401
+    
 @app.route("/login", methods=["POST"])
 def login():
-    data = request.get_json()  # ✅ Receive JSON from React
+    data = request.get_json()
     email = data.get("email")
     password = data.get("password")
 
@@ -155,19 +192,37 @@ def login():
 
     user = Employee_Info.query.filter_by(email=email).first()
 
-    # if user and check_password_hash(user.password, password):
     if user and (user.password == password or check_password_hash(user.password, password)):
-        # Store in session (optional)
+        
+        # Save session
         session["user_id"] = user.empid
         session["user_fname"] = user.fname
         session["user_lname"] = user.lname
         session["user_email"] = user.email
+        session["role"] = user.role.lower()  # store role in session
 
-        # Check role
-        # is_admin = 1 if user.empid == '1' else 0
-        is_admin = 1 if user.empid == 'N0482' else 0
+        # --- ROLE HIERARCHY ---
+        role = user.role.lower()
 
-        # ✅ Return JSON response instead of redirect
+        is_admin = False
+        is_manager = False
+        is_approver = False
+        is_employee = True   # everyone is at least employee
+
+        if role == "admin":
+            is_admin = True
+            is_approver = True
+
+        elif role == "manager":
+            is_manager = True
+            is_approver = True
+
+        elif role == "approver":
+            is_approver = True
+
+        # employee stays as only employee
+
+        # Return response
         return jsonify({
             "message": "successful",
             "user": {
@@ -175,11 +230,20 @@ def login():
                 "fname": user.fname,
                 "lname": user.lname,
                 "email": user.email,
-                "is_admin": is_admin
+                "role": role,
+                "dept_id":user.dept_id,
+                "permissions": {
+                    "is_admin": is_admin,
+                    "is_manager": is_manager,
+                    "is_approver": is_approver,
+                    "is_employee": is_employee,
+                    
+                }
             }
         }), 200
-    else:
-        return jsonify({"error": "Invalid credentials"}), 401
+
+    return jsonify({"error": "Invalid credentials"}), 401
+
     
 
 @app.route("/userclients", methods=["GET"])
@@ -204,8 +268,7 @@ def get_clients_for_user():
                 "id": c.clientID,
                 "client_name": c.client_name,
                 "start_date": c.start_date.strftime("%Y-%m-%d") if c.start_date else None,
-                "end_date": c.end_date.strftime("%Y-%m-%d") if c.end_date else None,
-                "daily_hours": c.daily_hours
+                "end_date": c.end_date.strftime("%Y-%m-%d") if c.end_date else None
             }
             for c in clients
         ]
@@ -1052,6 +1115,179 @@ def get_employee_form_data():
 # -------------------------------------------
 # 🚀 2. ADD EMPLOYEE (FULL)
 # -------------------------------------------
+# @app.route('/admin/add_employee', methods=['POST'])
+# def add_employee():
+#     data = request.json
+
+#     try:
+#         # ---------------------
+#         # Validate required fields
+#         # ---------------------
+#         required_fields = [
+#             "empid", "fname", "lname", "email", "designation",
+#             "mobile", "gender", "employee_type", "location",
+#             "company", "doj", "approver_id", "password"
+#         ]
+
+#         for field in required_fields:
+#             if not data.get(field):
+#                 return jsonify({"status": "error", "message": f"{field} is required"}), 400
+
+#         # Email validation
+#         if not re.match(r"[^@]+@[^@]+\.[^@]+", data["email"]):
+#             return jsonify({"status": "error", "message": "Invalid email format"}), 400
+
+#         # Mobile validation
+#         if not re.match(r"^\d{10}$", data["mobile"]):
+#             return jsonify({"status": "error", "message": "Mobile number must be 10 digits"}), 400
+
+#         # Duplicate employee
+#         if Employee_Info.query.filter_by(empid=data["empid"]).first():
+#             return jsonify({"status": "error", "message": "Employee ID already exists"}), 400
+
+#         if Employee_Info.query.filter_by(email=data["email"]).first():
+#             return jsonify({"status": "error", "message": "Email already exists"}), 400
+
+#         # ---------------------
+#         # Department Logic
+#         # ---------------------
+#         dept_id = data.get("dept_id")
+
+#         if dept_id == "custom":
+#             custom_name = data.get("custom_dept", "").strip()
+#             if not custom_name:
+#                 return jsonify({"status": "error", "message": "New department name required"}), 400
+
+#             existing = Department.query.filter_by(dept_name=custom_name).first()
+#             if existing:
+#                 dept_id = existing.id
+#             else:
+#                 new_dept = Department(dept_name=custom_name)
+#                 db.session.add(new_dept)
+#                 db.session.flush()
+#                 dept_id = new_dept.id
+
+#         elif dept_id == "edit":
+#             edit_dept_id = data.get("edit_dept_id")
+#             new_dept_name = data.get("new_dept_name", "").strip()
+
+#             if not edit_dept_id or not new_dept_name:
+#                 return jsonify({"status": "error", "message": "Department edit details missing"}), 400
+
+#             existing = Department.query.filter_by(dept_name=new_dept_name).first()
+#             if existing:
+#                 return jsonify({"status": "error", "message": "Department name already exists"}), 400
+
+#             dept_obj = Department.query.get(edit_dept_id)
+#             dept_obj.dept_name = new_dept_name
+#             dept_id = edit_dept_id
+
+#         # ---------------------
+#         # Dates
+#         # ---------------------
+#         doj = datetime.strptime(data["doj"], "%Y-%m-%d").date()
+#         lwd = None
+
+#         if data.get("lwd"):
+#             lwd = datetime.strptime(data["lwd"], "%Y-%m-%d").date()
+#             if lwd <= doj:
+#                 return jsonify({"status": "error", "message": "Last working day must be later than DOJ"}), 400
+
+#         # ---------------------
+#         # Fix prev_total_exp (IMPORTANT)
+#         # "" → None, "0", "1.5", etc. → float
+#         # ---------------------
+#         prev_exp = data.get("prev_total_exp")
+
+#         try:
+#             prev_exp = float(prev_exp) if prev_exp not in (None, "", " ") else None
+#         except:
+#             prev_exp = None  # fallback
+
+#         # ---------------------
+#         # Create Employee
+#         # ---------------------
+#         new_emp = Employee_Info(
+#             empid=data["empid"].upper(),
+#             fname=data["fname"],
+#             lname=data["lname"],
+#             email=data["email"].lower(),
+#             dept_id=dept_id,
+#             designation=data["designation"],
+#             mobile=data["mobile"],
+#             gender=data["gender"],
+#             employee_type=data["employee_type"],
+#             location=data["location"],
+#             company=data["company"],
+#             work_location=data.get("work_location", ""),
+#             city=data.get("city", ""),
+#             core_skill=data.get("core_skill", ""),
+#             skill_details=data.get("skill_details", ""),
+#             doj=doj,
+#             lwd=lwd,
+#             approver_id=data["approver_id"].upper(),
+#             password=generate_password_hash(data["password"]),
+#             prev_total_exp=prev_exp
+#         )
+
+#         db.session.add(new_emp)
+#         db.session.flush()
+
+#         # ---------------------
+#         # Leave Balances
+#         # ---------------------
+#         leave_balances = data.get("leave_balances", {})
+
+#         for leave_id, balance in leave_balances.items():
+#             try:
+#                 bal = float(balance) if balance not in ("", None) else 0.0
+#             except:
+#                 bal = 0.0
+
+#             db.session.add(Leave_Balance(
+#                 empid=new_emp.empid,
+#                 leave_id=int(leave_id),
+#                 balance=bal
+#             ))
+
+#         # ---------------------
+#         # Client Assignments
+#         # ---------------------
+#         client_assignments = data.get("client_assignments", {})
+
+#         for client_id, entry in client_assignments.items():
+#             start = entry.get("start_date")
+#             end = entry.get("end_date")
+
+#             if not start:
+#                 return jsonify({"status": "error", "message": "Client start date required"}), 400
+
+#             sd = datetime.strptime(start, "%Y-%m-%d").date()
+
+#             if end:
+#                 ed = datetime.strptime(end, "%Y-%m-%d").date()
+#                 if ed <= sd:
+#                     return jsonify({"status": "error", "message": "Client end date must be after start date"}), 400
+#             else:
+#                 ed = None
+
+#             db.session.add(Client_Employee(
+#                 empid=new_emp.empid,
+#                 clientID=int(client_id),
+#                 start_date=sd,
+#                 end_date=ed
+#             ))
+
+#         db.session.commit()
+
+#         return jsonify({"status": "success", "message": "Employee Added Successfully!"}), 200
+
+#     except Exception as e:
+#         db.session.rollback()
+#         return jsonify({"status": "error", "message": str(e)}), 500
+
+
+
 @app.route('/admin/add_employee', methods=['POST'])
 def add_employee():
     data = request.json
@@ -1131,15 +1367,22 @@ def add_employee():
                 return jsonify({"status": "error", "message": "Last working day must be later than DOJ"}), 400
 
         # ---------------------
-        # Fix prev_total_exp (IMPORTANT)
-        # "" → None, "0", "1.5", etc. → float
+        # prev_total_exp fix
         # ---------------------
         prev_exp = data.get("prev_total_exp")
-
         try:
             prev_exp = float(prev_exp) if prev_exp not in (None, "", " ") else None
         except:
-            prev_exp = None  # fallback
+            prev_exp = None
+
+        # ---------------------
+        # Secondary Approver (optional)
+        # ---------------------
+        secondary_approver = data.get("secondary_approver_id")
+        if secondary_approver:
+            secondary_approver = secondary_approver.upper()
+        else:
+            secondary_approver = None  # stored as NULL
 
         # ---------------------
         # Create Employee
@@ -1162,7 +1405,10 @@ def add_employee():
             skill_details=data.get("skill_details", ""),
             doj=doj,
             lwd=lwd,
+
             approver_id=data["approver_id"].upper(),
+            secondary_approver_id=secondary_approver,  # <-- NEW FIELD HERE
+
             password=generate_password_hash(data["password"]),
             prev_total_exp=prev_exp
         )
@@ -1222,6 +1468,7 @@ def add_employee():
     except Exception as e:
         db.session.rollback()
         return jsonify({"status": "error", "message": str(e)}), 500
+
 
 
 @app.route("/api/departments", methods=["GET"])
@@ -2466,8 +2713,6 @@ def add_client():
             start_date = datetime.strptime(data['start_date'], "%Y-%m-%d").date() if data.get('start_date') else None
             end_date = datetime.strptime(data['end_date'], "%Y-%m-%d").date() if data.get('end_date') else None
 
-            daily_hours = float(data['daily_hours']) if data.get('daily_hours') else None
-
             if not client_name:
                 return jsonify({"error": "client_name is required"}), 400
 
@@ -2479,8 +2724,7 @@ def add_client():
             new_client = Client_Info(
                 client_name=client_name,
                 start_date=start_date,
-                end_date=end_date,
-                daily_hours=daily_hours
+                end_date=end_date
             )
 
             db.session.add(new_client)
@@ -2514,8 +2758,7 @@ def view_clients():
                 "clientID": c.clientID,
                 "client_name": c.client_name,
                 "start_date": c.start_date.strftime('%Y-%m-%d') if c.start_date else None,
-                "end_date": c.end_date.strftime('%Y-%m-%d') if c.end_date else None,
-                "daily_hours": c.daily_hours
+                "end_date": c.end_date.strftime('%Y-%m-%d') if c.end_date else None
             }
             for c in clients
         ]
@@ -2878,6 +3121,7 @@ def add_project():
         project_billability = data.get('project_billability')
         start_date = data.get('start_date')
         end_date = data.get('end_date')
+        daily_hours = data.get('daily_hours')
 
         # ---------- VALIDATIONS ----------
         if not project_name:
@@ -2918,7 +3162,8 @@ def add_project():
             project_type=project_type,
             project_billability=project_billability,
             start_date=start_date,
-            end_date=end_date
+            end_date=end_date,
+            daily_hours=daily_hours
         )
 
         db.session.add(new_project)
@@ -3051,7 +3296,8 @@ def list_projects():
             "start_date": str(project.start_date),
             "end_date": str(project.end_date) if project.end_date else None,
             "project_billability": project.project_billability,
-            "project_type": project.project_type
+            "project_type": project.project_type,
+            "daily_hours":project.daily_hours
         })
 
     return jsonify(data)
@@ -3072,6 +3318,7 @@ def update_project(project_id):
         project.project_code = data.get('project_code')
         project.project_billability = data.get('project_billability', 'Billable')
         project.project_type = data.get('project_type', '')
+        project.daily_hours = data.get('daily_hours')
 
         # Start date
         start_date_str = data.get('start_date')
@@ -7504,6 +7751,129 @@ def process_timesheet_approval(timesheet, approver_id, action, comments):
     timesheet.comments = comments
     return new_status
 
+@app.route("/assign_secondary_approver", methods=["POST"])
+def assign_secondary_approver():
+    data = request.get_json()
+
+    if not data:
+        return jsonify({"status": "error", "message": "Missing JSON body"}), 400
+
+    employee_ids = data.get("employee_ids", [])
+    secondary_approver_id = data.get("secondary_approver_id")
+
+    if not employee_ids:
+        return jsonify({"status": "error", "message": "No employees selected"}), 400
+
+    if not secondary_approver_id:
+        return jsonify({"status": "error", "message": "Secondary approver ID is required"}), 400
+
+    # Convert to int (VERY IMPORTANT)
+    try:
+        secondary_approver_id = secondary_approver_id
+        employee_ids = [(eid) for eid in employee_ids]
+    except ValueError:
+        return jsonify({"status": "error", "message": "Invalid ID format"}), 400
+
+    # Validate approver exists
+    approver = Employee_Info.query.filter_by(empid=secondary_approver_id).first()
+    if not approver:
+        return jsonify({"status": "error", "message": "Approver ID does not exist"}), 400
+
+    try:
+        # Ensure approver role
+        approver.role = "approver"
+        db.session.add(approver)
+
+        # Assign secondary approver to employees
+        for empid in employee_ids:
+            emp = Employee_Info.query.filter_by(empid=empid).first()
+            if emp:
+                emp.secondary_approver_id = secondary_approver_id
+                db.session.add(emp)
+
+        db.session.commit()
+
+        return jsonify({
+            "status": "success",
+            "message": "Secondary approver assigned successfully"
+        }), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+
+@app.route("/employees/by-approver/<approver_id>", methods=["GET"])
+def get_employees_by_approver(approver_id):
+    try:
+        # keep approver_id as string (as per your design)
+        approver_id = str(approver_id).strip()
+
+        if not approver_id:
+            return jsonify({
+                "status": "error",
+                "message": "Approver ID is required"
+            }), 400
+
+        # Fetch employees where:
+        # - approver_id = logged-in approver
+        # - OR secondary_approver_id = logged-in approver
+        employees = (
+            Employee_Info.query
+            .filter(
+                or_(
+                    Employee_Info.approver_id == approver_id,
+                    Employee_Info.secondary_approver_id == approver_id
+                )
+            )
+            .order_by(Employee_Info.fname.asc())
+            .all()
+        )
+
+        result = []
+        for e in employees:
+            result.append({
+                "empid": e.empid,
+                "fname": e.fname,
+                "lname": e.lname,
+                "email": e.email,
+                "designation": e.designation,
+                "approver_id": e.approver_id,
+                "secondary_approver_id": e.secondary_approver_id,
+                "department": {
+                    "dept_id": e.department.id if e.department else None,
+                    "dept_name": e.department.dept_name if e.department else None
+                }
+            })
+
+        return jsonify(result), 200
+
+    except Exception as ex:
+        return jsonify({
+            "status": "error",
+            "message": str(ex)
+        }), 500
+
+
+
+@app.route("/employees/by_department/<dept_id>", methods=["GET"])
+def get_employees_by_department(dept_id):
+    employees = Employee_Info.query.filter_by(dept_id=dept_id).all()
+    return jsonify([
+        {
+            "empid": e.empid,
+            "fname": e.fname,
+            "lname": e.lname,
+            "email": e.email,
+            "role": e.role
+        }
+        for e in employees
+    ])
+
+
+
+
 @app.route("/dashboard/my_timesheets", methods=["GET", "POST"])
 def my_timesheets():
     if "user_id" not in session:
@@ -7795,29 +8165,52 @@ def approve_timesheets():
 
     approver_id = session["user_id"]
 
-    # SINGLE ACTION
+    # ---------------- POST: Approve / Reject ----------------
     if request.method == "POST":
         data = request.get_json()
+
         timesheet_id = data.get("timesheet_id")
         action = data.get("action")
         comments = data.get("comments", "")
+
+        if not timesheet_id or not action:
+            return jsonify({"error": "Missing data"}), 400
 
         timesheet = Timesheet.query.get(timesheet_id)
         if not timesheet:
             return jsonify({"error": "Timesheet not found"}), 404
 
         employee = Employee_Info.query.filter_by(empid=timesheet.empid).first()
-        if employee.approver_id != approver_id:
+        if not employee:
+            return jsonify({"error": "Employee not found"}), 404
+
+        # ✅ Allow primary OR secondary approver
+        if approver_id not in (
+            employee.approver_id,
+            employee.secondary_approver_id,
+        ):
             return jsonify({"error": "Unauthorized"}), 403
 
-        new_status = process_timesheet_approval(timesheet, approver_id, action, comments)
+        new_status = process_timesheet_approval(
+            timesheet, approver_id, action, comments
+        )
+
         db.session.commit()
 
         return jsonify({"success": True, "new_status": new_status})
 
-    # GET: return JSON instead of HTML
-    employees = Employee_Info.query.filter_by(approver_id=approver_id).all()
+    # ---------------- GET: Fetch Timesheets ----------------
+
+    # ✅ Employees where logged-in user is primary OR secondary approver
+    employees = Employee_Info.query.filter(
+        (Employee_Info.approver_id == approver_id)
+        | (Employee_Info.secondary_approver_id == approver_id)
+    ).all()
+
     emp_ids = list({emp.empid for emp in employees})
+
+    if not emp_ids:
+        return jsonify([])
 
     query = (
         db.session.query(
@@ -7833,23 +8226,37 @@ def approve_timesheets():
         )
         .join(Employee_Info, Employee_Info.empid == Timesheet.empid)
         .outerjoin(TimesheetEntry, TimesheetEntry.timesheet_id == Timesheet.id)
-        .filter(Timesheet.empid.in_(emp_ids), Timesheet.status == "Submitted")
-        .group_by(Timesheet.id, Employee_Info.fname, Employee_Info.lname)
+        .filter(
+            Timesheet.empid.in_(emp_ids),
+            Timesheet.status == "Submitted"
+        )
+        .group_by(
+            Timesheet.id,
+            Employee_Info.fname,
+            Employee_Info.lname,
+            Timesheet.week_start_date,
+            Timesheet.submitted_date,
+            Timesheet.status,
+            Timesheet.comments,
+        )
+        .order_by(Timesheet.submitted_date.desc())
     ).all()
 
     timesheets_data = [
         {
             "id": t.id,
+            "empid": t.empid,
             "employee_name": f"{t.fname} {t.lname}",
             "week_start_date": t.week_start_date.strftime("%Y-%m-%d"),
             "submitted_date": t.submitted_date.strftime("%Y-%m-%d"),
             "total_hours": float(t.total_hours or 0),
-            "status": t.status
+            "status": t.status,
         }
         for t in query
     ]
 
     return jsonify(timesheets_data)
+
 
 
 @app.route("/timesheetdashboard/bulk_approve_timesheets", methods=["POST"])

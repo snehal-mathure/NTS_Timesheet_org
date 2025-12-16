@@ -180,7 +180,9 @@ export default function AddProject() {
               </div>
 
               {/* Project Code + Type */}
+              {/* Project Code + Daily Hours */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+                {/* Project Code */}
                 <div>
                   <label className="block text-xs font-medium text-slate-600 mb-1.5">
                     Project Code <span className="text-rose-600">*</span>
@@ -198,6 +200,28 @@ export default function AddProject() {
                   </p>
                 </div>
 
+                {/* Daily Hours */}
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1.5">
+                    Daily Hours <span className="text-rose-600">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    name="daily_hours"
+                    onChange={handleChange}
+                    value={form.daily_hours}
+                    placeholder="e.g. 8 or 7.5"
+                    className="block w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm bg-slate-50/60 focus:ring-1 focus:ring-[#4C6FFF] focus:outline-none"
+                  />
+                  <p className="mt-1 text-[11px] text-slate-400">
+                    Expected daily working hours for employees.
+                  </p>
+                </div>
+              </div>
+
+              {/* Project Type — now moves to next row */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
                 <div>
                   <label className="block text-xs font-medium text-slate-600 mb-1.5">
                     Project Type <span className="text-rose-600">*</span>
@@ -215,6 +239,7 @@ export default function AddProject() {
                   </p>
                 </div>
               </div>
+
 
               {/* Billability + Dates */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
