@@ -17,7 +17,7 @@ export default function TimesheetReports() {
   const [departments, setDepartments] = useState([]);
   const [data, setData] = useState([]);
 
-  // Filters
+  // Filters (UNCHANGED)
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
@@ -26,7 +26,7 @@ export default function TimesheetReports() {
 
   const navigate = useNavigate();
 
-  // Sidebar collapse
+  // Sidebar collapse (UNCHANGED)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(
     typeof window !== "undefined" &&
       localStorage.getItem(SIDEBAR_STORAGE_KEY) === "true"
@@ -44,9 +44,9 @@ export default function TimesheetReports() {
     };
   }, []);
 
-  const mainMarginClass = sidebarCollapsed ? "md:ml-16" : "md:ml-56";
+  const mainMarginClass = sidebarCollapsed ? "md:ml-20" : "md:ml-60";
 
-  // Logout
+  // Logout (UNCHANGED)
   const handleLogout = async () => {
     try {
       const res = await axiosInstance.get("/logout", { withCredentials: true });
@@ -60,7 +60,7 @@ export default function TimesheetReports() {
     }
   };
 
-  // Load data
+  // Load data (UNCHANGED)
   useEffect(() => {
     loadDepartments();
     loadReport();
@@ -84,7 +84,7 @@ export default function TimesheetReports() {
     }
   };
 
-  // RESET
+  // Reset (UNCHANGED)
   const handleReset = () => {
     setStartDate("");
     setEndDate("");
@@ -94,7 +94,7 @@ export default function TimesheetReports() {
     loadReport();
   };
 
-  // DOWNLOAD CSV
+  // Download CSV (UNCHANGED)
   const handleDownload = async () => {
     try {
       const url = downloadCSV(startDate, endDate, selectedDepartment, billability);
@@ -115,7 +115,7 @@ export default function TimesheetReports() {
     }
   };
 
-  // LIVE AUTO FILTERING
+  // LIVE FILTERING (UNCHANGED)
   const filteredData = data.filter((row) => {
     const emp = (row.emp_name || "").toLowerCase();
     const project = (row.project_name || "").toLowerCase();
@@ -162,90 +162,86 @@ export default function TimesheetReports() {
           icon={<FiFileText className="text-white w-6 h-6" />}
         />
 
-        <div className="space-y-6">
-          {/* ---------------- FILTERS ---------------- */}
-          <section className="bg-white rounded-3xl shadow-sm border border-slate-100 px-6 md:px-8 py-6 relative">
+        {/* MAIN CARD (Dept Billability Style) */}
+        <div className="bg-white/90 border border-[#e5e7f5] rounded-3xl shadow-[0_24px_60px_rgba(15,23,42,0.12)] overflow-hidden">
 
-            {/* RESET BUTTON TOP-RIGHT */}
-            <div className="absolute right-4 top-4">
-              <button
-                type="button"
-                onClick={handleReset}
-                className="px-3.5 py-2 rounded-xl border border-slate-300 bg-slate-100 
-                           text-xs font-medium text-slate-700 hover:bg-slate-200 transition"
-              >
-                Reset
-              </button>
+          {/* CARD HEADER */}
+          <div className="flex items-center justify-between px-6 py-5 border-b border-[#e5e7f5] bg-white/80">
+            <div>
+              <h2 className="text-base md:text-lg font-semibold text-slate-900">
+                Detailed Timesheet Entries
+              </h2>
+              <p className="text-xs md:text-sm text-slate-500">
+                View, filter and export employee timesheet data.
+              </p>
             </div>
+          </div>
 
-            {/* NO APPLY BUTTON - LIVE FILTERS */}
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mt-6">
+          {/* CARD BODY */}
+          <div className="px-6 py-6 md:py-7 space-y-6">
 
-              {/* Start Date */}
-              <div>
-                <p className="text-[11px] uppercase font-semibold text-slate-500 mb-1">
-                  Start Date
-                </p>
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs"
-                />
-              </div>
+            {/* FILTER CARD */}
+            <form className="rounded-2xl border border-[#e1e4f3] bg-[#F8F9FF] px-4 py-5 md:px-5 relative">
 
-              {/* End Date */}
-              <div>
-                <p className="text-[11px] uppercase font-semibold text-slate-500 mb-1">
-                  End Date
-                </p>
-                <input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs"
-                />
-              </div>
-
-              {/* Department */}
-              <div>
-                <p className="text-[11px] uppercase font-semibold text-slate-500 mb-1">
-                  Department
-                </p>
-                <select
-                  value={selectedDepartment}
-                  onChange={(e) => setSelectedDepartment(e.target.value)}
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs"
+              {/* RESET + EXPORT */}
+              <div className="absolute right-4 top-4 flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={handleReset}
+                  className="px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-xs font-medium text-slate-700 hover:bg-slate-50"
                 >
+                  Reset
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleDownload}
+                  className="w-10 h-10 rounded-2xl bg-emerald-50 flex items-center justify-center hover:bg-emerald-100 transition shadow-sm"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="w-5 h-5 text-emerald-700"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth="2"
+                    stroke="currentColor"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M7 10l5 5m0 0l5-5m-5 5V4" />
+                  </svg>
+                </button>
+              </div>
+
+              <h3 className="text-sm md:text-base font-semibold text-slate-800 mb-3">
+                Filter Data
+              </h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+
+                {/* Start Date */}
+                <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="rounded-2xl px-3 py-2 text-sm border" />
+
+                {/* End Date */}
+                <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="rounded-2xl px-3 py-2 text-sm border" />
+
+                {/* Department */}
+                <select value={selectedDepartment} onChange={(e) => setSelectedDepartment(e.target.value)} className="rounded-2xl px-3 py-2 text-sm border">
                   <option value="">All Departments</option>
-                  {departments.map((dept) => (
-                    <option key={dept.id} value={dept.dept_name}>
-                      {dept.dept_name}
-                    </option>
+                  {departments.map((d) => (
+                    <option key={d.id} value={d.dept_name}>{d.dept_name}</option>
                   ))}
                 </select>
-              </div>
 
-              {/* Billability */}
-              <div>
-                <p className="text-[11px] uppercase font-semibold text-slate-500 mb-1">
-                  Billability
-                </p>
-                <select
-                  value={billability}
-                  onChange={(e) => setBillability(e.target.value)}
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs"
-                >
+                {/* Billability */}
+                <select value={billability} onChange={(e) => setBillability(e.target.value)} className="rounded-2xl px-3 py-2 text-sm border">
                   <option value="">All</option>
                   <option value="Billable">Billable</option>
                   <option value="Non-Billable">Non-Billable</option>
                 </select>
               </div>
-            </div>
-          </section>
+            </form>
 
-          {/* ---------------- SEARCH + EXPORT CSV ---------------- */}
-          <div className="flex flex-col md:flex-row justify-between items-center gap-3">
+            {/* SEARCH */}
             <input
               type="text"
               placeholder="Search employee / project / client..."
@@ -254,77 +250,48 @@ export default function TimesheetReports() {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
 
-            {/* EXPORT CSV BUTTON */}
-            <div className="relative group overflow-visible">
-              <button
-                onClick={handleDownload}
-                className="w-11 h-11 rounded-2xl bg-emerald-50 flex items-center justify-center 
-                           hover:bg-emerald-100 transition shadow-sm"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="w-5 h-5 text-emerald-700"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth="2"
-                  stroke="currentColor"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2" />
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M7 10l5 5m0 0l5-5m-5 5V4" />
-                </svg>
-              </button>
-
-              {/* Tooltip */}
-              <div
-                className="absolute -top-9 left-1/2 -translate-x-1/2 opacity-0 
-                           group-hover:opacity-100 bg-slate-800 text-white 
-                           text-[10px] px-2 py-1 rounded-md shadow transition"
-              >
-                Download CSV
-              </div>
-            </div>
-          </div>
-
-          {/* ---------------- TABLE ---------------- */}
-          <section className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
-            <table className="w-full text-xs">
-              <thead className="bg-[#F3F5FF] text-slate-600 text-[11px] uppercase tracking-wide">
-                <tr>
-                  <th className="px-4 py-3 text-left">Employee ID</th>
-                  <th className="px-4 py-3 text-left">Employee Name</th>
-                  <th className="px-4 py-3 text-left">Department</th>
-                  <th className="px-4 py-3 text-left">Client</th>
-                  <th className="px-4 py-3 text-left">Project</th>
-                  <th className="px-4 py-3 text-left">Billability</th>
-                  <th className="px-4 py-3 text-left">Hours</th>
-                  <th className="px-4 py-3 text-left">Date</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {filteredData.length > 0 ? (
-                  filteredData.map((row, i) => (
-                    <tr key={i} className="border-b border-slate-100 odd:bg-white even:bg-slate-50 hover:bg-slate-100">
-                      <td className="px-4 py-3">{row.empid}</td>
-                      <td className="px-4 py-3">{row.emp_name}</td>
-                      <td className="px-4 py-3">{row.department}</td>
-                      <td className="px-4 py-3">{row.client_name}</td>
-                      <td className="px-4 py-3">{row.project_name}</td>
-                      <td className="px-4 py-3">{row.project_billability}</td>
-                      <td className="px-4 py-3">{row.hours_worked}</td>
-                      <td className="px-4 py-3">{row.work_date}</td>
-                    </tr>
-                  ))
-                ) : (
+            {/* TABLE */}
+            <div className="overflow-x-auto rounded-2xl border border-[#e1e4f3] bg-white">
+              <table className="w-full text-sm">
+                <thead className="bg-[#F3F5FF] text-xs font-semibold text-slate-600">
                   <tr>
-                    <td colSpan={8} className="text-center py-6 text-slate-500">
-                      No records found.
-                    </td>
+                    <th className="px-4 py-3">Employee ID</th>
+                    <th className="px-4 py-3">Employee Name</th>
+                    <th className="px-4 py-3">Department</th>
+                    <th className="px-4 py-3">Client</th>
+                    <th className="px-4 py-3">Project</th>
+                    <th className="px-4 py-3">Billability</th>
+                    <th className="px-4 py-3">Hours</th>
+                    <th className="px-4 py-3">Date</th>
                   </tr>
-                )}
-              </tbody>
-            </table>
-          </section>
+                </thead>
+
+                <tbody>
+                  {filteredData.length ? (
+                    filteredData.map((row, i) => (
+                      <tr key={i} className="border-t hover:bg-[#F8F9FF] transition">
+                        <td className="px-4 py-3">{row.empid}</td>
+                        <td className="px-4 py-3">{row.emp_name}</td>
+                        <td className="px-4 py-3">{row.department}</td>
+                        <td className="px-4 py-3">{row.client_name}</td>
+                        <td className="px-4 py-3">{row.project_name}</td>
+                        <td className="px-4 py-3">{row.project_billability}</td>
+                        <td className="px-4 py-3">{row.hours_worked}</td>
+                        <td className="px-4 py-3">{row.work_date}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="8" className="text-center py-6 text-slate-500">
+                        No records found.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+          </div>
         </div>
       </div>
     </div>

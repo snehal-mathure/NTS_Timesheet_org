@@ -4230,6 +4230,351 @@ def export_client_department():
     return response
 
 
+from flask import jsonify
+from sqlalchemy import func, case
+from models import db, Employee_Info, Department
+
+@app.route("/admin/workforce_skill_distribution", methods=["GET"])
+def workforce_skill_distribution():
+    experience = request.args.get("experience", "all")
+
+    today = date.today()
+    grouped = {}
+
+    employees = (
+        db.session.query(Employee_Info, Department.dept_name)
+        .join(Department, Department.id == Employee_Info.dept_id)
+        .all()
+    )
+
+    for emp, dept_name in employees:
+        core_skill = emp.core_skill or "Unassigned"
+
+        # ---------------- EXPERIENCE CALCULATION ----------------
+        prev_exp = emp.prev_total_exp or 0
+        doj_exp = ((today - emp.doj).days / 365) if emp.doj else 0
+        total_exp = prev_exp + doj_exp
+        is_fresher = total_exp < 2
+
+        # ---------------- EXPERIENCE FILTER ----------------
+        if experience == "fresher" and not is_fresher:
+            continue
+        if experience == "experienced" and is_fresher:
+            continue
+
+        key = (dept_name, core_skill)
+
+        if key not in grouped:
+            grouped[key] = {
+                "department": dept_name,
+                "core_skill": core_skill,
+                "total_count": 0,
+                "billable_count": 0,
+                "non_billable_count": 0,
+                "fresher_count": 0,
+                "experienced_count": 0,
+                "skill_details": set(),
+            }
+
+        # ---------------- BILLABILITY CHECK ----------------
+        project_billabilities = {
+            row[0]
+            for row in (
+                db.session.query(Project_Info.project_billability)
+                .join(TimesheetEntry, Project_Info.id == TimesheetEntry.project_id)
+                .filter(TimesheetEntry.empid == emp.empid)
+                .distinct()
+                .all()
+            )
+        }
+
+        is_billable = "Billable" in project_billabilities
+
+        # ---------------- COUNTS ----------------
+        grouped[key]["total_count"] += 1
+
+        if is_billable:
+            grouped[key]["billable_count"] += 1
+        else:
+            grouped[key]["non_billable_count"] += 1
+
+        if is_fresher:
+            grouped[key]["fresher_count"] += 1
+        else:
+            grouped[key]["experienced_count"] += 1
+
+        if emp.skill_details:
+            grouped[key]["skill_details"].add(emp.skill_details)
+
+    # ---------------- RESPONSE ----------------
+    results = []
+    for row in grouped.values():
+        results.append({
+            "department": row["department"],
+            "core_skill": row["core_skill"],
+            "total_count": row["total_count"],
+            "billable_count": row["billable_count"],
+            "non_billable_count": row["non_billable_count"],
+            "fresher_count": row["fresher_count"],
+            "experienced_count": row["experienced_count"],
+            "skill_details": ", ".join(row["skill_details"]) if row["skill_details"] else None,
+        })
+
+    return jsonify({
+        "experience": experience,
+        "data": results
+    }), 200
+
+
+@app.route("/admin/workforce_skill_distribution/export", methods=["GET"])
+def export_workforce_skill_distribution():
+
+    experience = request.args.get("experience", "all")
+
+    today = date.today()
+    grouped = {}
+
+    employees = (
+        db.session.query(Employee_Info, Department.dept_name)
+        .join(Department, Department.id == Employee_Info.dept_id)
+        .all()
+    )
+
+    for emp, dept_name in employees:
+        core_skill = emp.core_skill or "Unassigned"
+
+        prev_exp = emp.prev_total_exp or 0
+        doj_exp = ((today - emp.doj).days / 365) if emp.doj else 0
+        total_exp = prev_exp + doj_exp
+        is_fresher = total_exp < 2
+
+        if experience == "fresher" and not is_fresher:
+            continue
+        if experience == "experienced" and is_fresher:
+            continue
+
+        key = (dept_name, core_skill)
+
+        if key not in grouped:
+            grouped[key] = {
+                "department": dept_name,
+                "core_skill": core_skill,
+                "total_count": 0,
+                "skill_details": set(),
+            }
+
+        grouped[key]["total_count"] += 1
+
+        if emp.skill_details:
+            grouped[key]["skill_details"].add(emp.skill_details)
+
+    def generate():
+        output = io.StringIO()
+        writer = csv.writer(output)
+
+        writer.writerow([
+            "Department",
+            "Core Skill",
+            "Total Employees",
+            "Skill Details"
+        ])
+
+        yield output.getvalue()
+        output.seek(0)
+        output.truncate(0)
+
+        for row in grouped.values():
+            writer.writerow([
+                row["department"],
+                row["core_skill"],
+                row["total_count"],
+                ", ".join(row["skill_details"]) if row["skill_details"] else ""
+            ])
+
+            yield output.getvalue()
+            output.seek(0)
+            output.truncate(0)
+
+    return Response(
+        generate(),
+        mimetype="text/csv",
+        headers={
+            "Content-Disposition": "attachment; filename=workforce_skill_distribution.csv"
+        }
+    )
+
+
+@app.route("/admin/workforce_employee_details", methods=["GET"])
+def workforce_employee_details():
+
+    department_filter = request.args.get("department")
+    core_skill_filter = request.args.get("core_skill")
+    experience_filter = request.args.get("experience", "all")
+    billable_filter = request.args.get("billable", "all")
+
+    today = date.today()
+    response = []
+
+    employees = (
+        db.session.query(Employee_Info, Department.dept_name)
+        .join(Department, Department.id == Employee_Info.dept_id)
+        .all()
+    )
+
+    for emp, dept_name in employees:
+
+        # ---------------- EXPERIENCE ----------------
+        prev_exp = emp.prev_total_exp or 0
+        doj_exp = ((today - emp.doj).days / 365) if emp.doj else 0
+        total_exp = prev_exp + doj_exp
+        is_fresher = total_exp < 2
+
+        if experience_filter == "fresher" and not is_fresher:
+            continue
+        if experience_filter == "experienced" and is_fresher:
+            continue
+
+        # ---------------- BILLABILITY ----------------
+        project_billabilities = {
+            row[0]
+            for row in (
+                db.session.query(Project_Info.project_billability)
+                .join(TimesheetEntry, Project_Info.id == TimesheetEntry.project_id)
+                .filter(TimesheetEntry.empid == emp.empid)
+                .distinct()
+                .all()
+            )
+        }
+
+        is_billable = "Billable" in project_billabilities
+
+        if billable_filter == "billable" and not is_billable:
+            continue
+        if billable_filter == "non-billable" and is_billable:
+            continue
+
+        # ---------------- DEPARTMENT FILTER ----------------
+        if department_filter and dept_name != department_filter:
+            continue
+
+        # ---------------- CORE SKILL FILTER ----------------
+        core_skill = emp.core_skill or "Unassigned"
+        if core_skill_filter and core_skill != core_skill_filter:
+            continue
+
+        # ---------------- RESPONSE OBJECT ----------------
+        response.append({
+            "empid": emp.empid,
+            "employee_name": f"{emp.fname} {emp.lname}" if emp.fname else None,
+            "designation": emp.designation,
+            "email": emp.email,
+            "department": dept_name,
+            "core_skill": core_skill,
+            "skill_details": emp.skill_details,
+            "experience_type": "Fresher" if is_fresher else "Experienced",
+            "total_experience_years": round(total_exp, 2),
+            "billable_status": "Billable" if is_billable else "Non-Billable"
+        })
+
+    return jsonify({
+        "total_employees": len(response),
+        "data": response
+    }), 200
+
+
+@app.route("/admin/workforce_employee_details/export", methods=["GET"])
+def export_workforce_employee_details():
+
+    department_filter = request.args.get("department")
+    core_skill_filter = request.args.get("core_skill")
+    experience_filter = request.args.get("experience", "all")
+    billable_filter = request.args.get("billable", "all")
+
+    today = date.today()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+
+    # CSV HEADER
+    writer.writerow([
+        "Employee ID",
+        "Employee Name",
+        "Designation",
+        "Email",
+        "Total Experience (Years)",
+        "Skill Set"
+    ])
+
+    employees = (
+        db.session.query(Employee_Info, Department.dept_name)
+        .join(Department, Department.id == Employee_Info.dept_id)
+        .all()
+    )
+
+    print("EMPLOYEES COUNT:", len(employees))
+
+    for emp, dept_name in employees:
+
+        prev_exp = emp.prev_total_exp or 0
+        doj_exp = ((today - emp.doj).days / 365) if emp.doj else 0
+        total_exp = round(prev_exp + doj_exp, 2)
+        is_fresher = total_exp < 2
+
+        if experience_filter == "fresher" and not is_fresher:
+            continue
+        if experience_filter == "experienced" and is_fresher:
+            continue
+
+        project_billabilities = {
+            row[0]
+            for row in (
+                db.session.query(Project_Info.project_billability)
+                .join(TimesheetEntry, Project_Info.id == TimesheetEntry.project_id)
+                .filter(TimesheetEntry.empid == emp.empid)
+                .distinct()
+                .all()
+            )
+        }
+        is_billable = "Billable" in project_billabilities
+
+        if billable_filter == "billable" and not is_billable:
+            continue
+        if billable_filter == "non-billable" and is_billable:
+            continue
+
+        core_skill = emp.core_skill or "Unassigned"
+        if core_skill_filter and core_skill != core_skill_filter:
+            continue
+
+        if department_filter and dept_name != department_filter:
+            continue
+
+        # ✅ ALWAYS WRITE ROW
+        writer.writerow([
+            emp.empid or "",
+            f"{emp.fname or ''} {emp.lname or ''}".strip(),
+            emp.designation or "",
+            emp.email or "",
+            total_exp,
+            emp.skill_details or ""
+        ])
+
+    return Response(
+        output.getvalue(),
+        mimetype="text/csv",
+        headers={
+            "Content-Disposition":
+            "attachment; filename=workforce_employee_details.csv"
+        }
+    )
+
+
+
+
+
+
+
+
 # ===========================
 
 
@@ -4916,7 +5261,7 @@ def location_reports():
     if export_format == 'csv':
         # Prepare data for CSV
         data = [
-            {'Location': item['location'], 'Count': item['count']}
+            {'Location': item['lo/admincation'], 'Count': item['count']}
             for item in location_data
         ]
         
@@ -5580,15 +5925,23 @@ def timesheet_approvers():
         Approver, Emp.approver_id == Approver.empid
     )
 
+    # ✅ Department filter (unchanged)
     if department:
         query = query.filter(Department.dept_name == department)
 
+    # ✅ Approver filter (ID OR Name)
     if approver:
-        query = query.filter((Approver.fname + literal(' ') + Approver.lname) == approver)
+        full_name = (Approver.fname + literal(' ') + Approver.lname)
+
+        query = query.filter(
+            or_(
+                Approver.empid == approver,
+                full_name.ilike(f"%{approver}%")
+            )
+        )
 
     results = query.order_by(Emp.empid).all()
 
-    # Convert query result to JSON list
     data_list = [
         {
             "employee_id": r.employee_id,
@@ -5600,16 +5953,23 @@ def timesheet_approvers():
         for r in results
     ]
 
-    # Dropdown values
+    # ✅ Department dropdown
     departments = [
         d.dept_name for d in
-        db.session.query(Department.dept_name).distinct().order_by(Department.dept_name).all()
+        db.session.query(Department.dept_name)
+        .distinct()
+        .order_by(Department.dept_name)
+        .all()
     ]
 
+    # ✅ Approver dropdown (same as before)
     approvers = [
         a[0] for a in db.session.query(
             (Employee_Info.fname + literal(' ') + Employee_Info.lname)
-        ).filter(Employee_Info.approver_id.isnot(None)).distinct().all()
+        )
+        .filter(Employee_Info.approver_id.isnot(None))
+        .distinct()
+        .all()
     ]
 
     return jsonify({
@@ -5628,6 +5988,9 @@ def download_timesheet_approvers():
     Emp = aliased(Employee_Info)
     Approver = aliased(Employee_Info)
 
+    department = request.args.get('department')
+    approver = request.args.get('approver')
+
     query = db.session.query(
         Emp.empid.label('employee_id'),
         (Emp.fname + literal(' ') + Emp.lname).label('employee_name'),
@@ -5638,9 +6001,23 @@ def download_timesheet_approvers():
         Approver, Emp.approver_id == Approver.empid
     ).outerjoin(
         Department, Emp.dept_id == Department.id
-    ).order_by(
-        Emp.empid
     )
+
+    # ✅ Department filter (same logic as listing API)
+    if department:
+        query = query.filter(Department.dept_name == department)
+
+    # ✅ Approver filter (ID OR Name)
+    if approver:
+        full_name = (Approver.fname + literal(' ') + Approver.lname)
+        query = query.filter(
+            or_(
+                Approver.empid == approver,
+                full_name.ilike(f"%{approver}%")
+            )
+        )
+
+    query = query.order_by(Emp.empid)
 
     results = query.all()
 
@@ -5648,10 +6025,16 @@ def download_timesheet_approvers():
     si = StringIO()
     cw = csv.writer(si)
 
-    # Header
-    cw.writerow(['Employee ID', 'Employee Name', 'Approver ID', 'Approver Name', 'Department'])
+    # Header (UNCHANGED)
+    cw.writerow([
+        'Employee ID',
+        'Employee Name',
+        'Approver ID',
+        'Approver Name',
+        'Department'
+    ])
 
-    # Proper row writing
+    # Rows (UNCHANGED)
     for r in results:
         cw.writerow([
             r.employee_id,
@@ -5670,6 +6053,7 @@ def download_timesheet_approvers():
             "Content-Disposition": f"attachment; filename=timesheet_approvers_{datetime.now().strftime('%Y%m%d')}.csv"
         }
     )
+
 
 # ================================
 

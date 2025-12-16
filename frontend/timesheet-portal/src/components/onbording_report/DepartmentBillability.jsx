@@ -251,18 +251,6 @@ const DepartmentBillability = () => {
               </div>
             </form>
 
-            {/* SEARCH */}
-            <input
-              type="text"
-              placeholder="Search departments..."
-              className="border border-[#d9dcef] bg-[#F8F9FF] rounded-2xl px-3 py-2 text-sm w-full md:w-72"
-              value={searchTerm}
-              onChange={(e) => {
-                setSearchTerm(e.target.value);
-                setPage(1);
-              }}
-            />
-
             {/* TABLE */}
             <div className="overflow-x-auto rounded-2xl border border-[#e1e4f3] bg-white">
               <table className="w-full text-sm">
