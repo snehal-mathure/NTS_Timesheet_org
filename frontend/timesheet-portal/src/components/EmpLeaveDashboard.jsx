@@ -4,6 +4,7 @@ import empLeaveDashboardService from "../services/UserDashboard/empLeaveDashboar
 import { Link } from "react-router-dom";
 import PageHeader from "./PageHeader";
 import UserDashboardSidebar from "./UserDashboardSidebar";
+import { FiTrash2 } from "react-icons/fi";
 
 const SIDEBAR_STORAGE_KEY = "td_sidebar_collapsed";
 
@@ -94,7 +95,7 @@ export default function EmpLeaveDashboard() {
   // compute main margin:
   // - sidebarCollapsed === true  -> show icon rail width (md:ml-20)
   // - sidebarCollapsed === false -> show full sidebar width (md:ml-72)
-  const mainMarginClass = sidebarCollapsed ? "md:ml-20" : "md:ml-72";
+  const mainMarginClass = sidebarCollapsed ? "md:ml-20" : "md:ml-60";
 
   return (
     <div className="flex min-h-screen bg-[#F5F7FF]">
@@ -172,7 +173,7 @@ export default function EmpLeaveDashboard() {
 
                   <Link
                     to="/applyleave"
-                    className="inline-flex items-center gap-2 text-white px-4 py-2 rounded-2xl text-sm shadow-[0_10px_30px_rgba(76,111,255,0.18)]"
+                    className="inline-flex items-center gap-2 text-white px-2 py-0 rounded-2xl text-xs shadow-[0_10px_30px_rgba(76,111,255,0.18)]"
                     style={{ background: "linear-gradient(135deg,#4C6FFF,#6C5CE7)" }}
                   >
                     Apply for Leave
@@ -219,9 +220,11 @@ export default function EmpLeaveDashboard() {
                     />
                   </div>
 
+                  {/* ✅ FIXED RESET BUTTON */}
                   <button
+                    type="button"
                     onClick={resetFilters}
-                    className="ml-auto bg-slate-800 text-white px-3 py-1 rounded-full text-xs"
+                    className="px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-xs font-medium text-slate-700 hover:bg-slate-50"
                   >
                     Reset
                   </button>
@@ -283,9 +286,10 @@ export default function EmpLeaveDashboard() {
                                 {isActionable ? (
                                   <button
                                     onClick={() => handleCancelLeave(leave.id)}
-                                    className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-full text-xs"
+                                    className="p-2 rounded-xl bg-rose-100 text-rose-700 border border-rose-200 hover:bg-rose-200 transition"
+                                    title="Cancel Leave"
                                   >
-                                    Cancel
+                                    <FiTrash2 size={15} />
                                   </button>
                                 ) : (
                                   <span className="text-xs text-slate-400">—</span>

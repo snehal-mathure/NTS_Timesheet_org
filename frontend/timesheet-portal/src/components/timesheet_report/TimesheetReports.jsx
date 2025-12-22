@@ -219,25 +219,66 @@ export default function TimesheetReports() {
               <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
 
                 {/* Start Date */}
-                <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="rounded-2xl px-3 py-2 text-sm border" />
+                <div>
+                  <label className="text-xs font-medium text-slate-700 mb-1 block">
+                    Start Date
+                  </label>
+                  <input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="rounded-2xl px-3 py-2 text-sm border w-full"
+                  />
+                </div>
 
                 {/* End Date */}
-                <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="rounded-2xl px-3 py-2 text-sm border" />
+                <div>
+                  <label className="text-xs font-medium text-slate-700 mb-1 block">
+                    End Date
+                  </label>
+                  <input
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className="rounded-2xl px-3 py-2 text-sm border w-full"
+                  />
+                </div>
 
                 {/* Department */}
-                <select value={selectedDepartment} onChange={(e) => setSelectedDepartment(e.target.value)} className="rounded-2xl px-3 py-2 text-sm border">
-                  <option value="">All Departments</option>
-                  {departments.map((d) => (
-                    <option key={d.id} value={d.dept_name}>{d.dept_name}</option>
-                  ))}
-                </select>
+                <div>
+                  <label className="text-xs font-medium text-slate-700 mb-1 block">
+                    Department
+                  </label>
+                  <select
+                    value={selectedDepartment}
+                    onChange={(e) => setSelectedDepartment(e.target.value)}
+                    className="rounded-2xl px-3 py-2 text-sm border w-full"
+                  >
+                    <option value="">All Departments</option>
+                    {departments.map((d) => (
+                      <option key={d.id} value={d.dept_name}>
+                        {d.dept_name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
                 {/* Billability */}
-                <select value={billability} onChange={(e) => setBillability(e.target.value)} className="rounded-2xl px-3 py-2 text-sm border">
-                  <option value="">All</option>
-                  <option value="Billable">Billable</option>
-                  <option value="Non-Billable">Non-Billable</option>
-                </select>
+                <div>
+                  <label className="text-xs font-medium text-slate-700 mb-1 block">
+                    Billability
+                  </label>
+                  <select
+                    value={billability}
+                    onChange={(e) => setBillability(e.target.value)}
+                    className="rounded-2xl px-3 py-2 text-sm border w-full"
+                  >
+                    <option value="">All</option>
+                    <option value="Billable">Billable</option>
+                    <option value="Non-Billable">Non-Billable</option>
+                  </select>
+                </div>
+
               </div>
             </form>
 

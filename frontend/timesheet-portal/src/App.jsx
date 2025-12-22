@@ -309,16 +309,13 @@ function App() {
         <Route path="/editemployee/:empid" element={<EditEmployeePage />} />
         <Route path="/utilization" element={<UtilizationReport />} />
 
-<<<<<<< Updated upstream
-         <Route path="/edituser/:empid" element={<EditUser />} />
-         <Route path="/utilization" element={<UtilizationReport />} />
+        <Route path="/edituser/:empid" element={<EditUser />} />
+         {/* <Route path="/utilization" element={<UtilizationReport />} /> */}
 
-         <Route path="/approver'sEmployees" element={<ApproverEmployees />} />
+        <Route path="/approver'sEmployees" element={<ApproverEmployees />} />
 
         {/* Onboarding reports mini-app (sub sidebar + pages) */}
-=======
         {/* 🔹 Onboarding Reports (Nested) */}
->>>>>>> Stashed changes
         <Route path="/onboarding-reports" element={<OnboardingReports />}>
           <Route index element={<DepartmentBillability />} />
           <Route path="departmentBillability" element={<DepartmentBillability />} />

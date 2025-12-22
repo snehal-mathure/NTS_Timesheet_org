@@ -157,42 +157,53 @@ export default function LeaveApprovers() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-3xl">
 
                 {/* Department */}
-                <select
-                  value={approverFilters.dept}
-                  onChange={(e) =>
-                    setApproverFilters((prev) => ({
-                      ...prev,
-                      dept: e.target.value.toLowerCase(),
-                    }))
-                  }
-                  className="border border-[#d9dcef] bg-white rounded-2xl px-3 py-2 text-sm"
-                >
-                  <option value="all">All Departments</option>
-                  {departments.map((d) => (
-                    <option key={d} value={d.toLowerCase()}>
-                      {d}
-                    </option>
-                  ))}
-                </select>
+                <div>
+                  <label className="text-xs font-medium text-slate-700 mb-1 block">
+                    Department
+                  </label>
+                  <select
+                    value={approverFilters.dept}
+                    onChange={(e) =>
+                      setApproverFilters((prev) => ({
+                        ...prev,
+                        dept: e.target.value.toLowerCase(),
+                      }))
+                    }
+                    className="border border-[#d9dcef] bg-white rounded-2xl px-3 py-2 text-sm w-full"
+                  >
+                    <option value="all">All Departments</option>
+                    {departments.map((d) => (
+                      <option key={d} value={d.toLowerCase()}>
+                        {d}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
                 {/* Employee */}
-                <select
-                  value={approverFilters.emp}
-                  onChange={(e) =>
-                    setApproverFilters((prev) => ({
-                      ...prev,
-                      emp: e.target.value.toLowerCase(),
-                    }))
-                  }
-                  className="border border-[#d9dcef] bg-white rounded-2xl px-3 py-2 text-sm"
-                >
-                  <option value="all">All Employees</option>
-                  {employeeNames.map((e) => (
-                    <option key={e} value={e.toLowerCase()}>
-                      {e}
-                    </option>
-                  ))}
-                </select>
+                <div>
+                  <label className="text-xs font-medium text-slate-700 mb-1 block">
+                    Employee
+                  </label>
+                  <select
+                    value={approverFilters.emp}
+                    onChange={(e) =>
+                      setApproverFilters((prev) => ({
+                        ...prev,
+                        emp: e.target.value.toLowerCase(),
+                      }))
+                    }
+                    className="border border-[#d9dcef] bg-white rounded-2xl px-3 py-2 text-sm w-full"
+                  >
+                    <option value="all">All Employees</option>
+                    {employeeNames.map((e) => (
+                      <option key={e} value={e.toLowerCase()}>
+                        {e}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
               </div>
             </div>
 

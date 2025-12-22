@@ -184,86 +184,132 @@ export default function LeaveReportsAdmin() {
                 Filter Data
               </h3>
 
-              {/* ✅ ALL FILTERS SAME SIZE */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-5xl">
 
-                <input
-                  type="date"
-                  value={filters.start}
-                  onChange={(e) => setFilters({ ...filters, start: e.target.value })}
-                  className="border border-[#d9dcef] bg-white rounded-2xl px-3 py-2 text-sm w-full"
-                />
+                {/* Start Date */}
+                <div>
+                  <label className="text-xs font-medium text-slate-700 mb-1 block">
+                    Start Date
+                  </label>
+                  <input
+                    type="date"
+                    value={filters.start}
+                    onChange={(e) =>
+                      setFilters({ ...filters, start: e.target.value })
+                    }
+                    className="border border-[#d9dcef] bg-white rounded-2xl px-3 py-2 text-sm w-full"
+                  />
+                </div>
 
-                <input
-                  type="date"
-                  value={filters.end}
-                  onChange={(e) => setFilters({ ...filters, end: e.target.value })}
-                  className="border border-[#d9dcef] bg-white rounded-2xl px-3 py-2 text-sm w-full"
-                />
+                {/* End Date */}
+                <div>
+                  <label className="text-xs font-medium text-slate-700 mb-1 block">
+                    End Date
+                  </label>
+                  <input
+                    type="date"
+                    value={filters.end}
+                    onChange={(e) =>
+                      setFilters({ ...filters, end: e.target.value })
+                    }
+                    className="border border-[#d9dcef] bg-white rounded-2xl px-3 py-2 text-sm w-full"
+                  />
+                </div>
 
-                <select
-                  value={filters.dept}
-                  onChange={(e) =>
-                    setFilters({ ...filters, dept: e.target.value.toLowerCase() })
-                  }
-                  className="border border-[#d9dcef] bg-white rounded-2xl px-3 py-2 text-sm w-full"
-                >
-                  <option value="all">All Departments</option>
-                  {departments.map((d) => (
-                    <option key={d} value={d.toLowerCase()}>
-                      {d}
-                    </option>
-                  ))}
-                </select>
+                {/* Department */}
+                <div>
+                  <label className="text-xs font-medium text-slate-700 mb-1 block">
+                    Department
+                  </label>
+                  <select
+                    value={filters.dept}
+                    onChange={(e) =>
+                      setFilters({
+                        ...filters,
+                        dept: e.target.value.toLowerCase(),
+                      })
+                    }
+                    className="border border-[#d9dcef] bg-white rounded-2xl px-3 py-2 text-sm w-full"
+                  >
+                    <option value="all">All Departments</option>
+                    {departments.map((d) => (
+                      <option key={d} value={d.toLowerCase()}>
+                        {d}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-                <select
-                  value={filters.emp}
-                  onChange={(e) =>
-                    setFilters({ ...filters, emp: e.target.value.toLowerCase() })
-                  }
-                  className="border border-[#d9dcef] bg-white rounded-2xl px-3 py-2 text-sm w-full"
-                >
-                  <option value="all">All Employees</option>
-                  {employeeNames.map((e) => (
-                    <option key={e} value={e.toLowerCase()}>
-                      {e}
-                    </option>
-                  ))}
-                </select>
+                {/* Employee */}
+                <div>
+                  <label className="text-xs font-medium text-slate-700 mb-1 block">
+                    Employee
+                  </label>
+                  <select
+                    value={filters.emp}
+                    onChange={(e) =>
+                      setFilters({
+                        ...filters,
+                        emp: e.target.value.toLowerCase(),
+                      })
+                    }
+                    className="border border-[#d9dcef] bg-white rounded-2xl px-3 py-2 text-sm w-full"
+                  >
+                    <option value="all">All Employees</option>
+                    {employeeNames.map((e) => (
+                      <option key={e} value={e.toLowerCase()}>
+                        {e}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-                <select
-                  value={filters.leaveType}
-                  onChange={(e) =>
-                    setFilters({
-                      ...filters,
-                      leaveType: e.target.value.toLowerCase(),
-                    })
-                  }
-                  className="border border-[#d9dcef] bg-white rounded-2xl px-3 py-2 text-sm w-full"
-                >
-                  <option value="all">All Leave Types</option>
-                  {leaveTypes.map((lt) => (
-                    <option key={lt} value={lt.toLowerCase()}>
-                      {lt}
-                    </option>
-                  ))}
-                </select>
+                {/* Leave Type */}
+                <div>
+                  <label className="text-xs font-medium text-slate-700 mb-1 block">
+                    Leave Type
+                  </label>
+                  <select
+                    value={filters.leaveType}
+                    onChange={(e) =>
+                      setFilters({
+                        ...filters,
+                        leaveType: e.target.value.toLowerCase(),
+                      })
+                    }
+                    className="border border-[#d9dcef] bg-white rounded-2xl px-3 py-2 text-sm w-full"
+                  >
+                    <option value="all">All Leave Types</option>
+                    {leaveTypes.map((lt) => (
+                      <option key={lt} value={lt.toLowerCase()}>
+                        {lt}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-                <select
-                  value={filters.status}
-                  onChange={(e) =>
-                    setFilters({
-                      ...filters,
-                      status: e.target.value.toLowerCase(),
-                    })
-                  }
-                  className="border border-[#d9dcef] bg-white rounded-2xl px-3 py-2 text-sm w-full"
-                >
-                  <option value="all">All Status</option>
-                  <option value="approved">Approved</option>
-                  <option value="pending">Pending</option>
-                  <option value="rejected">Rejected</option>
-                </select>
+                {/* Status */}
+                <div>
+                  <label className="text-xs font-medium text-slate-700 mb-1 block">
+                    Status
+                  </label>
+                  <select
+                    value={filters.status}
+                    onChange={(e) =>
+                      setFilters({
+                        ...filters,
+                        status: e.target.value.toLowerCase(),
+                      })
+                    }
+                    className="border border-[#d9dcef] bg-white rounded-2xl px-3 py-2 text-sm w-full"
+                  >
+                    <option value="all">All Status</option>
+                    <option value="approved">Approved</option>
+                    <option value="pending">Pending</option>
+                    <option value="rejected">Rejected</option>
+                  </select>
+                </div>
+
               </div>
             </div>
 

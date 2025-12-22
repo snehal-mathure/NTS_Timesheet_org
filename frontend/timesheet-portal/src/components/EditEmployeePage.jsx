@@ -684,10 +684,21 @@ export default function EditEmployeePage() {
                 <button
                   type="button"
                   onClick={addAssignmentRow}
-                  className="mt-4 bg-green-600 text-white px-4 py-2 rounded-2xl text-xs hover:bg-green-700"
+                  className="mt-4 px-4 py-2 rounded-2xl text-xs font-semibold text-white"
+                  style={{
+                    background: `linear-gradient(135deg, ${accent}, #6C5CE7)`,
+                  }}
                 >
                   + Add Assignment
                 </button>
+
+                {/* <button
+                  type="button"
+                  onClick={addAssignmentRow}
+                  className="mt-4 bg-green-600 text-white px-4 py-2 rounded-2xl text-xs hover:bg-green-700"
+                >
+                  + Add Assignment
+                </button> */}
               </section>
 
               {/* ACTION BUTTONS */}

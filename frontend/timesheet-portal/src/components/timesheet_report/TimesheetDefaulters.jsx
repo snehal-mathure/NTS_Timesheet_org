@@ -168,34 +168,45 @@ export default function TimesheetDefaulters() {
               Filter Data
             </h3>
 
-            {/* 🔥 SAME WIDTH + SIZE AS TimesheetApprovers */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end max-w-3xl">
 
-              <select
-                name="department"
-                value={filters.department}
-                onChange={handleChange}
-                className="border border-[#d9dcef] bg-white rounded-2xl px-3 py-2 text-sm"
-              >
-                <option value="">All Departments</option>
-                {departments.map((dept, i) => (
-                  <option key={i} value={dept}>
-                    {dept}
-                  </option>
-                ))}
-              </select>
+              {/* Department */}
+              <div>
+                <label className="text-xs font-medium text-slate-700 mb-1 block">
+                  Department
+                </label>
+                <select
+                  name="department"
+                  value={filters.department}
+                  onChange={handleChange}
+                  className="border border-[#d9dcef] bg-white rounded-2xl px-3 py-2 text-sm w-full"
+                >
+                  <option value="">All Departments</option>
+                  {departments.map((dept, i) => (
+                    <option key={i} value={dept}>
+                      {dept}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-              <select
-                name="status"
-                value={filters.status}
-                onChange={handleChange}
-                className="border border-[#d9dcef] bg-white rounded-2xl px-3 py-2 text-sm"
-              >
-                <option value="">All Status</option>
-                <option value="Submitted">Submitted</option>
-                <option value="Approved">Approved</option>
-                <option value="Not Submitted">Not Submitted</option>
-              </select>
+              {/* Status */}
+              <div>
+                <label className="text-xs font-medium text-slate-700 mb-1 block">
+                  Status
+                </label>
+                <select
+                  name="status"
+                  value={filters.status}
+                  onChange={handleChange}
+                  className="border border-[#d9dcef] bg-white rounded-2xl px-3 py-2 text-sm w-full"
+                >
+                  <option value="">All Status</option>
+                  <option value="Submitted">Submitted</option>
+                  <option value="Approved">Approved</option>
+                  <option value="Not Submitted">Not Submitted</option>
+                </select>
+              </div>
 
             </div>
           </div>

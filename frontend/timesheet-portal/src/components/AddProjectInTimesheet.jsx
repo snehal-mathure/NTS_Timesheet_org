@@ -164,7 +164,14 @@ export default function AddProjectInTimesheet() {
     }
   }, [success, error]);
 
-  const mainMarginClass = sidebarCollapsed ? "md:ml-20" : "md:ml-72";
+  const mainMarginClass = sidebarCollapsed ? "md:ml-20" : "md:ml-60";
+
+  const resetFilters = () => {
+    setSelectedClient(null);
+    setSelectedProjects(new Set());
+    setProjectQuery("");
+  };
+
 
   /* ---------------- Render ---------------- */
   return (
@@ -175,7 +182,7 @@ export default function AddProjectInTimesheet() {
         <div className="max-w-7xl mx-auto space-y-6">
 
           {/* HEADER */}
-          <div className="bg-gradient-to-r from-[#4C6FFF] to-[#8B5CF6] rounded-3xl p-6 text-white shadow">
+          <div className="bg-gradient-to-r from-[#4C6FFF] to-[#8B5CF6] rounded-3xl p-4 text-white shadow">
             <h2 className="text-xl font-semibold">Assign Projects in Timesheet</h2>
             <p className="text-sm opacity-90">
               Select a client and assign projects
@@ -190,7 +197,12 @@ export default function AddProjectInTimesheet() {
               <div className="md:col-span-2 bg-white border border-slate-200 rounded-3xl p-5">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-sm font-semibold">Clients</h3>
-                  <button onClick={loadData} className={actionBtnClass}>
+                  {/* ✅ FIXED RESET BUTTON */}
+                  <button
+                    type="button"
+                    onClick={resetFilters}
+                    className="px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-xs font-medium text-slate-700 hover:bg-slate-50"
+                  >
                     Reset
                   </button>
                 </div>
@@ -232,10 +244,17 @@ export default function AddProjectInTimesheet() {
                       </div>
 
                       <div className="flex gap-2">
-                        <button onClick={selectAllForClient} className={actionBtnClass}>
+                        <button
+                          onClick={selectAllForClient}
+                          className="px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-xs font-medium text-slate-700 hover:bg-slate-50"
+                        >
                           Select all
                         </button>
-                        <button onClick={clearSelectionForClient} className={actionBtnClass}>
+
+                        <button
+                          onClick={clearSelectionForClient}
+                          className="px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-xs font-medium text-slate-700 hover:bg-slate-50"
+                        >
                           Clear
                         </button>
                       </div>
@@ -267,7 +286,7 @@ export default function AddProjectInTimesheet() {
                       <button
                         onClick={handleUpdate}
                         disabled={saving}
-                        className={`px-6 h-10 text-sm rounded-full font-medium
+                        className={`inline-flex items-center justify-center gap-2 px-5 py-2 rounded-2xl text-sm font-semibold
                           ${
                             saving
                               ? "bg-slate-300 text-slate-600"

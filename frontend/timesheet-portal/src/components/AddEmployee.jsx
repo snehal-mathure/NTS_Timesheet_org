@@ -5,8 +5,42 @@ import { Link } from "react-router-dom";
 import employeeService from "../services/AdminDashboard/employeeService";
 import Sidebar from "../components/Sidebar";
 import PageHeader from "../components/PageHeader";
+import { FiUsers } from "react-icons/fi";
+import { FiCheckCircle, FiX } from "react-icons/fi";
 
 const SIDEBAR_STORAGE_KEY = "td_sidebar_collapsed";
+
+/* ---------------- Toast Component ---------------- */
+const Toast = ({ type, message, onClose }) => {
+  if (!message) return null;
+
+  return (
+    <div
+      className={`bg-white border-l-4 shadow-lg rounded-xl p-4 max-w-sm flex gap-3
+        ${type === "success" ? "border-emerald-500" : "border-rose-500"}`}
+    >
+      {type === "success" ? (
+        <FiCheckCircle className="text-emerald-500 mt-1" />
+      ) : (
+        <FiX className="text-rose-500 mt-1" />
+      )}
+
+      <div className="flex-1">
+        <p className="text-sm font-semibold">
+          {type === "success" ? "Success" : "Error"}
+        </p>
+        <p className="text-xs text-slate-600">{message}</p>
+      </div>
+
+      <button
+        onClick={onClose}
+        className="text-slate-400 hover:text-slate-700"
+      >
+        <FiX size={14} />
+      </button>
+    </div>
+  );
+};
 
 export default function AddEmployeePage() {
   const [loading, setLoading] = useState(false);
@@ -63,6 +97,7 @@ export default function AddEmployeePage() {
     () => localStorage.getItem(SIDEBAR_STORAGE_KEY) === "true"
   );
 
+
   // update layout if sidebar toggled elsewhere (same-tab event)
   useEffect(() => {
     const handler = () => {
@@ -77,6 +112,17 @@ export default function AddEmployeePage() {
       window.removeEventListener("storage", handler);
     };
   }, []);
+
+  useEffect(() => {
+    if (showSuccess || showError) {
+      const t = setTimeout(() => {
+        setShowSuccess("");
+        setShowError("");
+      }, 3000);
+      return () => clearTimeout(t);
+    }
+  }, [showSuccess, showError]);
+
 
   // load form data from API
   useEffect(() => {
@@ -425,7 +471,7 @@ export default function AddEmployeePage() {
             description="Create a new employee, assign clients and configure leave balances."
           />
 
-          {/* Alerts */}
+          {/* Alerts
           {showError && (
             <div className="mb-4 rounded-2xl px-4 py-3 text-sm bg-rose-50 text-rose-800 border border-rose-100 flex items-center justify-between">
               <span>{showError}</span>
@@ -447,7 +493,26 @@ export default function AddEmployeePage() {
                 Dismiss
               </button>
             </div>
-          )}
+          )} */}
+
+          {/* TOAST CONTAINER */}
+          <div className="fixed top-5 right-5 z-50 space-y-3">
+            {showSuccess && (
+              <Toast
+                type="success"
+                message={showSuccess}
+                onClose={() => setShowSuccess("")}
+              />
+            )}
+
+            {showError && (
+              <Toast
+                type="error"
+                message={showError}
+                onClose={() => setShowError("")}
+              />
+            )}
+          </div>
 
           {/* Main card */}
           <div className="bg-white/90 rounded-3xl shadow-[0_24px_60px_rgba(15,23,42,0.12)] border border-[#e5e7f5] overflow-hidden">
@@ -455,22 +520,7 @@ export default function AddEmployeePage() {
             <div className="flex items-center justify-between px-6 py-5 border-b border-[#e5e7f5] bg-white/80">
               <div className="flex items-center gap-4">
                 <div className="w-11 h-11 rounded-2xl bg-[#F3F5FF] flex items-center justify-center shadow-sm">
-                  <svg
-                    width="28"
-                    height="28"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="#4C6FFF"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="w-6 h-6"
-                  >
-                    <path d="M16 11c1.66 0 3-1.57 3-3.5S17.66 4 16 4s-3 1.57-3 3.5 1.34 3.5 3 3.5z" />
-                    <path d="M8 11c1.66 0 3-1.57 3-3.5S9.66 4 8 4 5 5.57 5 7.5 6.34 11 8 11z" />
-                    <path d="M2 20v-1c0-2.8 3.6-5 8-5" />
-                    <path d="M14 14c4.4 0 8 2.2 8 5v1" />
-                  </svg>
+                  <FiUsers className="w-6 h-6 text-[#4C6FFF]" />
                 </div>
                 <div>
                   <h2 className="text-lg font-semibold text-slate-900">Employee Details</h2>

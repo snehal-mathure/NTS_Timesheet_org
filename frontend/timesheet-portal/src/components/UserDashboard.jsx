@@ -194,7 +194,14 @@ export default function UserDashboard() {
                           </td>
                         ))}
 
-                        <td className="p-3 font-semibold text-slate-800">{row.total_hours ?? 0}</td>
+                        <td className="p-2">
+                          <input
+                            type="number"
+                            readOnly
+                            value={row.total_hours ?? 0}
+                            className="w-16 h-9 border border-slate-200 rounded-lg p-1 text-center bg-slate-50 text-slate-800"
+                          />
+                        </td>
                       </tr>
                     ))
                   ) : (

@@ -3,6 +3,17 @@ import Sidebar from "./Sidebar";
 import { useNavigate } from "react-router-dom";
 import { getAdminDashboard } from "../services/AdminDashboard/admindashboard";
 import { logoutUser } from "../services/authservice";
+const BLUE_GRADIENT_COLORS = [
+  "#7DE7EA",
+  "#4EC3E0",
+  "#2FA4D9",
+  "#1F8DBA",
+  "#1E6FA8",
+  "#2C5D9E",
+  "#2E3A74",
+  "#1B2F5B",
+];
+
 
 import {
   FiMenu,
@@ -98,28 +109,41 @@ export default function AdminDashboard() {
   const chartOptions = {
     plugins: {
       legend: {
-        position: "bottom",
+        position: "right",   // 👈 move legend to right (vertical)
+        align: "center",
         labels: {
-          font: { size: 10 },
+          boxWidth: 10,
+          boxHeight: 10,
+          padding: 12,
           usePointStyle: true,
-          boxWidth: 8,
-          padding: 10,
+          pointStyle: "circle",
+          font: {
+            size: 11,
+          },
           generateLabels: function (chart) {
             const data = chart.data.datasets[0].data;
             const total = data.reduce((a, b) => a + b, 0);
+
             return chart.data.labels.map((label, i) => {
               const value = data[i];
-              const percent = total ? ((value / total) * 100).toFixed(1) : 0;
+              const percent = total
+                ? ((value / total) * 100).toFixed(1)
+                : 0;
+
               return {
-                text: `${label} — ${percent}%`,
+                text: `${label}  (${percent}%)`,
                 fillStyle: chart.data.datasets[0].backgroundColor[i],
+                strokeStyle: chart.data.datasets[0].backgroundColor[i],
+                lineWidth: 0,
                 hidden: false,
               };
             });
           },
         },
       },
-      datalabels: { display: false },
+      datalabels: {
+        display: false,
+      },
       tooltip: {
         callbacks: {
           label: (ctx) => `${ctx.label}: ${ctx.raw}`,
@@ -134,17 +158,7 @@ export default function AdminDashboard() {
     datasets: [
       {
         data: clientAllocations.map((c) => Number(c.employee_count) || 0),
-        backgroundColor: [
-          "#4C6FFF",
-          "#10B981",
-          "#F97316",
-          "#EC4899",
-          "#6366F1",
-          "#0EA5E9",
-          "#14B8A6",
-          "#F59E0B",
-          "#A855F7",
-        ],
+        backgroundColor: BLUE_GRADIENT_COLORS,
       },
     ],
   };
@@ -154,16 +168,7 @@ export default function AdminDashboard() {
     datasets: [
       {
         data: departmentAllocations.map((d) => Number(d.employee_count) || 0),
-        backgroundColor: [
-          "#0EA5E9",
-          "#10B981",
-          "#F59E0B",
-          "#A855F7",
-          "#4C6FFF",
-          "#14B8A6",
-          "#EC4899",
-          "#6366F1",
-        ],
+        backgroundColor: BLUE_GRADIENT_COLORS,
       },
     ],
   };
@@ -176,11 +181,13 @@ export default function AdminDashboard() {
           Number(billability.billable) || 0,
           Number(billability.nonBillable) || 0,
         ],
-        backgroundColor: ["#16A34A", "#EF4444"],
-        cutout: "45%",
+        backgroundColor: ["#A7DBF5", "#6B7BBE"],
+        borderWidth: 0,     // cleaner look
+        cutout: "50%",      // slightly more modern
       },
     ],
   };
+
 
   // compute main margin:
   // - sidebarCollapsed === true  -> show icon rail width (md:ml-20)
@@ -220,15 +227,6 @@ export default function AdminDashboard() {
           <button onClick={() => setSidebarOpen(true)}>
             <FiMenu className="text-slate-600" />
           </button>
-
-          {/* Logout */}
-          <button
-            onClick={handleLogout}
-            className="text-red-600 hover:text-red-700 transition"
-            title="Sign Out"
-          >
-            <FiLogOut size={22} strokeWidth={2.4} />
-          </button>
         </div>
 
         {/* Main */}
@@ -252,13 +250,13 @@ export default function AdminDashboard() {
               </div>
 
               {/* Logout Desktop */}
-              <button
+              {/* <button
                 onClick={handleLogout}
                 className="hidden md:block text-red-600 hover:text-red-700 transition"
                 title="Sign Out"
               >
                 <FiLogOut size={24} strokeWidth={2.4} />
-              </button>
+              </button> */}
             </div>
           </div>
 

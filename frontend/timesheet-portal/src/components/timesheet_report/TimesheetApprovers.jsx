@@ -198,35 +198,48 @@ export default function TimesheetApprovers() {
                 Filter Data
               </h3>
 
-              {/* ✅ SAME SIZE FILTERS */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end max-w-3xl">
-                <select
-                  name="department"
-                  value={filters.department}
-                  onChange={handleChange}
-                  className="border border-[#d9dcef] bg-white rounded-2xl px-3 py-2 text-sm"
-                >
-                  <option value="">All Departments</option>
-                  {departments.map((dept, i) => (
-                    <option key={i} value={dept}>
-                      {dept}
-                    </option>
-                  ))}
-                </select>
 
-                <select
-                  name="approver"
-                  value={filters.approver}
-                  onChange={handleChange}
-                  className="border border-[#d9dcef] bg-white rounded-2xl px-3 py-2 text-sm"
-                >
-                  <option value="">All Approvers</option>
-                  {approversList.map((a, i) => (
-                    <option key={i} value={a}>
-                      {a}
-                    </option>
-                  ))}
-                </select>
+                {/* Department */}
+                <div>
+                  <label className="text-xs font-medium text-slate-700 mb-1 block">
+                    Department
+                  </label>
+                  <select
+                    name="department"
+                    value={filters.department}
+                    onChange={handleChange}
+                    className="border border-[#d9dcef] bg-white rounded-2xl px-3 py-2 text-sm w-full"
+                  >
+                    <option value="">All Departments</option>
+                    {departments.map((dept, i) => (
+                      <option key={i} value={dept}>
+                        {dept}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Approver */}
+                <div>
+                  <label className="text-xs font-medium text-slate-700 mb-1 block">
+                    Approver
+                  </label>
+                  <select
+                    name="approver"
+                    value={filters.approver}
+                    onChange={handleChange}
+                    className="border border-[#d9dcef] bg-white rounded-2xl px-3 py-2 text-sm w-full"
+                  >
+                    <option value="">All Approvers</option>
+                    {approversList.map((a, i) => (
+                      <option key={i} value={a}>
+                        {a}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
               </div>
             </div>
 

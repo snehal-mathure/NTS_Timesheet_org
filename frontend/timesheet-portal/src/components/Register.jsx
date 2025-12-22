@@ -1,7 +1,8 @@
-import { registerUser } from "../services/authService";
+// src/pages/Register.jsx
 import React, { useState, useEffect } from "react";
 import { FiEye, FiEyeOff } from "react-icons/fi";
-import { getDepartments } from "../services/authService";
+import { NavLink } from "react-router-dom";
+import { registerUser, getDepartments } from "../services/authservice";
 
 export default function Register() {
   const [departments, setDepartments] = useState([]);
@@ -64,22 +65,42 @@ export default function Register() {
           Signup
         </h1>
 
+        {/* ✅ LOGIN / SIGNUP TABS */}
         <div className="flex text-sm mb-6 rounded-xl overflow-hidden border border-gray-200">
-          <a
-            href="/"
-            className="flex-1 py-2 text-center font-semibold text-white
-            bg-gradient-to-r from-[#4c6fff] to-[#1532c7]"
+          <NavLink
+            to="/"
+            end
+            className={({ isActive }) =>
+              `flex-1 py-2 text-center font-semibold transition
+              ${
+                isActive
+                  ? "text-white bg-gradient-to-r from-[#4c6fff] to-[#1532c7]"
+                  : "text-gray-700 bg-gray-100 hover:bg-gray-200"
+              }`
+            }
           >
             Login
-          </a>
-          <button className="flex-1 py-2 font-semibold text-gray-700 bg-gray-100 cursor-default">
+          </NavLink>
+
+          <NavLink
+            to="/register"
+            className={({ isActive }) =>
+              `flex-1 py-2 text-center font-semibold transition
+              ${
+                isActive
+                  ? "text-white bg-gradient-to-r from-[#4c6fff] to-[#1532c7]"
+                  : "text-gray-700 bg-gray-100 hover:bg-gray-200"
+              }`
+            }
+          >
             Signup
-          </button>
+          </NavLink>
         </div>
 
         {message && (
           <div
-            className={`mb-4 px-3 py-2 rounded-lg border text-sm font-medium shadow-sm ${
+            className={`mb-4 px-3 py-2 rounded-lg border text-sm font-medium shadow-sm
+            ${
               success
                 ? "bg-green-100 border-green-300 text-green-700"
                 : "bg-red-100 border-red-300 text-red-700"
@@ -100,7 +121,9 @@ export default function Register() {
           <InputBox label="Email" type="email" name="email" value={formData.email} onChange={handleChange} />
 
           <div>
-            <label className="text-[13px] text-gray-700 font-medium mb-1 block">Department *</label>
+            <label className="text-[13px] text-gray-700 font-medium mb-1 block">
+              Department *
+            </label>
             <select
               required
               name="dept_id"
@@ -142,23 +165,27 @@ export default function Register() {
           >
             Signup
           </button>
-
         </form>
 
         <p className="text-center text-xs mt-5 text-gray-600">
           Already have an account?{" "}
-          <a href="/" className="text-blue-600 font-medium hover:underline">Login</a>
+          <NavLink to="/" className="text-blue-600 font-medium hover:underline">
+            Login
+          </NavLink>
         </p>
-
       </div>
     </div>
   );
 }
 
+/* ---------------- Reusable Inputs ---------------- */
+
 function InputBox({ label, type = "text", name, value, onChange, required = true }) {
   return (
     <div>
-      <label className="text-[13px] font-medium text-gray-700 mb-1 block">{label}</label>
+      <label className="text-[13px] font-medium text-gray-700 mb-1 block">
+        {label}
+      </label>
       <input
         type={type}
         required={required}
@@ -174,9 +201,10 @@ function InputBox({ label, type = "text", name, value, onChange, required = true
 function PasswordField({ label, name, value, onChange, show, setShow }) {
   return (
     <div>
-      <label className="text-[13px] font-medium text-gray-700 mb-1 block">{label}</label>
+      <label className="text-[13px] font-medium text-gray-700 mb-1 block">
+        {label}
+      </label>
       <div className="flex items-center gap-2 border border-gray-300 rounded-lg px-3 py-2 bg-gray-50 shadow-sm">
-
         <input
           type={show ? "text" : "password"}
           required
@@ -192,19 +220,19 @@ function PasswordField({ label, name, value, onChange, show, setShow }) {
           {show ? <FiEyeOff /> : <FiEye />}
         </button>
 
-        {/* Hides default browser password reveal icon */}
         <style>
           {`
-          input::-ms-reveal,
-          input::-ms-clear {
-            display: none !important;
-          }
-          input::-webkit-textfield-decoration-container {
-            display: none !important;
-          }
-        `}
+            input::-ms-reveal,
+            input::-ms-clear {
+              display: none !important;
+            }
+            input::-webkit-textfield-decoration-container {
+              display: none !important;
+            }
+          `}
         </style>
       </div>
     </div>
   );
 }
+

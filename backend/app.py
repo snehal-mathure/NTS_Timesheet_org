@@ -9547,6 +9547,8 @@ def download_timesheet(timesheet_id):
 #         print(f"❌ Error in download_approval_history_csv: {str(e)}")
 #         flash("Error generating CSV", "error")
 #         return redirect(url_for("dashboard"))
+
+
 @app.route("/timesheetdashboard/approve_timesheets/approval_history_json")
 def approval_history_json():
     if 'user_id' not in session:
@@ -9605,12 +9607,22 @@ def approval_history_json():
                 .ilike(f"%{employee_name.lower()}%")
             )
 
-        # Status filter
+        # # Status filter
+        # if status:
+        #     if status.lower() == "pending":
+        #         timesheets_query = timesheets_query.filter(Timesheet.status == "Submitted")
+        #     else:
+        #         timesheets_query = timesheets_query.filter(Timesheet.status == status)
+        status = request.args.get('status', '').strip()
+
         if status:
-            if status.lower() == "pending":
+            if status == "Pending":
                 timesheets_query = timesheets_query.filter(Timesheet.status == "Submitted")
-            else:
-                timesheets_query = timesheets_query.filter(Timesheet.status == status)
+            elif status == "Rejected":
+                timesheets_query = timesheets_query.filter(Timesheet.status == "Rejected")
+            elif status == "Approved":
+                timesheets_query = timesheets_query.filter(Timesheet.status == "Approved")
+
 
         # Date Range Filter
         if date_range == "this_week":

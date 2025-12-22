@@ -639,15 +639,29 @@ export default function TimesheetDashboard() {
 
                         {/* ROW TOTAL */}
                         <td className="p-1.5 align-middle text-center">
-                          <div
+                          <input
+                            type="text"
+                            readOnly
+                            value={rowTotal.toFixed(1)}
+                            className="
+                              w-12 md:w-14 h-8 rounded-xl px-2.5
+                              text-center text-xs md:text-sm
+                              border border-[#C9D7FF]
+                              bg-[#F3F6FF]
+                              text-[#17408A] font-semibold
+                              cursor-default
+                            "
+                          />
+                          {/* <div
                             className="inline-flex items-center justify-center min-w-[3.2rem] px-3 py-1 rounded-xl border border-[#C9D7FF] bg-[#F3F6FF] text-[11px] md:text-xs"
+                            // className="w-12 md:w-14 h-8 rounded-xl px-2.5 text-center text-xs md:text-sm border border-[#C9D7FF] bg-[#F3F6FF] text-[#17408A] font-semibold cursor-default"
                             style={{
                               color: "#17408A",
                               fontWeight: 600,
                             }}
                           >
                             {rowTotal.toFixed(1)}
-                          </div>
+                          </div> */}
                         </td>
                       </tr>
                     );
@@ -681,7 +695,23 @@ export default function TimesheetDashboard() {
                             key={day}
                             className="p-2.5 text-center align-middle"
                           >
-                            <div
+                            <input
+                              type="text"
+                              readOnly
+                              value={total.toFixed(1)}
+                              className={`
+                                w-12 md:w-14 h-8 rounded-xl px-2.5
+                                text-center text-xs md:text-sm
+                                border
+                                ${isWeekend
+                                  ? "bg-[#FFF9EC] border-[#F2DCA2]"
+                                  : "bg-white border-[#C9D7FF]"
+                                }
+                                text-[#17408A] font-semibold
+                                cursor-default
+                              `}
+                            />
+                            {/* <div
                               className={`inline-flex items-center justify-center min-w-[3.2rem] px-3 py-1 rounded-xl border text-[11px] md:text-xs ${
                                 isWeekend
                                   ? "bg-[#FFF9EC] border-[#F2DCA2]"
@@ -690,7 +720,7 @@ export default function TimesheetDashboard() {
                               style={{ color: "#17408A" }}
                             >
                               {total.toFixed(1)}
-                            </div>
+                            </div> */}
                           </td>
                         );
                       }
