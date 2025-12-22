@@ -184,9 +184,9 @@ export default function AddProjectInTimesheet() {
           {/* HEADER */}
           <div className="bg-gradient-to-r from-[#4C6FFF] to-[#8B5CF6] rounded-3xl p-4 text-white shadow">
             <h2 className="text-xl font-semibold">Assign Projects in Timesheet</h2>
-            <p className="text-sm opacity-90">
+            {/* <p className="text-sm opacity-90">
               Select a client and assign projects
-            </p>
+            </p> */}
           </div>
 
           {/* MAIN CARD */}

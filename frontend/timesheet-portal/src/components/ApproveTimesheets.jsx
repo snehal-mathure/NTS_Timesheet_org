@@ -468,96 +468,103 @@ function TimesheetDetails({ id }) {
   } = data;
 
   return (
-  <div className="rounded-2xl bg-gradient-to-b from-white to-slate-50 p-8 
-    shadow-2xl shadow-slate-300 ring-1 ring-slate-200 border border-slate-300">
+    <div className="rounded-2xl bg-white p-8 shadow-xl border border-slate-200">
 
-    <h2 className="text-xl font-semibold mb-4 text-slate-800">
-      {employee_name}
-    </h2>
+      <h2 className="text-xl font-semibold mb-4 text-slate-800">
+        {employee_name}
+      </h2>
 
-    <div className="overflow-x-auto p-2">
-      <table className="min-w-full text-sm rounded-xl overflow-hidden border border-slate-200 bg-white">
-        <thead className="bg-slate-200 text-slate-800">
-          <tr>
-            <th className="px-4 py-3 text-left font-semibold border-r border-slate-300 w-40">
-              Client
-            </th>
+      <div className="overflow-x-auto">
+        <table className="min-w-full text-sm rounded-xl overflow-hidden border border-blue-200 bg-white">
 
-            <th className="px-4 py-3 text-left font-semibold border-r border-slate-300 w-40">
-              Project
-            </th>
-
-            {dayOrder.map((key) => (
-              <th
-                key={key}
-                className="px-4 py-3 text-center font-semibold border-r border-slate-300"
-              >
-                <div>{day_labels[key].label}</div>
-                <div className="text-[11px] text-slate-600">{day_labels[key].date}</div>
+          {/* HEADER */}
+          <thead className="bg-blue-100 text-slate-800">
+            <tr>
+              <th className="px-4 py-4 text-left font-semibold border-r border-blue-200 w-40">
+                Client
               </th>
+
+              <th className="px-4 py-4 text-left font-semibold border-r border-blue-200 w-40">
+                Project
+              </th>
+
+              {dayOrder.map((key) => (
+                <th
+                  key={key}
+                  className="px-4 py-3 text-center font-semibold border-r border-blue-200"
+                >
+                  <div>{day_labels[key].label}</div>
+                  <div className="text-[11px] text-slate-600">
+                    {day_labels[key].date}
+                  </div>
+                </th>
+              ))}
+
+              <th className="px-4 py-4 text-center font-semibold">
+                Total
+              </th>
+            </tr>
+          </thead>
+
+          {/* BODY */}
+          <tbody>
+            {Object.entries(hours_by_project).map(([code, proj], idx) => (
+              <tr
+                key={code}
+                className={idx % 2 === 0 ? "bg-white" : "bg-white"}
+              >
+                <td className="px-4 py-3 font-medium text-slate-800 border-r border-blue-100">
+                  {proj.client_name}
+                </td>
+
+                <td className="px-4 py-3 text-slate-700 border-r border-blue-100">
+                  {proj.project_name}
+                </td>
+
+                {dayOrder.map((key) => (
+                  <td
+                    key={key}
+                    className="px-4 py-3 text-center text-slate-700 border-r border-blue-100"
+                  >
+                    {proj.hours[key] || 0}
+                  </td>
+                ))}
+
+                <td className="px-4 py-3 text-center font-semibold text-slate-800">
+                  {proj.total}
+                </td>
+              </tr>
             ))}
 
-            <th className="px-4 py-3 text-center font-semibold">Total</th>
-          </tr>
-        </thead>
-
-        <tbody className="divide-y divide-slate-100">
-          {Object.entries(hours_by_project).map(([code, proj], idx) => (
-            <tr
-              key={code}
-              className={`transition-all duration-150 ${
-                idx % 2 === 0 ? "bg-white" : "bg-slate-50"
-              } hover:bg-slate-100 hover:shadow-sm`}
-            >
-              <td className="px-4 py-3 font-medium text-slate-800 border-r border-slate-200">
-                {proj.client_name}
-              </td>
-
-              <td className="px-4 py-3 text-slate-700 border-r border-slate-200">
-                {proj.project_name}
+            {/* DAILY TOTAL */}
+            <tr className="bg-slate-100 font-semibold text-slate-800">
+              <td className="px-4 py-4 border-r border-slate-300" colSpan={2}>
+                Daily Total
               </td>
 
               {dayOrder.map((key) => (
                 <td
                   key={key}
-                  className="px-4 py-3 text-center text-slate-700 border-r border-slate-200"
+                  className="px-4 py-4 text-center border-r border-slate-300"
                 >
-                  {proj.hours[key] || 0}
+                  {total_hours[key] || 0}
                 </td>
               ))}
 
-              <td className="px-4 py-3 text-center font-semibold text-slate-800">
-                {proj.total}
+              <td className="px-4 py-4 text-center">
+                {week_total}
               </td>
             </tr>
-          ))}
+          </tbody>
+        </table>
+      </div>
 
-          <tr className="bg-slate-200 font-semibold text-slate-800">
-            <td className="px-4 py-3 border-r border-slate-300" colSpan={2}>
-              Daily Total
-            </td>
-
-            {dayOrder.map((key) => (
-              <td
-                key={key}
-                className="px-4 py-3 text-center border-r border-slate-300"
-              >
-                {total_hours[key] || 0}
-              </td>
-            ))}
-
-            <td className="px-4 py-3 text-center">{week_total}</td>
-          </tr>
-        </tbody>
-      </table>
+      <div className="mt-4 text-slate-700 font-semibold text-sm">
+        Total Hours (Week): {week_total}
+      </div>
     </div>
-
-    <div className="mt-4 text-slate-700 font-semibold text-sm">
-      Total Hours (Week): {week_total}
-    </div>
-  </div>
-);
-
+  );
 }
+
 
 
