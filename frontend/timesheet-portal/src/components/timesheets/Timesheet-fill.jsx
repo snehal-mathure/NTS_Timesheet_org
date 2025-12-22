@@ -728,7 +728,19 @@ export default function TimesheetDashboard() {
 
                     <td className="p-2.5 text-center align-middle">
                       <div
-                        className="inline-flex items-center justify-center min-w-[3.2rem] px-3 py-1 rounded-xl border border-[#C9D7FF] bg-white text-[11px] md:text-xs"
+                        // className="inline-flex items-center justify-center min-w-[3.2rem] px-3 py-1 rounded-xl border border-[#C9D7FF] bg-white text-[11px] md:text-xs"
+                        className="
+                          w-12 md:w-14 h-8
+                          rounded-xl px-2.5
+                          text-center
+                          leading-none
+                          flex items-center justify-center
+                          text-xs md:text-sm
+                          border border-[#C9D7FF]
+                          bg-[#F3F6FF]
+                          text-[#17408A] font-semibold
+                          cursor-default
+                        "
                         style={{ color: "#17408A" }}
                       >
                         {rows

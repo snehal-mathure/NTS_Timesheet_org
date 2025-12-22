@@ -1,4 +1,4 @@
-// // src/pages/ApprovalHistory.jsx
+// // // src/pages/ApprovalHistory.jsx
 // import React, { useEffect, useState, useRef } from "react";
 // import UserDashboardSidebar from "../components/UserDashboardSidebar";
 // import PageHeader from "../components/PageHeader";
@@ -313,7 +313,7 @@
 
 
 
-// src/pages/ApprovalHistory.jsx
+// // src/pages/ApprovalHistory.jsx
 import React, { useEffect, useState, useRef } from "react";
 import UserDashboardSidebar from "../components/UserDashboardSidebar";
 import PageHeader from "../components/PageHeader";
@@ -328,7 +328,6 @@ export default function ApprovalHistory() {
   const [employees, setEmployees] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [timesheets, setTimesheets] = useState([]);
-  const initialLoadRef = useRef(true);
 
   const [filters, setFilters] = useState({
     employee_name: "",
@@ -362,19 +361,15 @@ export default function ApprovalHistory() {
   }, []);
 
   useEffect(() => {
-  const timer = setTimeout(() => {
-    handleFilter();
-  }, 400);
+    // Skip initial load (already handled by loadInitialData)
+    if (!mountedRef.current) return;
 
-  return () => clearTimeout(timer);
-}, [
-  filters.employee_name,
-  filters.status,
-  filters.department,
-  filters.date_range,
-  filters.custom_start_date,
-  filters.custom_end_date
-]);
+    const timer = setTimeout(() => {
+      handleFilter();
+    }, 400); // debounce delay (ms)
+
+    return () => clearTimeout(timer);
+  }, [filters]); // 👈 runs whenever ANY filter changes
 
 
   const loadInitialData = async () => {
@@ -382,12 +377,9 @@ export default function ApprovalHistory() {
     try {
       const data = await approvalHistoryService.getInitialData();
       if (!mountedRef.current) return;
-
       setEmployees(data.employees || []);
       setDepartments(data.departments || []);
       setTimesheets(data.timesheets || []);
-
-      initialLoadRef.current = false; // ✅ IMPORTANT
     } catch (err) {
       console.error("Failed to load initial data", err);
     } finally {
@@ -395,14 +387,34 @@ export default function ApprovalHistory() {
     }
   };
 
+  // const handleFilter = async () => {
+  //   setLoading(true);
+  //   try {
+  //     const data = await approvalHistoryService.getFiltered(filters);
+  //     if (!mountedRef.current) return;
+  //     setTimesheets(data.timesheets || []);
+  //   } catch (err) {
+  //     console.error("Filter error", err);
+  //   } finally {
+  //     if (mountedRef.current) setLoading(false);
+  //   }
+  // };
 
   const handleFilter = async () => {
-    if (initialLoadRef.current) return; // ✅ correct check
-
     setLoading(true);
+
     try {
-      const data = await approvalHistoryService.getFiltered(filters);
+      const payload = {
+        ...filters,
+        custom_start_date:
+          filters.date_range === "custom" ? filters.custom_start_date : "",
+        custom_end_date:
+          filters.date_range === "custom" ? filters.custom_end_date : "",
+      };
+
+      const data = await approvalHistoryService.getFiltered(payload);
       if (!mountedRef.current) return;
+
       setTimesheets(data.timesheets || []);
     } catch (err) {
       console.error("Filter error", err);
@@ -410,6 +422,7 @@ export default function ApprovalHistory() {
       if (mountedRef.current) setLoading(false);
     }
   };
+
 
   const deleteTimesheet = async (id) => {
     if (!window.confirm("Are you sure you want to delete this approved timesheet?")) return;
@@ -425,21 +438,57 @@ export default function ApprovalHistory() {
   const mainMarginClass = sidebarCollapsed ? "md:ml-20" : "md:ml-64";
 
   const renderStatusPill = (status) => {
+    const base =
+      "inline-flex items-center justify-center px-4 py-1.5 rounded-full text-xs font-semibold border transition-all";
+
+    if (status === "Submitted") {
+      return (
+        <span className={`${base} bg-blue-50 text-blue-600 border-blue-300 hover:bg-blue-100`}>
+          Submitted
+        </span>
+      );
+    }
+
+    if (status === "Approved") {
+      return (
+        <span className={`${base} bg-emerald-50 text-emerald-600 border-emerald-300 hover:bg-emerald-100`}>
+          Approved
+        </span>
+      );
+    }
+
+    if (status === "Not Submitted") {
+      return (
+        <span className={`${base} bg-rose-50 text-rose-600 border-rose-300 hover:bg-rose-100`}>
+          Not Submitted
+        </span>
+      );
+    }
+
     return (
-      <span
-        className={`inline-flex items-center justify-center px-4 py-1.5 rounded-full 
-                    text-xs font-semibold transition-all ${
-          status === "Approved"
-            ? "bg-emerald-600 text-white"
-            : status === "Submitted"
-            ? "bg-blue-50 text-blue-600 border border-blue-300 hover:bg-blue-100"
-            : "bg-rose-500 text-white"
-        }`}
-      >
+      <span className={`${base} bg-slate-50 text-slate-600 border-slate-300`}>
         {status}
       </span>
     );
   };
+
+
+  // const renderStatusPill = (status) => {
+  //   return (
+  //     <span
+  //       className={`inline-flex items-center justify-center px-4 py-1.5 rounded-full 
+  //                   text-xs font-semibold transition-all ${
+  //         status === "Approved"
+  //           ? "bg-emerald-600 text-white"
+  //           : status === "Submitted"
+  //           ? "bg-blue-50 text-blue-600 border border-blue-300 hover:bg-blue-100"
+  //           : "bg-rose-500 text-white"
+  //       }`}
+  //     >
+  //       {status}
+  //     </span>
+  //   );
+  // };
 
   return (
     <div className="min-h-screen flex bg-[#F5F7FF]">
@@ -454,7 +503,7 @@ export default function ApprovalHistory() {
             description="View approval history and manage approved timesheets."
           />
           {/* Download CSV */}
-          <div className="flex justify-start">
+          {/* <div className="flex justify-start">
             <a
               href={loading ? undefined : approvalHistoryService.getDownloadURL(filters)}
               title={loading ? "Loading..." : "Download CSV"}
@@ -467,11 +516,54 @@ export default function ApprovalHistory() {
             >
               <FiDownload size={16} />
             </a>
-          </div>
+          </div> */}
 
           {/* Filters card */}
           <div className="bg-white/90 border border-[#e5e7f5] rounded-3xl shadow-[0_24px_60px_rgba(15,23,42,0.06)] overflow-hidden">
             <div className="px-6 py-5 border-b border-[#e5e7f5] bg-white/80">
+              <div className="flex items-center justify-between">
+                
+                {/* Left: Icon + Title */}
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-[#F3F5FF] flex items-center justify-center shadow-sm">
+                    <svg className="w-6 h-6 text-[#4C6FFF]" fill="none" viewBox="0 0 24 24">
+                      <path
+                        d="M3 7a2 2 0 012-2h4l2 2h6a2 2 0 012 2v7a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"
+                        stroke="currentColor"
+                        strokeWidth="1.4"
+                      />
+                    </svg>
+                  </div>
+
+                  <div>
+                    <h3 className="text-lg font-semibold text-slate-900">
+                      Approval History
+                    </h3>
+                    <p className="text-sm text-slate-500">
+                      Filter and export approved timesheets.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Right: Download Button */}
+                <a
+                  href={loading ? undefined : approvalHistoryService.getDownloadURL(filters)}
+                  title={loading ? "Loading..." : "Download CSV"}
+                  className={`inline-flex items-center justify-center p-2 rounded-xl 
+                border transition ${
+                  loading
+                    ? "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed"
+                    : "bg-green-100 text-green-700 border-green-200 hover:bg-green-200"
+                    }`}
+                >
+                  <FiDownload size={16} />
+                  <span className="hidden md:inline">
+                  </span>
+                </a>
+
+              </div>
+            </div>
+            {/* <div className="px-6 py-5 border-b border-[#e5e7f5] bg-white/80">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-2xl bg-[#F3F5FF] flex items-center justify-center shadow-sm">
@@ -485,7 +577,7 @@ export default function ApprovalHistory() {
                   </div>
                 </div>
               </div>
-            </div>
+            </div> */}
 
             <div className="px-6 py-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -574,13 +666,13 @@ export default function ApprovalHistory() {
                 </div>
 
                 <div className="flex items-end">
-                  <button
+                  {/* <button
                     onClick={handleFilter}
                     className="w-full md:w-auto inline-flex items-center justify-center gap-2 px-4 py-2 rounded-2xl text-white font-semibold"
                     style={{ background: `linear-gradient(135deg, ${accent}, #6C5CE7)` }}
                   >
                     Apply Filter
-                  </button>
+                  </button> */}
                 </div>
               </div>
             </div>
@@ -648,3 +740,6 @@ export default function ApprovalHistory() {
     </div>
   );
 }
+
+
+

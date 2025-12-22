@@ -9549,6 +9549,135 @@ def download_timesheet(timesheet_id):
 #         return redirect(url_for("dashboard"))
 
 
+# @app.route("/timesheetdashboard/approve_timesheets/approval_history_json")
+# def approval_history_json():
+#     if 'user_id' not in session:
+#         return jsonify({"error": "Unauthorized"}), 401
+
+#     approver_id = session['user_id']
+
+#     try:
+#         # Employees under this approver
+#         employees = Employee_Info.query.filter_by(approver_id=approver_id).all()
+#         emp_ids = [emp.empid for emp in employees]
+
+#         # Department list
+#         departments = Department.query.all()
+
+#         # Filters
+#         selected_department = request.args.get('department', '').strip()
+#         employee_name = request.args.get('employee_name', '').strip()
+#         status = request.args.get('status', '').strip().title()
+#         date_range = request.args.get('date_range', '').strip()
+#         custom_start_date = request.args.get('custom_start_date', '').strip()
+#         custom_end_date = request.args.get('custom_end_date', '').strip()
+
+#         today = datetime.today().date()
+
+#         # Base Query
+#         timesheets_query = (
+#             db.session.query(
+#                 Timesheet.id,
+#                 Timesheet.week_start_date,
+#                 Timesheet.submitted_date,
+#                 Timesheet.empid,
+#                 Employee_Info.fname,
+#                 Employee_Info.lname,
+#                 Department.dept_name.label("department_name"),
+#                 Timesheet.status,
+#                 Timesheet.comments,
+#                 func.coalesce(func.sum(TimesheetEntry.hours_worked), 0).label("total_hours")
+#             )
+#             .join(Employee_Info, Employee_Info.empid == Timesheet.empid)
+#             .join(Department, Department.id == Employee_Info.dept_id)
+#             .outerjoin(TimesheetEntry, TimesheetEntry.timesheet_id == Timesheet.id)
+#             .filter(Timesheet.empid.in_(emp_ids))
+#         )
+
+#         # Department filter
+#         if selected_department:
+#             timesheets_query = timesheets_query.filter(
+#                 Employee_Info.dept_id == int(selected_department)
+#             )
+
+#         # Employee name filter
+#         if employee_name:
+#             timesheets_query = timesheets_query.filter(
+#                 func.lower(func.concat(Employee_Info.fname, ' ', Employee_Info.lname))
+#                 .ilike(f"%{employee_name.lower()}%")
+#             )
+
+#         # # Status filter
+#         # if status:
+#         #     if status.lower() == "pending":
+#         #         timesheets_query = timesheets_query.filter(Timesheet.status == "Submitted")
+#         #     else:
+#         #         timesheets_query = timesheets_query.filter(Timesheet.status == status)
+#         status = request.args.get('status', '').strip()
+
+#         if status:
+#             if status == "Pending":
+#                 timesheets_query = timesheets_query.filter(Timesheet.status == "Submitted")
+#             elif status == "Rejected":
+#                 timesheets_query = timesheets_query.filter(Timesheet.status == "Rejected")
+#             elif status == "Approved":
+#                 timesheets_query = timesheets_query.filter(Timesheet.status == "Approved")
+
+
+#         # Date Range Filter
+#         if date_range == "this_week":
+#             start = today - timedelta(days=today.weekday())
+#             end = start + timedelta(days=6)
+#             timesheets_query = timesheets_query.filter(Timesheet.week_start_date.between(start, end))
+
+#         elif date_range == "last_week":
+#             start = today - timedelta(days=today.weekday() + 7)
+#             end = start + timedelta(days=6)
+#             timesheets_query = timesheets_query.filter(Timesheet.week_start_date.between(start, end))
+
+#         elif date_range == "custom" and custom_start_date and custom_end_date:
+#             custom_start_date = datetime.strptime(custom_start_date, "%Y-%m-%d").date()
+#             custom_end_date = datetime.strptime(custom_end_date, "%Y-%m-%d").date()
+#             timesheets_query = timesheets_query.filter(
+#                 Timesheet.week_start_date.between(custom_start_date, custom_end_date)
+#             )
+
+#         # Execute Query
+#         results = timesheets_query.group_by(
+#             Timesheet.id,
+#             Timesheet.week_start_date,
+#             Timesheet.submitted_date,
+#             Timesheet.empid,
+#             Employee_Info.fname,
+#             Employee_Info.lname,
+#             Department.dept_name,
+#             Timesheet.status,
+#             Timesheet.comments
+#         ).all()
+
+#         # Prepare JSON response
+#         timesheets_data = [{
+#             'id': ts.id,
+#             'employee_name': f"{ts.fname} {ts.lname}",
+#             'department': ts.department_name,
+#             'week_start_date': ts.week_start_date.strftime('%Y-%m-%d'),
+#             'submitted_date': ts.submitted_date.strftime('%Y-%m-%d') if ts.submitted_date else "",
+#             'total_hours': float(ts.total_hours),
+#             'status': ts.status,
+#             'comments': ts.comments
+#         } for ts in results]
+
+#         return jsonify({
+#             "employees": [{"empid": e.empid, "fname": e.fname, "lname": e.lname} for e in employees],
+#             "departments": [{"id": d.id, "dept_name": d.dept_name} for d in departments],
+#             "timesheets": timesheets_data
+#         })
+
+#     except Exception as e:
+#         print("Error =>", str(e))
+#         return jsonify({"error": "Server Error"}), 500
+
+
 @app.route("/timesheetdashboard/approve_timesheets/approval_history_json")
 def approval_history_json():
     if 'user_id' not in session:
@@ -9557,24 +9686,20 @@ def approval_history_json():
     approver_id = session['user_id']
 
     try:
-        # Employees under this approver
         employees = Employee_Info.query.filter_by(approver_id=approver_id).all()
         emp_ids = [emp.empid for emp in employees]
 
-        # Department list
         departments = Department.query.all()
 
-        # Filters
         selected_department = request.args.get('department', '').strip()
         employee_name = request.args.get('employee_name', '').strip()
-        status = request.args.get('status', '').strip().title()
+        status = request.args.get('status', '').strip()
         date_range = request.args.get('date_range', '').strip()
         custom_start_date = request.args.get('custom_start_date', '').strip()
         custom_end_date = request.args.get('custom_end_date', '').strip()
 
         today = datetime.today().date()
 
-        # Base Query
         timesheets_query = (
             db.session.query(
                 Timesheet.id,
@@ -9594,37 +9719,27 @@ def approval_history_json():
             .filter(Timesheet.empid.in_(emp_ids))
         )
 
-        # Department filter
-        if selected_department:
+        # ✅ Department filter
+        if selected_department and selected_department.isdigit():
             timesheets_query = timesheets_query.filter(
                 Employee_Info.dept_id == int(selected_department)
             )
 
-        # Employee name filter
+        # ✅ Employee name filter (SQLite-safe)
         if employee_name:
             timesheets_query = timesheets_query.filter(
-                func.lower(func.concat(Employee_Info.fname, ' ', Employee_Info.lname))
+                func.lower(Employee_Info.fname + ' ' + Employee_Info.lname)
                 .ilike(f"%{employee_name.lower()}%")
             )
 
-        # # Status filter
-        # if status:
-        #     if status.lower() == "pending":
-        #         timesheets_query = timesheets_query.filter(Timesheet.status == "Submitted")
-        #     else:
-        #         timesheets_query = timesheets_query.filter(Timesheet.status == status)
-        status = request.args.get('status', '').strip()
-
+        # ✅ Status filter
         if status:
-            if status == "Pending":
+            if status.lower() == "pending":
                 timesheets_query = timesheets_query.filter(Timesheet.status == "Submitted")
-            elif status == "Rejected":
-                timesheets_query = timesheets_query.filter(Timesheet.status == "Rejected")
-            elif status == "Approved":
-                timesheets_query = timesheets_query.filter(Timesheet.status == "Approved")
+            else:
+                timesheets_query = timesheets_query.filter(Timesheet.status == status)
 
-
-        # Date Range Filter
+        # ✅ Date filters
         if date_range == "this_week":
             start = today - timedelta(days=today.weekday())
             end = start + timedelta(days=6)
@@ -9636,13 +9751,12 @@ def approval_history_json():
             timesheets_query = timesheets_query.filter(Timesheet.week_start_date.between(start, end))
 
         elif date_range == "custom" and custom_start_date and custom_end_date:
-            custom_start_date = datetime.strptime(custom_start_date, "%Y-%m-%d").date()
-            custom_end_date = datetime.strptime(custom_end_date, "%Y-%m-%d").date()
+            start = datetime.strptime(custom_start_date, "%Y-%m-%d").date()
+            end = datetime.strptime(custom_end_date, "%Y-%m-%d").date()
             timesheets_query = timesheets_query.filter(
-                Timesheet.week_start_date.between(custom_start_date, custom_end_date)
+                Timesheet.week_start_date.between(start, end)
             )
 
-        # Execute Query
         results = timesheets_query.group_by(
             Timesheet.id,
             Timesheet.week_start_date,
@@ -9655,16 +9769,15 @@ def approval_history_json():
             Timesheet.comments
         ).all()
 
-        # Prepare JSON response
         timesheets_data = [{
-            'id': ts.id,
-            'employee_name': f"{ts.fname} {ts.lname}",
-            'department': ts.department_name,
-            'week_start_date': ts.week_start_date.strftime('%Y-%m-%d'),
-            'submitted_date': ts.submitted_date.strftime('%Y-%m-%d') if ts.submitted_date else "",
-            'total_hours': float(ts.total_hours),
-            'status': ts.status,
-            'comments': ts.comments
+            "id": ts.id,
+            "employee_name": f"{ts.fname} {ts.lname}",
+            "department": ts.department_name,
+            "week_start_date": ts.week_start_date.strftime('%Y-%m-%d'),
+            "submitted_date": ts.submitted_date.strftime('%Y-%m-%d') if ts.submitted_date else "",
+            "total_hours": float(ts.total_hours),
+            "status": ts.status,
+            "comments": ts.comments
         } for ts in results]
 
         return jsonify({
@@ -9674,8 +9787,9 @@ def approval_history_json():
         })
 
     except Exception as e:
-        print("Error =>", str(e))
+        print("🔥 Approval History Error:", str(e))
         return jsonify({"error": "Server Error"}), 500
+
 
 
 
