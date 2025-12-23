@@ -21,6 +21,18 @@ ChartJS.register(
   Legend
 );
 
+const BLUE_GRADIENT_COLORS = [
+  "#7DE7EA",
+  "#4EC3E0",
+  "#2FA4D9",
+  "#1F8DBA",
+  "#1E6FA8",
+  "#2C5D9E",
+  "#2E3A74",
+  "#1B2F5B",
+];
+
+
 const SIDEBAR_STORAGE_KEY = "td_sidebar_collapsed";
 
 export default function AdminReports() {
@@ -102,17 +114,52 @@ export default function AdminReports() {
   const empTypeData = report.employee_type_report?.data || [];
   const billabilityData = report.billability_report || {};
 
+  // const locationChart = {
+  //   labels: locationData.map((d) => d.location),
+  //   datasets: [
+  //     {
+  //       label: "Employees",
+  //       data: locationData.map((d) => d.count),
+  //       backgroundColor: ["#4C6FFF", "#22C55E", "#F97316"],
+  //       borderRadius: 6,
+  //     },
+  //   ],
+  // };
+
   const locationChart = {
     labels: locationData.map((d) => d.location),
     datasets: [
       {
         label: "Employees",
         data: locationData.map((d) => d.count),
-        backgroundColor: ["#4C6FFF", "#22C55E", "#F97316"],
+        backgroundColor: locationData.map(
+          (_, i) => BLUE_GRADIENT_COLORS[i % BLUE_GRADIENT_COLORS.length]
+        ),
         borderRadius: 6,
       },
     ],
   };
+
+  // const empTypeChart = {
+  //   labels: empTypeData.map((d) => d.type),
+  //   datasets: [
+  //     {
+  //       label: "Employees",
+  //       data: empTypeData.map((d) => d.count),
+  //       backgroundColor: ["#6366F1", "#0EA5E9", "#14B8A6"],
+  //     },
+  //   ],
+  // };
+
+
+  const PIE_BLUE_COLORS = [
+    "#7DE7EA", // light aqua – highlights small slices
+    "#2FA4D9", // clean primary blue
+    "#1F8DBA", // mid-deep blue
+    "#2C5D9E", // strong navy blue
+    "#2E3A74", // deep indigo
+    "#1B2F5B", // darkest (fallback)
+  ];
 
   const empTypeChart = {
     labels: empTypeData.map((d) => d.type),
@@ -120,10 +167,28 @@ export default function AdminReports() {
       {
         label: "Employees",
         data: empTypeData.map((d) => d.count),
-        backgroundColor: ["#6366F1", "#0EA5E9", "#14B8A6"],
+        backgroundColor: empTypeData.map(
+          (_, i) => BLUE_GRADIENT_COLORS[i % BLUE_GRADIENT_COLORS.length]
+        ),
+        borderWidth: 0,
       },
     ],
   };
+
+  // const billabilityChart = {
+  //   labels: ["Billable", "Non-Billable"],
+  //   datasets: [
+  //     {
+  //       data: [
+  //         billabilityData.billable_count || 0,
+  //         billabilityData.non_billable_count || 0,
+  //       ],
+  //       backgroundColor: ["#10B981", "#EF4444"],
+  //     },
+  //   ],
+  // };
+
+  
 
   const billabilityChart = {
     labels: ["Billable", "Non-Billable"],
@@ -133,7 +198,12 @@ export default function AdminReports() {
           billabilityData.billable_count || 0,
           billabilityData.non_billable_count || 0,
         ],
-        backgroundColor: ["#10B981", "#EF4444"],
+        backgroundColor: [
+          BLUE_GRADIENT_COLORS[2], // Billable
+          BLUE_GRADIENT_COLORS[3], // Non-Billable
+        ],
+        borderWidth: 0,
+        cutout: "55%", // modern donut look
       },
     ],
   };

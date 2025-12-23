@@ -185,6 +185,14 @@ export default function EmpLeaveDashboard() {
                   >
                     Apply for Leave
                   </Link>
+
+                  {/* <Link
+                    to="/applyleave"
+                    className="inline-flex items-center gap-2 text-white px-2 py-0 rounded-2xl text-xs"
+                    style={{ background: "linear-gradient(135deg,#4C6FFF,#6C5CE7)" }}
+                  >
+                    Apply for Leave
+                  </Link> */}
                 </div>
 
                 {/* Filters */}

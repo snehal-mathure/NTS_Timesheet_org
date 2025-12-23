@@ -181,9 +181,12 @@ export default function AdminDashboard() {
           Number(billability.billable) || 0,
           Number(billability.nonBillable) || 0,
         ],
-        backgroundColor: ["#A7DBF5", "#6B7BBE"],
-        borderWidth: 0,     // cleaner look
-        cutout: "50%",      // slightly more modern
+        backgroundColor: [
+          "#4EC3E0", // Billable (strong blue)
+          "#1F8DBA", // Non-Billable (lighter blue)
+        ],
+        borderWidth: 0,
+        cutout: "50%",
       },
     ],
   };

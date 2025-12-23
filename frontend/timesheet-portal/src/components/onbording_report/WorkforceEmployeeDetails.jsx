@@ -197,6 +197,9 @@ const WorkforceEmployeeDetails = () => {
   const [data, setData] = useState([]);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [billableCount, setBillableCount] = useState(0);
+  const [nonBillableCount, setNonBillableCount] = useState(0);
+
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(
     typeof window !== "undefined" &&
@@ -239,7 +242,11 @@ const WorkforceEmployeeDetails = () => {
           billable,
         });
 
-        setData(Array.isArray(res.data) ? res.data : []);
+        // setData(Array.isArray(res.data) ? res.data : []);
+        setData(res.data || []);
+        setBillableCount(res.billable_count || 0);
+        setNonBillableCount(res.non_billable_count || 0);
+
         setPage(1);
       } catch (err) {
         console.error("Employee API error:", err);
@@ -389,3 +396,5 @@ const WorkforceEmployeeDetails = () => {
 };
 
 export default WorkforceEmployeeDetails;
+
+

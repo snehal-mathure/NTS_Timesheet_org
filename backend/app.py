@@ -4414,6 +4414,9 @@ def workforce_employee_details():
 
     today = date.today()
     response = []
+    billable_count = 0
+    non_billable_count = 0
+
 
     employees = (
         db.session.query(Employee_Info, Department.dept_name)
@@ -4448,6 +4451,13 @@ def workforce_employee_details():
 
         is_billable = "Billable" in project_billabilities
 
+        # ---- COUNT FOR SIDEBAR (DO NOT FILTER HERE) ----
+        if is_billable:
+            billable_count += 1
+        else:
+            non_billable_count += 1
+
+
         if billable_filter == "billable" and not is_billable:
             continue
         if billable_filter == "non-billable" and is_billable:
@@ -4478,8 +4488,11 @@ def workforce_employee_details():
 
     return jsonify({
         "total_employees": len(response),
+        "billable_count": billable_count,
+        "non_billable_count": non_billable_count,
         "data": response
     }), 200
+
 
 
 @app.route("/admin/workforce_employee_details/export", methods=["GET"])
