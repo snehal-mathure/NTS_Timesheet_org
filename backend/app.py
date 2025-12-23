@@ -10769,47 +10769,103 @@ def apply_leave():
         return jsonify({"status": "error", "message": str(e)}), 500
     
 
-@app.route('/cancel_leave', methods=['POST'])
-def cancel_leave():
+# @app.route('/cancel_leave', methods=['POST'])
+# def cancel_leave():
    
-    leave_id = request.form.get('leave_id')
-    empid = session['user_id']
+#     leave_id = request.form.get('leave_id')
+#     empid = session['user_id']
  
-    if not leave_id:
-        flash('Invalid request', 'error')
-        return redirect(url_for('dashboard'))
+#     if not leave_id:
+#         flash('Invalid request', 'error')
+#         return redirect(url_for('dashboard'))
    
-    try:
-        leave_request = Leave_Request.query.filter_by(id=leave_id).first()
-        if leave_request.status != "Approved":
+#     try:
+#         leave_request = Leave_Request.query.filter_by(id=leave_id).first()
+#         if leave_request.status != "Approved":
            
-            leave_request.status = "Canceled"
-            # db.session.delete(leave_request)
-            leave_id = leave_request.id
-            empid = leave_request.empid
-            total_days = leave_request.total_days
-            leave_type = leave_request.leave_type
-            leave_balance = Leave_Balance.query.filter_by(empid = empid).first()
+#             leave_request.status = "Canceled"
+#             # db.session.delete(leave_request)
+#             leave_id = leave_request.id
+#             empid = leave_request.empid
+#             total_days = leave_request.total_days
+#             leave_type = leave_request.leave_type
+#             leave_balance = Leave_Balance.query.filter_by(empid = empid).first()
            
-            if leave_type == "Sick Leave":
-                leave_balance.sick_leave += total_days
-            elif leave_type == "Restricted Holiday":
-                leave_balance.restricted_holiday += total_days
-            elif leave_type == "Earned Leave":
-                leave_balance.earned_leave += total_days
+#             if leave_type == "Sick Leave":
+#                 leave_balance.sick_leave += total_days
+#             elif leave_type == "Restricted Holiday":
+#                 leave_balance.restricted_holiday += total_days
+#             elif leave_type == "Paid Time Off":
+#                 leave_balance.paid_time_off += total_days
  
-        else:
-            flash('Leave is already approved. You cannot cancle it now!', 'success')
-            return redirect(url_for('emp_leave_dashboard'))
+#         else:
+#             flash('Leave is already approved. You cannot cancle it now!', 'success')
+#             return redirect(url_for('/empleavedashboard'))
  
-        db.session.commit()
-        flash('Leave cancelled successfully and balance updated', 'success')
-        return redirect(url_for('emp_leave_dashboard'))
+#         db.session.commit()
+#         flash('Leave cancelled successfully and balance updated', 'success')
+#         return redirect(url_for('/empleavedashboard'))
        
+#     except Exception as e:
+#         # db.execute('ROLLBACK')
+#         flash(f'Error cancelling leave: {str(e)}', 'error')
+#         return redirect(url_for('dashboard'))
+
+
+from flask import request, jsonify, session
+
+@app.route("/cancel_leave", methods=["POST"])
+def cancel_leave():
+    try:
+        data = request.get_json(silent=True) or {}
+        leave_id = data.get("leave_id")
+        empid = session.get("user_id")
+
+        if not leave_id:
+            return jsonify(success=False, message="Leave ID missing"), 400
+
+        leave_request = Leave_Request.query.filter_by(
+            id=leave_id, empid=empid
+        ).first()
+
+        if not leave_request:
+            return jsonify(success=False, message="Leave not found"), 404
+
+        if leave_request.status.lower() == "canceled":
+            return jsonify(success=False, message="Already cancelled"), 400
+
+        total_days = leave_request.total_days or 0
+        leave_type_name = leave_request.leave_type
+
+        # 🔑 Get same balance record used in apply_leave
+        leave_type_obj = LeaveType.query.filter_by(
+            leave_type=leave_type_name
+        ).first()
+
+        if not leave_type_obj:
+            return jsonify(success=False, message="Leave type not found"), 400
+
+        leave_balance = Leave_Balance.query.filter_by(
+            empid=empid,
+            leave_id=leave_type_obj.leave_id
+        ).first()
+
+        if not leave_balance:
+            return jsonify(success=False, message="Leave balance not found"), 404
+
+        # ✅ RESTORE BALANCE (THIS IS THE KEY FIX)
+        leave_balance.balance = float(leave_balance.balance) + float(total_days)
+
+        leave_request.status = "Canceled"
+        db.session.commit()
+
+        return jsonify(success=True, message="Leave cancelled & balance restored")
+
     except Exception as e:
-        # db.execute('ROLLBACK')
-        flash(f'Error cancelling leave: {str(e)}', 'error')
-        return redirect(url_for('dashboard'))
+        db.session.rollback()
+        print("❌ CANCEL ERROR:", e)
+        return jsonify(success=False, message=str(e)), 500
+
   
 
 
@@ -11221,8 +11277,8 @@ def approve_leaves():
                         leave_balance.sick_leave += leave_request.total_days
                     elif leave_request.leave_type == "Restricted Holiday":
                         leave_balance.restricted_holiday += leave_request.total_days
-                    elif leave_request.leave_type == "Earned Leave":
-                        leave_balance.earned_leave += leave_request.total_days
+                    elif leave_request.leave_type == "Paid Time Off":
+                        leave_balance.paid_time_off += leave_request.total_days
 
             processed_count += 1
 

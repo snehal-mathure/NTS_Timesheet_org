@@ -146,9 +146,10 @@ export default function EmpLeaveDashboard() {
                     Object.entries(balance).map(([type, count]) => (
                       <div
                         key={type}
-                        className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm"
+                        // className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm"
+                        className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm text-center flex flex-col items-center justify-center"
                       >
-                        <h4 className="text-[11px] font-medium text-slate-500 mb-2">
+                        <h4 className="text-sm font-semibold text-slate-600 mb-2">
                           {type.replace("_", " ").toUpperCase()}
                         </h4>
                         <div className="text-3xl font-semibold text-slate-900">{count}</div>
@@ -173,7 +174,13 @@ export default function EmpLeaveDashboard() {
 
                   <Link
                     to="/applyleave"
-                    className="inline-flex items-center gap-2 text-white px-2 py-0 rounded-2xl text-xs shadow-[0_10px_30px_rgba(76,111,255,0.18)]"
+                    className="
+                      inline-flex items-center gap-2
+                      px-2 py-0              /* ✅ same as button */
+                      rounded-2xl
+                      text-xs font-semibold  /* match font weight */
+                      text-white
+                    "
                     style={{ background: "linear-gradient(135deg,#4C6FFF,#6C5CE7)" }}
                   >
                     Apply for Leave

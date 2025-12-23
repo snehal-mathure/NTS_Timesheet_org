@@ -304,7 +304,7 @@ export default function ApplyLeave() {
       if (res && res.status === "success") {
         setSuccess(res.message || "Leave request submitted successfully!");
         // redirect after a short delay so user sees success
-        setTimeout(() => navigate("/emp_leave_dashboard"), 1200);
+        setTimeout(() => navigate("/empleavedashboard"), 1200);
       } else {
         setError(res.message || "Failed to submit leave.");
       }
