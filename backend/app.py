@@ -25,6 +25,8 @@ from models import (
     Holidays,
     Leave_Entries
 )
+from models import JobRole
+
 from werkzeug.security import check_password_hash,generate_password_hash
 from sqlalchemy import func
 from config import Config
@@ -1288,6 +1290,188 @@ def get_employee_form_data():
 
 
 
+# @app.route('/admin/add_employee', methods=['POST'])
+# def add_employee():
+#     data = request.json
+
+#     try:
+#         # ---------------------
+#         # Validate required fields
+#         # ---------------------
+#         required_fields = [
+#             "empid", "fname", "lname", "email", "designation",
+#             "mobile", "gender", "employee_type", "location",
+#             "company", "doj", "approver_id", "password"
+#         ]
+
+#         for field in required_fields:
+#             if not data.get(field):
+#                 return jsonify({"status": "error", "message": f"{field} is required"}), 400
+
+#         # Email validation
+#         if not re.match(r"[^@]+@[^@]+\.[^@]+", data["email"]):
+#             return jsonify({"status": "error", "message": "Invalid email format"}), 400
+
+#         # Mobile validation
+#         if not re.match(r"^\d{10}$", data["mobile"]):
+#             return jsonify({"status": "error", "message": "Mobile number must be 10 digits"}), 400
+
+#         # Duplicate employee
+#         if Employee_Info.query.filter_by(empid=data["empid"]).first():
+#             return jsonify({"status": "error", "message": "Employee ID already exists"}), 400
+
+#         if Employee_Info.query.filter_by(email=data["email"]).first():
+#             return jsonify({"status": "error", "message": "Email already exists"}), 400
+
+#         # ---------------------
+#         # Department Logic
+#         # ---------------------
+#         dept_id = data.get("dept_id")
+
+#         if dept_id == "custom":
+#             custom_name = data.get("custom_dept", "").strip()
+#             if not custom_name:
+#                 return jsonify({"status": "error", "message": "New department name required"}), 400
+
+#             existing = Department.query.filter_by(dept_name=custom_name).first()
+#             if existing:
+#                 dept_id = existing.id
+#             else:
+#                 new_dept = Department(dept_name=custom_name)
+#                 db.session.add(new_dept)
+#                 db.session.flush()
+#                 dept_id = new_dept.id
+
+#         elif dept_id == "edit":
+#             edit_dept_id = data.get("edit_dept_id")
+#             new_dept_name = data.get("new_dept_name", "").strip()
+
+#             if not edit_dept_id or not new_dept_name:
+#                 return jsonify({"status": "error", "message": "Department edit details missing"}), 400
+
+#             existing = Department.query.filter_by(dept_name=new_dept_name).first()
+#             if existing:
+#                 return jsonify({"status": "error", "message": "Department name already exists"}), 400
+
+#             dept_obj = Department.query.get(edit_dept_id)
+#             dept_obj.dept_name = new_dept_name
+#             dept_id = edit_dept_id
+
+#         # ---------------------
+#         # Dates
+#         # ---------------------
+#         doj = datetime.strptime(data["doj"], "%Y-%m-%d").date()
+#         lwd = None
+
+#         if data.get("lwd"):
+#             lwd = datetime.strptime(data["lwd"], "%Y-%m-%d").date()
+#             if lwd <= doj:
+#                 return jsonify({"status": "error", "message": "Last working day must be later than DOJ"}), 400
+
+#         # ---------------------
+#         # prev_total_exp fix
+#         # ---------------------
+#         prev_exp = data.get("prev_total_exp")
+#         try:
+#             prev_exp = float(prev_exp) if prev_exp not in (None, "", " ") else None
+#         except:
+#             prev_exp = None
+
+#         # ---------------------
+#         # Secondary Approver (optional)
+#         # ---------------------
+#         secondary_approver = data.get("secondary_approver_id")
+#         if secondary_approver:
+#             secondary_approver = secondary_approver.upper()
+#         else:
+#             secondary_approver = None  # stored as NULL
+
+#         # ---------------------
+#         # Create Employee
+#         # ---------------------
+#         new_emp = Employee_Info(
+#             empid=data["empid"].upper(),
+#             fname=data["fname"],
+#             lname=data["lname"],
+#             email=data["email"].lower(),
+#             dept_id=dept_id,
+#             designation=data["designation"],
+#             mobile=data["mobile"],
+#             gender=data["gender"],
+#             employee_type=data["employee_type"],
+#             location=data["location"],
+#             company=data["company"],
+#             work_location=data.get("work_location", ""),
+#             city=data.get("city", ""),
+#             core_skill=data.get("core_skill", ""),
+#             skill_details=data.get("skill_details", ""),
+#             doj=doj,
+#             lwd=lwd,
+
+#             approver_id=data["approver_id"].upper(),
+#             secondary_approver_id=secondary_approver,  # <-- NEW FIELD HERE
+
+#             password=generate_password_hash(data["password"]),
+#             prev_total_exp=prev_exp
+#         )
+
+#         db.session.add(new_emp)
+#         db.session.flush()
+
+#         # ---------------------
+#         # Leave Balances
+#         # ---------------------
+#         leave_balances = data.get("leave_balances", {})
+
+#         for leave_id, balance in leave_balances.items():
+#             try:
+#                 bal = float(balance) if balance not in ("", None) else 0.0
+#             except:
+#                 bal = 0.0
+
+#             db.session.add(Leave_Balance(
+#                 empid=new_emp.empid,
+#                 leave_id=int(leave_id),
+#                 balance=bal
+#             ))
+
+#         # ---------------------
+#         # Client Assignments
+#         # ---------------------
+#         client_assignments = data.get("client_assignments", {})
+
+#         for client_id, entry in client_assignments.items():
+#             start = entry.get("start_date")
+#             end = entry.get("end_date")
+
+#             if not start:
+#                 return jsonify({"status": "error", "message": "Client start date required"}), 400
+
+#             sd = datetime.strptime(start, "%Y-%m-%d").date()
+
+#             if end:
+#                 ed = datetime.strptime(end, "%Y-%m-%d").date()
+#                 if ed <= sd:
+#                     return jsonify({"status": "error", "message": "Client end date must be after start date"}), 400
+#             else:
+#                 ed = None
+
+#             db.session.add(Client_Employee(
+#                 empid=new_emp.empid,
+#                 clientID=int(client_id),
+#                 start_date=sd,
+#                 end_date=ed
+#             ))
+
+#         db.session.commit()
+
+#         return jsonify({"status": "success", "message": "Employee Added Successfully!"}), 200
+
+#     except Exception as e:
+#         db.session.rollback()
+#         return jsonify({"status": "error", "message": str(e)}), 500
+
+
 @app.route('/admin/add_employee', methods=['POST'])
 def add_employee():
     data = request.json
@@ -1299,30 +1483,34 @@ def add_employee():
         required_fields = [
             "empid", "fname", "lname", "email", "designation",
             "mobile", "gender", "employee_type", "location",
-            "company", "doj", "approver_id", "password"
+            "company", "doj", "approver_id", "password",
+            "job_role_id"   # ✅ NEW REQUIRED FIELD
         ]
 
         for field in required_fields:
             if not data.get(field):
                 return jsonify({"status": "error", "message": f"{field} is required"}), 400
 
-        # Email validation
+        # ---------------------
+        # Email & Mobile validation
+        # ---------------------
         if not re.match(r"[^@]+@[^@]+\.[^@]+", data["email"]):
             return jsonify({"status": "error", "message": "Invalid email format"}), 400
 
-        # Mobile validation
         if not re.match(r"^\d{10}$", data["mobile"]):
             return jsonify({"status": "error", "message": "Mobile number must be 10 digits"}), 400
 
-        # Duplicate employee
-        if Employee_Info.query.filter_by(empid=data["empid"]).first():
+        # ---------------------
+        # Duplicate employee checks
+        # ---------------------
+        if Employee_Info.query.filter_by(empid=data["empid"].upper()).first():
             return jsonify({"status": "error", "message": "Employee ID already exists"}), 400
 
-        if Employee_Info.query.filter_by(email=data["email"]).first():
+        if Employee_Info.query.filter_by(email=data["email"].lower()).first():
             return jsonify({"status": "error", "message": "Email already exists"}), 400
 
         # ---------------------
-        # Department Logic
+        # Department Logic (UNCHANGED)
         # ---------------------
         dept_id = data.get("dept_id")
 
@@ -1347,13 +1535,42 @@ def add_employee():
             if not edit_dept_id or not new_dept_name:
                 return jsonify({"status": "error", "message": "Department edit details missing"}), 400
 
-            existing = Department.query.filter_by(dept_name=new_dept_name).first()
-            if existing:
+            if Department.query.filter_by(dept_name=new_dept_name).first():
                 return jsonify({"status": "error", "message": "Department name already exists"}), 400
 
             dept_obj = Department.query.get(edit_dept_id)
             dept_obj.dept_name = new_dept_name
             dept_id = edit_dept_id
+
+        # ---------------------
+        # ✅ JOB ROLE LOGIC (NEW)
+        # ---------------------
+        job_role_id = data.get("job_role_id")
+
+        if job_role_id == "custom":
+            role_name = data.get("custom_job_role", "").strip()
+
+            if not role_name:
+                return jsonify({"status": "error", "message": "New job role name required"}), 400
+
+            # prevent duplicate role in same department
+            existing_role = JobRole.query.filter_by(
+                dept_id=dept_id,
+                job_role=role_name
+            ).first()
+
+            if existing_role:
+                job_role_id = existing_role.id
+            else:
+                new_role = JobRole(
+                    dept_id=dept_id,
+                    job_role=role_name
+                )
+                db.session.add(new_role)
+                db.session.flush()
+                job_role_id = new_role.id
+        else:
+            job_role_id = int(job_role_id)
 
         # ---------------------
         # Dates
@@ -1367,7 +1584,7 @@ def add_employee():
                 return jsonify({"status": "error", "message": "Last working day must be later than DOJ"}), 400
 
         # ---------------------
-        # prev_total_exp fix
+        # Previous Experience
         # ---------------------
         prev_exp = data.get("prev_total_exp")
         try:
@@ -1376,13 +1593,10 @@ def add_employee():
             prev_exp = None
 
         # ---------------------
-        # Secondary Approver (optional)
+        # Secondary Approver
         # ---------------------
         secondary_approver = data.get("secondary_approver_id")
-        if secondary_approver:
-            secondary_approver = secondary_approver.upper()
-        else:
-            secondary_approver = None  # stored as NULL
+        secondary_approver = secondary_approver.upper() if secondary_approver else None
 
         # ---------------------
         # Create Employee
@@ -1393,6 +1607,7 @@ def add_employee():
             lname=data["lname"],
             email=data["email"].lower(),
             dept_id=dept_id,
+            job_role_id=job_role_id,   # ✅ ASSIGNED HERE
             designation=data["designation"],
             mobile=data["mobile"],
             gender=data["gender"],
@@ -1405,10 +1620,8 @@ def add_employee():
             skill_details=data.get("skill_details", ""),
             doj=doj,
             lwd=lwd,
-
             approver_id=data["approver_id"].upper(),
-            secondary_approver_id=secondary_approver,  # <-- NEW FIELD HERE
-
+            secondary_approver_id=secondary_approver,
             password=generate_password_hash(data["password"]),
             prev_total_exp=prev_exp
         )
@@ -1417,16 +1630,10 @@ def add_employee():
         db.session.flush()
 
         # ---------------------
-        # Leave Balances
+        # Leave Balances (UNCHANGED)
         # ---------------------
-        leave_balances = data.get("leave_balances", {})
-
-        for leave_id, balance in leave_balances.items():
-            try:
-                bal = float(balance) if balance not in ("", None) else 0.0
-            except:
-                bal = 0.0
-
+        for leave_id, balance in data.get("leave_balances", {}).items():
+            bal = float(balance) if balance not in ("", None) else 0.0
             db.session.add(Leave_Balance(
                 empid=new_emp.empid,
                 leave_id=int(leave_id),
@@ -1434,25 +1641,14 @@ def add_employee():
             ))
 
         # ---------------------
-        # Client Assignments
+        # Client Assignments (UNCHANGED)
         # ---------------------
-        client_assignments = data.get("client_assignments", {})
+        for client_id, entry in data.get("client_assignments", {}).items():
+            sd = datetime.strptime(entry["start_date"], "%Y-%m-%d").date()
+            ed = datetime.strptime(entry["end_date"], "%Y-%m-%d").date() if entry.get("end_date") else None
 
-        for client_id, entry in client_assignments.items():
-            start = entry.get("start_date")
-            end = entry.get("end_date")
-
-            if not start:
-                return jsonify({"status": "error", "message": "Client start date required"}), 400
-
-            sd = datetime.strptime(start, "%Y-%m-%d").date()
-
-            if end:
-                ed = datetime.strptime(end, "%Y-%m-%d").date()
-                if ed <= sd:
-                    return jsonify({"status": "error", "message": "Client end date must be after start date"}), 400
-            else:
-                ed = None
+            if ed and ed <= sd:
+                return jsonify({"status": "error", "message": "Client end date must be after start date"}), 400
 
             db.session.add(Client_Employee(
                 empid=new_emp.empid,
@@ -1462,13 +1658,85 @@ def add_employee():
             ))
 
         db.session.commit()
-
         return jsonify({"status": "success", "message": "Employee Added Successfully!"}), 200
 
     except Exception as e:
         db.session.rollback()
         return jsonify({"status": "error", "message": str(e)}), 500
 
+
+@app.route('/admin/job-roles/<int:dept_id>', methods=['GET'])
+def get_job_roles_by_department(dept_id):
+    try:
+        roles = JobRole.query.filter_by(dept_id=dept_id).order_by(JobRole.job_role).all()
+
+        return jsonify({
+            "status": "success",
+            "roles": [
+                {
+                    "id": role.id,
+                    "job_role": role.job_role
+                }
+                for role in roles
+            ]
+        }), 200
+
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
+
+
+@app.route('/admin/job-roles', methods=['POST'])
+def create_job_role():
+    data = request.json
+
+    try:
+        dept_id = data.get("dept_id")
+        job_role_name = data.get("job_role", "").strip()
+
+        if not dept_id or not job_role_name:
+            return jsonify({
+                "status": "error",
+                "message": "Department ID and job role are required"
+            }), 400
+
+        # Check duplicate role in same department
+        existing = JobRole.query.filter_by(
+            dept_id=dept_id,
+            job_role=job_role_name
+        ).first()
+
+        if existing:
+            return jsonify({
+                "status": "success",
+                "role_id": existing.id,
+                "job_role": existing.job_role,
+                "message": "Job role already exists"
+            }), 200
+
+        new_role = JobRole(
+            dept_id=dept_id,
+            job_role=job_role_name
+        )
+
+        db.session.add(new_role)
+        db.session.commit()
+
+        return jsonify({
+            "status": "success",
+            "role_id": new_role.id,
+            "job_role": new_role.job_role,
+            "message": "Job role created successfully"
+        }), 201
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
 
 
 @app.route("/api/departments", methods=["GET"])
@@ -2320,24 +2588,23 @@ def approvers_by_department():
 #         total_experience=total_experience
 #     )
 
-
 @app.route('/admin/editemployee/<empid>', methods=['PUT'])
 def edit_employee(empid):
     try:
         data = request.get_json()
- 
+
         if not data:
             return jsonify({"error": "Invalid JSON"}), 400
- 
+
         form = data.get("form", {})
         assignments = data.get("assignments", [])
- 
+
         employee = Employee_Info.query.filter_by(empid=empid).first()
         if not employee:
             return jsonify({"error": "Employee not found"}), 404
- 
+
         # -------------------------------------------------------
-        # BASIC FIELDS — Update for every user
+        # BASIC FIELDS — editable by all
         # -------------------------------------------------------
         employee.fname = form.get("fname", employee.fname)
         employee.lname = form.get("lname", employee.lname)
@@ -2349,41 +2616,75 @@ def edit_employee(empid):
         employee.work_location = form.get("work_location", employee.work_location)
         employee.country = form.get("country", employee.country)
         employee.city = form.get("city", employee.city)
- 
+
         # Previous experience
         prev_exp = form.get("prev_total_exp")
-        if prev_exp not in [None, ""]:
+        if prev_exp not in (None, ""):
             try:
                 employee.prev_total_exp = float(prev_exp)
             except:
                 return jsonify({"error": "Invalid previous experience"}), 400
- 
+
         # -------------------------------------------------------
         # ADMIN-ONLY FIELDS
         # -------------------------------------------------------
         logged_in_user = session.get("user_id")
-        print("SESSION USER:", session.get("user_id"))
-        print("IS ADMIN:", session.get("user_id") == "N0482")
-        print("REQUEST JSON:", request.get_json())
-        is_admin = logged_in_user == "N0482"
- 
+        is_admin = logged_in_user == "N0482"   # your admin condition
+
         if is_admin:
+            # ---------------------
+            # DEPARTMENT
+            # ---------------------
             employee.dept_id = form.get("dept_id", employee.dept_id)
+
+            # ---------------------
+            # JOB ROLE LOGIC (FULL FIX)
+            # ---------------------
+            job_role_id = form.get("job_role_id")
+
+            if job_role_id == "custom":
+                role_name = form.get("custom_job_role", "").strip()
+
+                if not role_name:
+                    return jsonify({"error": "New job role name required"}), 400
+
+                existing_role = JobRole.query.filter_by(
+                    dept_id=employee.dept_id,
+                    job_role=role_name
+                ).first()
+
+                if existing_role:
+                    employee.job_role_id = existing_role.id
+                else:
+                    new_role = JobRole(
+                        dept_id=employee.dept_id,
+                        job_role=role_name
+                    )
+                    db.session.add(new_role)
+                    db.session.flush()   # REQUIRED
+                    employee.job_role_id = new_role.id
+
+            elif job_role_id:
+                employee.job_role_id = int(job_role_id)
+
+            # ---------------------
+            # OTHER ADMIN FIELDS
+            # ---------------------
             employee.designation = form.get("designation", employee.designation)
             employee.employee_type = form.get("employee_type", employee.employee_type)
             employee.location = form.get("location", employee.location)
             employee.company = form.get("company", employee.company)
             employee.approver_id = form.get("approver_id", employee.approver_id)
- 
-            # Date of Joining
+
+            # DOJ
             doj = form.get("doj")
             if doj:
                 try:
                     employee.doj = datetime.strptime(doj, "%Y-%m-%d").date()
                 except:
                     return jsonify({"error": "Invalid DOJ format"}), 400
- 
-            # Last Working Day
+
+            # LWD
             lwd = form.get("lwd")
             if lwd:
                 try:
@@ -2392,19 +2693,19 @@ def edit_employee(empid):
                     return jsonify({"error": "Invalid LWD format"}), 400
             else:
                 employee.lwd = None
- 
-        # -------------------------------------------------------
-        # UPDATE CLIENT ASSIGNMENTS
-        # -------------------------------------------------------
+
+            # -------------------------------------------------------
+            # CLIENT ASSIGNMENTS (ADMIN)
+            # -------------------------------------------------------
             Client_Employee.query.filter_by(empid=empid).delete()
- 
+
             for a in assignments:
                 if not a.get("clientID"):
                     continue
- 
+
                 start = a.get("start_date")
                 end = a.get("end_date")
- 
+
                 new_assign = Client_Employee(
                     empid=empid,
                     clientID=a["clientID"],
@@ -2412,17 +2713,24 @@ def edit_employee(empid):
                     end_date=datetime.strptime(end, "%Y-%m-%d").date() if end else None
                 )
                 db.session.add(new_assign)
- 
+
+        # -------------------------------------------------------
+        # COMMIT
+        # -------------------------------------------------------
         db.session.commit()
- 
-        return jsonify({"message": "Employee updated successfully!"}), 200
- 
+
+        return jsonify({
+            "status": "success",
+            "message": "Employee updated successfully!"
+        }), 200
+
     except Exception as e:
         db.session.rollback()
         print("❌ ERROR Updating Employee:", e)
         import traceback
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
+
     
 
 

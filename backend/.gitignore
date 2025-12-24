@@ -71,3 +71,17 @@ files/
 
 # Generated static files
 staticfiles/
+
+node_modules/
+dist/
+build/
+lib/
+.env
+
+
+venv/
+.venv/
+__pycache__/
+*.pyc
+.env
+

@@ -57,6 +57,10 @@ class Employee_Info(db.Model):
     lwd = db.Column(db.Date, nullable=True)
     prev_total_exp = db.Column(db.Float, nullable=True)
     role = db.Column(db.String(20), nullable=False, default="Employee")
+    job_role_id = db.Column(db.Integer, db.ForeignKey('job_roles.id'), nullable=True)
+
+    job_role = db.relationship('JobRole', backref=db.backref('employees', lazy=True))
+
 
     # Relationship to department
     department = db.relationship('Department', back_populates='employees')
@@ -246,4 +250,22 @@ class Leave_Entries(db.Model):
  
     def __repr__(self):
         return f"<LeaveEntry {self.date} | Half: {self.is_half} ({self.half_type})>"
+    
+
+class JobRole(db.Model):
+    __tablename__ = 'job_roles'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    dept_id = db.Column(db.Integer, db.ForeignKey('departments.id', ondelete='CASCADE'),nullable=False)
+    job_role = db.Column(db.String(100), nullable=False)
+
+    # Relationship
+    department = db.relationship(
+        'Department',
+        backref=db.backref('job_roles', cascade='all, delete-orphan', lazy=True)
+    )
+
+    def __repr__(self):
+        return f'<JobRole {self.job_role} (Dept ID: {self.dept_id})>'
+
  

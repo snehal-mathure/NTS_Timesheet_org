@@ -122,13 +122,6 @@
 
 import axios from "axios";
  
-// const API = axios.create({
-//   baseURL: "http://127.0.0.1:5000",
-//   headers: {
-//     "Content-Type": "application/json",
-//   },
-// });
- 
 const API = axios.create({
   baseURL: "http://127.0.0.1:5000",
 //   headers: { "Content-Type": "application/json" },
@@ -235,6 +228,23 @@ const employeeService = {
       query.length ? "?" + query.join("&") : ""
     }`;
   },
+
+  // ===========================
+  // 9) JOB ROLES
+  // ===========================
+
+  // Get job roles by department
+  getJobRolesByDepartment: async (deptId) => {
+    const res = await API.get(`/admin/job-roles/${deptId}`);
+    return res.data;
+  },
+
+  // Create new job role
+  createJobRole: async (payload) => {
+    const res = await API.post(`/admin/job-roles`, payload);
+    return res.data;
+  },
+
 };
  
 export default employeeService;

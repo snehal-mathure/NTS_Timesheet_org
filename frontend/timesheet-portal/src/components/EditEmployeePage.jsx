@@ -19,6 +19,10 @@ export default function EditEmployeePage() {
 
   const [departments, setDepartments] = useState([]);
   const [availableClients, setAvailableClients] = useState([]);
+  // Job roles
+  const [jobRoles, setJobRoles] = useState([]);
+  const [loadingRoles, setLoadingRoles] = useState(false);
+
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(
     () => localStorage.getItem(SIDEBAR_STORAGE_KEY) === "true"
@@ -59,9 +63,47 @@ export default function EditEmployeePage() {
     work_location: "",
     country: "",
     city: "",
+    job_role_id: "",
+    custom_job_role: "",
+
   });
 
   const [assignments, setAssignments] = useState([]);
+
+  useEffect(() => {
+    if (!form.dept_id || form.is_new_dept) {
+      setJobRoles([]);
+      setForm((p) => ({ ...p, job_role_id: "", custom_job_role: "" }));
+      return;
+    }
+
+    async function fetchRoles() {
+      try {
+        setLoadingRoles(true);
+        const res = await employeeService.getJobRolesByDepartment(form.dept_id);
+        setJobRoles(res.roles || []);
+      } catch {
+        setJobRoles([]);
+      } finally {
+        setLoadingRoles(false);
+      }
+    }
+
+    fetchRoles();
+  }, [form.dept_id, form.is_new_dept]);
+
+
+  useEffect(() => {
+    if (!form.dept_id || form.is_new_dept) return;
+
+    async function fetchRoles() {
+      const res = await employeeService.getJobRolesByDepartment(form.dept_id);
+      setJobRoles(res.roles || []);
+    }
+
+    fetchRoles();
+  }, [form.dept_id]);
+
 
   useEffect(() => {
     async function load() {
@@ -95,6 +137,10 @@ export default function EditEmployeePage() {
           work_location: emp.work_location || "",
           country: emp.country || "",
           city: emp.city || "",
+          job_role_id: emp.job_role_id || "",
+          custom_job_role: "",
+          job_role_id: emp.job_role_id || "", 
+
         }));
 
         setAssignments(res.assignments?.length ? res.assignments : []);
@@ -107,6 +153,16 @@ export default function EditEmployeePage() {
 
     if (empid) load();
   }, [empid]);
+
+
+  const handleJobRoleChange = (value) => {
+    setForm((p) => ({
+      ...p,
+      job_role_id: value,
+      custom_job_role: value === "custom" ? p.custom_job_role : "",
+    }));
+  };
+
 
   const updateField = (key, value) =>
     setForm((s) => ({ ...s, [key]: value }));
@@ -128,6 +184,14 @@ export default function EditEmployeePage() {
     });
 
   const validate = () => {
+    if (!form.job_role_id) {
+      setError("Job role is required.");
+      return false;
+    }
+    if (form.job_role_id === "custom" && !form.custom_job_role.trim()) {
+      setError("New job role name is required.");
+      return false;
+    }
     if (!form.fname.trim() || !form.lname.trim()) {
       setError("First name and last name are required.");
       return false;
@@ -401,6 +465,45 @@ export default function EditEmployeePage() {
                       rows="3"
                     />
                   </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600">
+                      Job Role <span className="text-rose-600">*</span>
+                    </label>
+
+                    <select
+                      value={form.job_role_id}
+                      onChange={(e) => handleJobRoleChange(e.target.value)}
+                      className="mt-1 block w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm"
+                    >
+                      <option value="">
+                        {loadingRoles ? "Loading roles..." : "Select Job Role"}
+                      </option>
+
+                      {jobRoles.map((r) => (
+                        <option key={r.id} value={r.id}>
+                          {r.job_role}
+                        </option>
+                      ))}
+
+                      <option value="custom">+ Add New Job Role</option>
+                    </select>
+                  </div>
+
+                  {form.job_role_id === "custom" && (
+                    <div>
+                      <label className="block text-xs font-medium text-slate-600">
+                        New Job Role <span className="text-rose-600">*</span>
+                      </label>
+                      <input
+                        value={form.custom_job_role}
+                        onChange={(e) => updateField("custom_job_role", e.target.value)}
+                        className="mt-1 block w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm"
+                        placeholder="Enter new job role"
+                      />
+                    </div>
+                  )}
+
 
                   {/* Department */}
                   <div>
