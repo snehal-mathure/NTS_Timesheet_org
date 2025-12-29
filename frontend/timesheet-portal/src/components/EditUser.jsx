@@ -387,7 +387,7 @@ export default function EditEmployeePage() {
                       className="mt-1 block w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm"
                     />
                   </div>
-
+                  
                   <div>
                     <label className="block text-xs font-medium text-slate-600">
                       Skill Details

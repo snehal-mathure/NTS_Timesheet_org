@@ -70,7 +70,28 @@ from flask import jsonify
 db = SQLAlchemy() 
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
+# CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
+
+from flask_cors import CORS
+
+CORS(
+    app,
+    supports_credentials=True,
+    resources={
+        r"/admin/*": {
+            "origins": "http://localhost:5173"
+        }
+    }
+)
+
+
+@app.after_request
+def add_cors_headers(response):
+    response.headers["Access-Control-Allow-Credentials"] = "true"
+    response.headers["Access-Control-Allow-Headers"] = "Content-Type,Authorization"
+    response.headers["Access-Control-Allow-Methods"] = "GET,POST,PUT,DELETE,OPTIONS"
+    return response
+
 
 db_path = os.path.join(app.root_path, 'mydatabase.db') #this is for local
 # db_path = '/home/nts_sqlite_db/mydatabase.db'          #this for server
@@ -4556,7 +4577,8 @@ def workforce_skill_distribution():
     )
 
     for emp, dept_name in employees:
-        core_skill = emp.core_skill or "Unassigned"
+        # ---------------- JOB ROLE (FIXED) ----------------
+        job_role = emp.job_role.job_role if emp.job_role else "Unassigned"
 
         # ---------------- EXPERIENCE CALCULATION ----------------
         prev_exp = emp.prev_total_exp or 0
@@ -4569,13 +4591,16 @@ def workforce_skill_distribution():
             continue
         if experience == "experienced" and is_fresher:
             continue
+        
+        # job_role = emp.job_role or "Unassigned"
+        key = (dept_name, job_role)
 
-        key = (dept_name, core_skill)
+        # key = (dept_name, core_skill)
 
         if key not in grouped:
             grouped[key] = {
                 "department": dept_name,
-                "core_skill": core_skill,
+                "job_role": job_role,
                 "total_count": 0,
                 "billable_count": 0,
                 "non_billable_count": 0,
@@ -4619,12 +4644,13 @@ def workforce_skill_distribution():
     for row in grouped.values():
         results.append({
             "department": row["department"],
-            "core_skill": row["core_skill"],
+            "job_role": row["job_role"],   # now STRING ✅
             "total_count": row["total_count"],
             "billable_count": row["billable_count"],
             "non_billable_count": row["non_billable_count"],
             "fresher_count": row["fresher_count"],
             "experienced_count": row["experienced_count"],
+            # "skill_details": ", ".join(row["skill_details"]) if row["skill_details"] else None,
             "skill_details": ", ".join(row["skill_details"]) if row["skill_details"] else None,
         })
 
