@@ -211,6 +211,7 @@ const WorkforceEmployeeDetails = () => {
   const params = new URLSearchParams(location.search);
 
   const department = params.get("department");
+  const jobRole = params.get("job_role");
   const coreSkill = params.get("core_skill");
   const experience = params.get("experience");
   const billable = params.get("billable");
@@ -237,6 +238,7 @@ const WorkforceEmployeeDetails = () => {
       try {
         const res = await getWorkforceEmployeeDetails({
           department,
+          job_role: jobRole,        // ✅ ADD THIS
           core_skill: coreSkill,
           experience,
           billable,
@@ -262,6 +264,7 @@ const WorkforceEmployeeDetails = () => {
     try {
       const response = await exportWorkforceEmployeeDetails({
         department,
+        job_role: jobRole,        // ✅ ADD THIS
         core_skill: coreSkill,
         experience,
         billable,

@@ -4563,9 +4563,199 @@ from flask import jsonify
 from sqlalchemy import func, case
 from models import db, Employee_Info, Department
 
+# @app.route("/admin/workforce_skill_distribution", methods=["GET"])
+# def workforce_skill_distribution():
+#     experience = request.args.get("experience", "all")
+
+#     today = date.today()
+#     grouped = {}
+
+#     employees = (
+#         db.session.query(Employee_Info, Department.dept_name)
+#         .join(Department, Department.id == Employee_Info.dept_id)
+#         .all()
+#     )
+
+#     for emp, dept_name in employees:
+#         # ---------------- JOB ROLE (FIXED) ----------------
+#         job_role = emp.job_role.job_role if emp.job_role else "Unassigned"
+
+#         # ---------------- EXPERIENCE CALCULATION ----------------
+#         prev_exp = emp.prev_total_exp or 0
+#         doj_exp = ((today - emp.doj).days / 365) if emp.doj else 0
+#         total_exp = prev_exp + doj_exp
+#         is_fresher = total_exp < 2
+
+#         # ---------------- EXPERIENCE FILTER ----------------
+#         if experience == "fresher" and not is_fresher:
+#             continue
+#         if experience == "experienced" and is_fresher:
+#             continue
+        
+#         # job_role = emp.job_role or "Unassigned"
+#         key = (dept_name, job_role)
+
+#         # key = (dept_name, core_skill)
+
+#         if key not in grouped:
+#             grouped[key] = {
+#                 "department": dept_name,
+#                 "job_role": job_role,
+#                 "total_count": 0,
+#                 "billable_count": 0,
+#                 "non_billable_count": 0,
+#                 "fresher_count": 0,
+#                 "experienced_count": 0,
+#                 "skill_details": set(),
+#             }
+
+#         # ---------------- BILLABILITY CHECK ----------------
+#         project_billabilities = {
+#             row[0]
+#             for row in (
+#                 db.session.query(Project_Info.project_billability)
+#                 .join(TimesheetEntry, Project_Info.id == TimesheetEntry.project_id)
+#                 .filter(TimesheetEntry.empid == emp.empid)
+#                 .distinct()
+#                 .all()
+#             )
+#         }
+
+#         is_billable = "Billable" in project_billabilities
+
+#         # ---------------- COUNTS ----------------
+#         grouped[key]["total_count"] += 1
+
+#         if is_billable:
+#             grouped[key]["billable_count"] += 1
+#         else:
+#             grouped[key]["non_billable_count"] += 1
+
+#         if is_fresher:
+#             grouped[key]["fresher_count"] += 1
+#         else:
+#             grouped[key]["experienced_count"] += 1
+
+#         if emp.skill_details:
+#             grouped[key]["skill_details"].add(emp.skill_details)
+
+#     # ---------------- RESPONSE ----------------
+#     results = []
+#     for row in grouped.values():
+#         results.append({
+#             "department": row["department"],
+#             "job_role": row["job_role"],   # now STRING ✅
+#             "total_count": row["total_count"],
+#             "billable_count": row["billable_count"],
+#             "non_billable_count": row["non_billable_count"],
+#             "fresher_count": row["fresher_count"],
+#             "experienced_count": row["experienced_count"],
+#             # "skill_details": ", ".join(row["skill_details"]) if row["skill_details"] else None,
+#             "skill_details": ", ".join(row["skill_details"]) if row["skill_details"] else None,
+#         })
+
+#     return jsonify({
+#         "experience": experience,
+#         "data": results
+#     }), 200
+
+
+# @app.route("/admin/workforce_skill_distribution", methods=["GET"])
+# def workforce_skill_distribution():
+#     experience = request.args.get("experience", "all")
+#     billable_filter = request.args.get("billable", "all")
+
+#     today = date.today()
+#     grouped = {}
+
+#     employees = (
+#         db.session.query(Employee_Info, Department.dept_name)
+#         .join(Department, Department.id == Employee_Info.dept_id)
+#         .all()
+#     )
+
+#     for emp, dept_name in employees:
+
+#         # ---------- EXPERIENCE ----------
+#         prev_exp = emp.prev_total_exp or 0
+#         doj_exp = ((today - emp.doj).days / 365) if emp.doj else 0
+#         total_exp = prev_exp + doj_exp
+#         is_fresher = total_exp < 2
+
+#         if experience == "fresher" and not is_fresher:
+#             continue
+#         if experience == "experienced" and is_fresher:
+#             continue
+
+#         # ---------- BILLABILITY ----------
+#         is_billable = (
+#             db.session.query(TimesheetEntry.id)
+#             .join(Project_Info, Project_Info.id == TimesheetEntry.project_id)
+#             .filter(
+#                 TimesheetEntry.empid == emp.empid,
+#                 Project_Info.project_billability == "Billable"
+#             )
+#             .first()
+#             is not None
+#         )
+
+#         if billable_filter == "billable" and not is_billable:
+#             continue
+#         if billable_filter == "non-billable" and is_billable:
+#             continue
+
+#         # ---------- JOB ROLE ----------
+#         job_role = emp.job_role.job_role if emp.job_role else "Unassigned"
+#         key = (dept_name, job_role)
+
+#         if key not in grouped:
+#             grouped[key] = {
+#                 "department": dept_name,
+#                 "job_role": job_role,
+#                 "employees": set(),
+#                 "billable": set(),
+#                 "non_billable": set(),
+#                 "skill_details": set(),
+#             }
+
+#         grouped[key]["employees"].add(emp.empid)
+
+#         if is_billable:
+#             grouped[key]["billable"].add(emp.empid)
+#         else:
+#             grouped[key]["non_billable"].add(emp.empid)
+
+#         if emp.skill_details:
+#             grouped[key]["skill_details"].add(emp.skill_details)
+
+#     # ---------- RESPONSE ----------
+#     results = []
+#     for row in grouped.values():
+#         total = len(row["employees"])
+
+#         if total == 0:
+#             continue   # 🚀 REMOVE ZERO TOTAL ENTRIES
+
+#         results.append({
+#             "department": row["department"],
+#             "job_role": row["job_role"],
+#             "total_count": total,
+#             "billable_count": len(row["billable"]),
+#             "non_billable_count": len(row["non_billable"]),
+#             "skill_details": ", ".join(row["skill_details"]) if row["skill_details"] else None,
+#         })
+
+
+#     return jsonify({
+#         "experience": experience,
+#         "billable": billable_filter,
+#         "data": results
+#     }), 200
+
 @app.route("/admin/workforce_skill_distribution", methods=["GET"])
 def workforce_skill_distribution():
     experience = request.args.get("experience", "all")
+    billable_filter = request.args.get("billable", "all")
 
     today = date.today()
     grouped = {}
@@ -4577,85 +4767,79 @@ def workforce_skill_distribution():
     )
 
     for emp, dept_name in employees:
-        # ---------------- JOB ROLE (FIXED) ----------------
-        job_role = emp.job_role.job_role if emp.job_role else "Unassigned"
 
-        # ---------------- EXPERIENCE CALCULATION ----------------
+        # ---------- EXPERIENCE ----------
         prev_exp = emp.prev_total_exp or 0
         doj_exp = ((today - emp.doj).days / 365) if emp.doj else 0
         total_exp = prev_exp + doj_exp
         is_fresher = total_exp < 2
 
-        # ---------------- EXPERIENCE FILTER ----------------
         if experience == "fresher" and not is_fresher:
             continue
         if experience == "experienced" and is_fresher:
             continue
-        
-        # job_role = emp.job_role or "Unassigned"
-        key = (dept_name, job_role)
 
-        # key = (dept_name, core_skill)
+        # ---------- BILLABILITY ----------
+        is_billable = (
+            db.session.query(TimesheetEntry.id)
+            .join(Project_Info, Project_Info.id == TimesheetEntry.project_id)
+            .filter(
+                TimesheetEntry.empid == emp.empid,
+                Project_Info.project_billability == "Billable"
+            )
+            .first()
+            is not None
+        )
+
+        if billable_filter == "billable" and not is_billable:
+            continue
+        if billable_filter == "non-billable" and is_billable:
+            continue
+
+        # ---------- JOB ROLE ----------
+        job_role = emp.job_role.job_role if emp.job_role else "Unassigned"
+        key = (dept_name, job_role)
 
         if key not in grouped:
             grouped[key] = {
                 "department": dept_name,
                 "job_role": job_role,
-                "total_count": 0,
-                "billable_count": 0,
-                "non_billable_count": 0,
-                "fresher_count": 0,
-                "experienced_count": 0,
+                "employees": set(),
+                "billable": set(),
+                "non_billable": set(),
                 "skill_details": set(),
             }
 
-        # ---------------- BILLABILITY CHECK ----------------
-        project_billabilities = {
-            row[0]
-            for row in (
-                db.session.query(Project_Info.project_billability)
-                .join(TimesheetEntry, Project_Info.id == TimesheetEntry.project_id)
-                .filter(TimesheetEntry.empid == emp.empid)
-                .distinct()
-                .all()
-            )
-        }
-
-        is_billable = "Billable" in project_billabilities
-
-        # ---------------- COUNTS ----------------
-        grouped[key]["total_count"] += 1
+        grouped[key]["employees"].add(emp.empid)
 
         if is_billable:
-            grouped[key]["billable_count"] += 1
+            grouped[key]["billable"].add(emp.empid)
         else:
-            grouped[key]["non_billable_count"] += 1
-
-        if is_fresher:
-            grouped[key]["fresher_count"] += 1
-        else:
-            grouped[key]["experienced_count"] += 1
+            grouped[key]["non_billable"].add(emp.empid)
 
         if emp.skill_details:
             grouped[key]["skill_details"].add(emp.skill_details)
 
-    # ---------------- RESPONSE ----------------
+    # ---------- RESPONSE ----------
     results = []
     for row in grouped.values():
+        total = len(row["employees"])
+
+        if total == 0:
+            continue  # ✅ HARD BLOCK ZERO ENTRIES
+
         results.append({
             "department": row["department"],
-            "job_role": row["job_role"],   # now STRING ✅
-            "total_count": row["total_count"],
-            "billable_count": row["billable_count"],
-            "non_billable_count": row["non_billable_count"],
-            "fresher_count": row["fresher_count"],
-            "experienced_count": row["experienced_count"],
-            # "skill_details": ", ".join(row["skill_details"]) if row["skill_details"] else None,
+            "job_role": row["job_role"],
+            "total_count": total,
+            "billable_count": len(row["billable"]),
+            "non_billable_count": len(row["non_billable"]),
             "skill_details": ", ".join(row["skill_details"]) if row["skill_details"] else None,
         })
 
     return jsonify({
         "experience": experience,
+        "billable": billable_filter,
         "data": results
     }), 200
 
@@ -4743,6 +4927,7 @@ def workforce_employee_details():
 
     department_filter = request.args.get("department")
     core_skill_filter = request.args.get("core_skill")
+    job_role_filter = request.args.get("job_role")   # ✅ NEW
     experience_filter = request.args.get("experience", "all")
     billable_filter = request.args.get("billable", "all")
 
@@ -4750,7 +4935,6 @@ def workforce_employee_details():
     response = []
     billable_count = 0
     non_billable_count = 0
-
 
     employees = (
         db.session.query(Employee_Info, Department.dept_name)
@@ -4760,7 +4944,7 @@ def workforce_employee_details():
 
     for emp, dept_name in employees:
 
-        # ---------------- EXPERIENCE ----------------
+        # -------- EXPERIENCE --------
         prev_exp = emp.prev_total_exp or 0
         doj_exp = ((today - emp.doj).days / 365) if emp.doj else 0
         total_exp = prev_exp + doj_exp
@@ -4771,7 +4955,7 @@ def workforce_employee_details():
         if experience_filter == "experienced" and is_fresher:
             continue
 
-        # ---------------- BILLABILITY ----------------
+        # -------- BILLABILITY --------
         project_billabilities = {
             row[0]
             for row in (
@@ -4785,34 +4969,38 @@ def workforce_employee_details():
 
         is_billable = "Billable" in project_billabilities
 
-        # ---- COUNT FOR SIDEBAR (DO NOT FILTER HERE) ----
+        # ---- SIDEBAR COUNTS (UNFILTERED BY DEPT/JOB ROLE) ----
         if is_billable:
             billable_count += 1
         else:
             non_billable_count += 1
-
 
         if billable_filter == "billable" and not is_billable:
             continue
         if billable_filter == "non-billable" and is_billable:
             continue
 
-        # ---------------- DEPARTMENT FILTER ----------------
+        # -------- DEPARTMENT --------
         if department_filter and dept_name != department_filter:
             continue
 
-        # ---------------- CORE SKILL FILTER ----------------
+        # -------- JOB ROLE (🔥 FIX) --------
+        emp_job_role = emp.job_role.job_role if emp.job_role else "Unassigned"
+        if job_role_filter and emp_job_role != job_role_filter:
+            continue
+
+        # -------- CORE SKILL --------
         core_skill = emp.core_skill or "Unassigned"
         if core_skill_filter and core_skill != core_skill_filter:
             continue
 
-        # ---------------- RESPONSE OBJECT ----------------
         response.append({
             "empid": emp.empid,
             "employee_name": f"{emp.fname} {emp.lname}" if emp.fname else None,
             "designation": emp.designation,
             "email": emp.email,
             "department": dept_name,
+            "job_role": emp_job_role,          # ✅ OPTIONAL BUT GOOD
             "core_skill": core_skill,
             "skill_details": emp.skill_details,
             "experience_type": "Fresher" if is_fresher else "Experienced",
