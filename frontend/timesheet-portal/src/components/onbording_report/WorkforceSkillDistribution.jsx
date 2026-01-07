@@ -611,7 +611,7 @@ const WorkforceSkillDistribution = () => {
                     displayedData.map((row, i) => (
                       <tr
                         key={i}
-                        className="border-t hover:bg-[#F8F9FF] cursor-pointer"
+                        className="border-t border-[#f1f2fb] hover:bg-[#F8F9FF] cursor-pointer"
                         onClick={() =>
                           navigate(
                             `/onboarding-reports/workforce-employees?department=${encodeURIComponent(

@@ -139,7 +139,6 @@ export default function EditEmployeePage() {
           city: emp.city || "",
           job_role_id: emp.job_role_id || "",
           custom_job_role: "",
-          job_role_id: emp.job_role_id || "", 
 
         }));
 

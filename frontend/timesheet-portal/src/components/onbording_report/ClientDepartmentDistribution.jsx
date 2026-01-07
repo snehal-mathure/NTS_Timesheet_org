@@ -246,21 +246,21 @@ const ClientDepartmentDistribution = () => {
               <>
                 <div className="overflow-x-auto rounded-2xl border border-[#e1e4f3] bg-white">
                   <table className="w-full text-sm">
-                    <thead className="bg-[#F3F5FF]">
+                    <thead className="bg-[#F3F5FF] text-xs font-semibold text-slate-600">
                       <tr className="text-left text-xs font-semibold text-slate-600">
-                        <th className="p-4 border-b font-semibold">Department</th>
+                        <th className="px-4 py-3 text-left">Department</th>
 
                         {clientList.map((client, i) => (
-                          <th key={i} className="p-4 border-b text-center font-semibold">
+                          <th key={i} className="px-4 py-3 text-center">
                             {client}
                           </th>
                         ))}
 
-                        <th className="p-4 border-b text-center font-semibold">
+                        <th className="px-4 py-3 text-center">
                           Non-Billable
                         </th>
 
-                        <th className="p-4 border-b text-center font-semibold">
+                        <th className="px-4 py-3 text-center">
                           Total Count
                         </th>
                       </tr>

@@ -353,7 +353,7 @@ const WorkforceEmployeeDetails = () => {
                 <tbody>
                   {displayedData.length > 0 ? (
                     displayedData.map((emp, i) => (
-                      <tr key={i} className="border-t hover:bg-[#F8F9FF]">
+                      <tr key={i} className="border-t border-[#f1f2fb] hover:bg-[#F8F9FF]">
                         <td className="px-4 py-3">{emp.empid}</td>
                         <td className="px-4 py-3 font-semibold">
                           {emp.employee_name}

@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import UserDashboardSidebar from "./UserDashboardSidebar";
 import chargeCodeService from "../services/UserDashboard/chargeCodeService";
 import { FiSearch, FiCheckCircle, FiX } from "react-icons/fi";
+import PageHeader from "../components/PageHeader";
 
 const SIDEBAR_STORAGE_KEY = "td_sidebar_collapsed";
 
@@ -181,13 +182,12 @@ export default function AddProjectInTimesheet() {
       <main className={`flex-1 px-6 md:px-10 py-8 ${mainMarginClass}`}>
         <div className="max-w-7xl mx-auto space-y-6">
 
-          {/* HEADER */}
-          <div className="bg-gradient-to-r from-[#4C6FFF] to-[#8B5CF6] rounded-3xl p-4 text-white shadow">
-            <h2 className="text-xl font-semibold">Assign Projects in Timesheet</h2>
-            {/* <p className="text-sm opacity-90">
-              Select a client and assign projects
-            </p> */}
-          </div>
+          
+            <PageHeader
+              section="Employees"
+              title={`Assign Project`}
+            />
+            
 
           {/* MAIN CARD */}
           <div className="bg-white rounded-3xl shadow-lg p-6">
