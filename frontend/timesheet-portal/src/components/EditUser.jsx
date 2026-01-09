@@ -403,7 +403,7 @@ export default function EditEmployeePage() {
                   </div>
 
                   {/* Department */}
-                  <div>
+                  {/* <div>
                     <label className="block text-xs font-medium text-slate-600">
                       Department
                     </label>
@@ -519,9 +519,9 @@ export default function EditEmployeePage() {
                       }
                       className="mt-1 block w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm"
                     />
-                  </div>
+                  </div> */}
 
-                  <div>
+                  {/* <div>
                     <label className="block text-xs font-medium text-slate-600">
                       Company
                     </label>
@@ -552,7 +552,7 @@ export default function EditEmployeePage() {
                       <option>Offshore</option>
                       <option>Nearshore</option>
                     </select>
-                  </div>
+                  </div> */}
                 </div>
               </section>
 
@@ -601,7 +601,7 @@ export default function EditEmployeePage() {
               </section>
 
               {/* CLIENT ASSIGNMENTS */}
-              <section className="rounded-2xl border border-slate-100 bg-[#F8F9FF] p-5">
+              {/* <section className="rounded-2xl border border-slate-100 bg-[#F8F9FF] p-5">
                 <h2 className="font-semibold mb-3 text-sm text-slate-800">
                   Client Assignments
                 </h2>
@@ -691,7 +691,7 @@ export default function EditEmployeePage() {
                 >
                   + Add Assignment
                 </button>
-              </section>
+              </section> */}
 
               {/* ACTION BUTTONS */}
               <div className="flex justify-end gap-3 border-t border-[#e5e7f5] pt-4">

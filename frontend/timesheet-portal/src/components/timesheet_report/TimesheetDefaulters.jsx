@@ -92,7 +92,14 @@ export default function TimesheetDefaulters() {
 
   /* EXPORT */
   const handleExport = () => {
-    downloadCSVDefaulters(filters);
+    const url = downloadCSVDefaulters(
+      filters.start_date,
+      filters.end_date,
+      filters.department,
+      filters.status
+    );
+
+    window.open(url, "_blank");
   };
 
   return (
