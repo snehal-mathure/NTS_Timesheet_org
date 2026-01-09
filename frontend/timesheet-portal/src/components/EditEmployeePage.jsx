@@ -4,6 +4,9 @@ import employeeService from "../services/AdminDashboard/employeeService";
 import Sidebar from "../components/Sidebar";
 import PageHeader from "../components/PageHeader";
 import { FiArrowLeft, FiX } from "react-icons/fi";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 
 const SIDEBAR_STORAGE_KEY = "td_sidebar_collapsed";
 
@@ -14,8 +17,8 @@ export default function EditEmployeePage() {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  // const [error, setError] = useState("");
+  // const [success, setSuccess] = useState("");
 
   const [departments, setDepartments] = useState([]);
   const [availableClients, setAvailableClients] = useState([]);
@@ -184,36 +187,35 @@ export default function EditEmployeePage() {
 
   const validate = () => {
     if (!form.job_role_id) {
-      setError("Job role is required.");
+      showError("Job role is required.");
       return false;
     }
     if (form.job_role_id === "custom" && !form.custom_job_role.trim()) {
-      setError("New job role name is required.");
+      showError("New job role name is required.");
       return false;
     }
     if (!form.fname.trim() || !form.lname.trim()) {
-      setError("First name and last name are required.");
+      showError("First name and last name are required.");
       return false;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
-      setError("Please enter a valid email address.");
+      showError("Please enter a valid email address.");
       return false;
     }
     if (!/^[0-9+\s]{7,20}$/.test(form.mobile || "")) {
-      setError("Please enter a valid mobile number (7–20 digits).");
+      showError("Please enter a valid mobile number (7–20 digits).");
       return false;
     }
     if (form.is_new_dept && !form.custom_dept.trim()) {
-      setError("Please provide a department name.");
+      showError("Please provide a department name.");
       return false;
     }
     for (let a of assignments) {
       if (a.clientID && !a.start_date) {
-        setError("Each assignment must have a start date.");
+        showError("Each assignment must have a start date.");
         return false;
       }
     }
-    setError("");
     return true;
   };
 
@@ -222,8 +224,8 @@ export default function EditEmployeePage() {
     if (!validate()) return;
 
     setSaving(true);
-    setError("");
-    setSuccess("");
+
+    const loadingToastId = showLoading("Updating employee...");
 
     try {
       const payload = {
@@ -239,9 +241,14 @@ export default function EditEmployeePage() {
       };
 
       const res = await employeeService.updateEmployee(empid, payload);
-      setSuccess(res.message || "Employee updated successfully");
+
+      toast.dismiss(loadingToastId);
+      toast.dismiss(); 
+      showSuccess(res.message || "Employee updated successfully!");
     } catch (err) {
-      setError(err.response?.data?.error || "Failed to update employee.");
+      toast.dismiss(loadingToastId);
+      toast.dismiss(); 
+      showError(err.response?.data?.error || "Failed to update employee.");
     } finally {
       setSaving(false);
     }
@@ -257,6 +264,41 @@ export default function EditEmployeePage() {
     );
 
   const mainMarginClass = sidebarCollapsed ? "md:ml-20" : "md:ml-60";
+
+  const showSuccess = (msg) =>
+    toast.success(msg, {
+      icon: "✅",
+      style: {
+        borderLeft: "6px solid #22c55e",
+        borderRadius: "10px",
+        background: "#ffffff",
+        color: "#1f2937",
+        fontSize: "14px",
+      },
+    });
+
+  const showError = (msg) =>
+    toast.error(msg, {
+      icon: "❌",
+      style: {
+        borderLeft: "6px solid #ef4444",
+        borderRadius: "10px",
+        background: "#ffffff",
+        color: "#1f2937",
+        fontSize: "14px",
+      },
+    });
+
+  const showLoading = (msg) =>
+    toast.loading(msg, {
+      style: {
+        borderLeft: "6px solid #3b82f6",
+        borderRadius: "10px",
+        background: "#ffffff",
+        color: "#1f2937",
+        fontSize: "14px",
+      },
+    });
 
   return (
     <div
@@ -274,6 +316,18 @@ export default function EditEmployeePage() {
       <main
         className={`flex-1 h-full overflow-y-auto px-4 md:px-10 py-6 md:py-2 transition-all duration-200 ${mainMarginClass}`}
       >
+
+        <ToastContainer
+          position="top-right"
+          autoClose={3000}
+          hideProgressBar={false}
+          closeOnClick
+          pauseOnHover
+          draggable
+          newestOnTop
+          theme="light"
+        />
+
         <div className="max-w-5xl mx-auto space-y-5 mt-4">
           <PageHeader
             section="Employees"
@@ -281,7 +335,7 @@ export default function EditEmployeePage() {
             description="Update employee details, assignments, and access information."
           />
 
-          {/* Alerts */}
+          {/* Alerts
           {error && (
             <div className="rounded-2xl px-4 py-3 text-sm bg-rose-50 text-rose-800 border border-rose-100 flex justify-between">
               <span>{error}</span>
@@ -301,7 +355,7 @@ export default function EditEmployeePage() {
                 Dismiss
               </button>
             </div>
-          )}
+          )} */}
 
           {/* MAIN CARD */}
           <div className="bg-white/90 rounded-3xl shadow-[0_24px_60px_rgba(15,23,42,0.12)] border border-[#e5e7f5] overflow-hidden">

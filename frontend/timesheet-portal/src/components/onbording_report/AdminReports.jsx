@@ -114,18 +114,6 @@ export default function AdminReports() {
   const empTypeData = report.employee_type_report?.data || [];
   const billabilityData = report.billability_report || {};
 
-  // const locationChart = {
-  //   labels: locationData.map((d) => d.location),
-  //   datasets: [
-  //     {
-  //       label: "Employees",
-  //       data: locationData.map((d) => d.count),
-  //       backgroundColor: ["#4C6FFF", "#22C55E", "#F97316"],
-  //       borderRadius: 6,
-  //     },
-  //   ],
-  // };
-
   const locationChart = {
     labels: locationData.map((d) => d.location),
     datasets: [
@@ -140,17 +128,7 @@ export default function AdminReports() {
     ],
   };
 
-  // const empTypeChart = {
-  //   labels: empTypeData.map((d) => d.type),
-  //   datasets: [
-  //     {
-  //       label: "Employees",
-  //       data: empTypeData.map((d) => d.count),
-  //       backgroundColor: ["#6366F1", "#0EA5E9", "#14B8A6"],
-  //     },
-  //   ],
-  // };
-
+  
 
   const PIE_BLUE_COLORS = [
     "#7DE7EA", // light aqua – highlights small slices
@@ -175,19 +153,7 @@ export default function AdminReports() {
     ],
   };
 
-  // const billabilityChart = {
-  //   labels: ["Billable", "Non-Billable"],
-  //   datasets: [
-  //     {
-  //       data: [
-  //         billabilityData.billable_count || 0,
-  //         billabilityData.non_billable_count || 0,
-  //       ],
-  //       backgroundColor: ["#10B981", "#EF4444"],
-  //     },
-  //   ],
-  // };
-
+  
   
 
   const billabilityChart = {
@@ -375,7 +341,7 @@ export default function AdminReports() {
 
                   <div className="relative group overflow-visible">
                     <a
-                      href="http://127.0.0.1:5000/admin/location_reports?export=csv"
+                      href="http://127.0.0.1:5000/admin/employee_type_reports?export=csv"
                       className="w-11 h-11 rounded-2xl bg-emerald-50 flex items-center justify-center 
                                 hover:bg-emerald-100 transition shadow-sm overflow-visible"
                     >
@@ -582,6 +548,3 @@ export default function AdminReports() {
     </div>
   );
 }
-
-
-

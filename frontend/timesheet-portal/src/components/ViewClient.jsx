@@ -8,6 +8,9 @@ import {
   updateClient,
   deleteClient,
 } from "../services/AdminDashboard/clientservice";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 
 const SIDEBAR_STORAGE_KEY = "td_sidebar_collapsed";
 // ❗ NEW: import icons to match ProjectList.jsx buttons
@@ -26,8 +29,8 @@ export default function ViewClients() {
   const [modalDeleteId, setModalDeleteId] = useState(null);
   const [errorModalId, setErrorModalId] = useState(null);
 
-  const [successMessage, setSuccessMessage] = useState("");
-  const successTimerRef = useRef(null);
+  // const [successMessage, setSuccessMessage] = useState("");
+  // const successTimerRef = useRef(null);
 
   const accent = "#4C6FFF";
 
@@ -42,9 +45,9 @@ export default function ViewClients() {
 
   useEffect(() => {
     loadClients();
-    return () => {
-      if (successTimerRef.current) clearTimeout(successTimerRef.current);
-    };
+    // return () => {
+    //   if (successTimerRef.current) clearTimeout(successTimerRef.current);
+    // };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -109,40 +112,46 @@ export default function ViewClients() {
     setFormValues({});
   }
 
-  const showSuccess = (msg) => {
-    setSuccessMessage(msg);
-    if (successTimerRef.current) clearTimeout(successTimerRef.current);
-    successTimerRef.current = setTimeout(() => setSuccessMessage(""), 3000);
-  };
+  // const showSuccess = (msg) => {
+  //   setSuccessMessage(msg);
+  //   if (successTimerRef.current) clearTimeout(successTimerRef.current);
+  //   successTimerRef.current = setTimeout(() => setSuccessMessage(""), 3000);
+  // };
 
   async function onSave(clientId) {
+    const loadingToast = showLoading("Updating client...");
+
     try {
       const payload = {
         client_name: formValues.client_name,
         start_date: formValues.start_date || null,
         end_date: formValues.end_date || null,
-        // daily_hours:
-        //   formValues.daily_hours === "" ? null : Number(formValues.daily_hours),
       };
 
       const res = await updateClient(clientId, payload);
+
+      toast.dismiss(loadingToast);
+
       if (res.success) {
         setClients((prev) =>
-          prev.map((c) => (c.clientID === clientId ? { ...c, ...payload } : c))
+          prev.map((c) =>
+            c.clientID === clientId ? { ...c, ...payload } : c
+          )
         );
         onCancelEdit();
-        const msg =
-          (res.data && (res.data.message || res.data.msg)) ||
-          res.message ||
-          "Client updated successfully";
-        showSuccess(msg);
+
+        showSuccess(
+          res.message || res.data?.message || "Client updated successfully!"
+        );
       } else {
-        alert(res.message || "Update failed");
+        showError(res.message || "Update failed");
       }
     } catch (err) {
-      alert(err.message || "Error updating");
+      toast.dismiss(loadingToast);
+      showError(err.message || "Error updating client");
     }
   }
+
 
   async function onDeleteConfirmed(clientId) {
     try {
@@ -171,6 +180,42 @@ export default function ViewClients() {
   const endIndex = startIndex + pageSize;
   const displayedClients = clients.slice(startIndex, endIndex);
 
+  const showSuccess = (msg) =>
+    toast.success(msg, {
+      icon: "✅",
+      style: {
+        borderLeft: "6px solid #22c55e",
+        borderRadius: "10px",
+        background: "#ffffff",
+        color: "#1f2937",
+        fontSize: "14px",
+      },
+    });
+
+  const showError = (msg) =>
+    toast.error(msg, {
+      icon: "❌",
+      style: {
+        borderLeft: "6px solid #ef4444",
+        borderRadius: "10px",
+        background: "#ffffff",
+        color: "#1f2937",
+        fontSize: "14px",
+      },
+    });
+
+  const showLoading = (msg) =>
+    toast.loading(msg, {
+      style: {
+        borderLeft: "6px solid #3b82f6",
+        borderRadius: "10px",
+        background: "#ffffff",
+        color: "#1f2937",
+        fontSize: "14px",
+      },
+    });
+
+
   return (
     <div className="min-h-screen flex" style={{ backgroundColor: "#F5F7FF" }}>
       {/* FIXED SIDEBAR */}
@@ -180,6 +225,17 @@ export default function ViewClients() {
 
       {/* MAIN */}
       <main className={`flex-1 transition-all duration-200 ${mainMarginClass} px-4 md:px-10 py-6 md:py-2`} style={{ minHeight: "100vh" }}>
+        <ToastContainer
+          position="top-right"
+          autoClose={3000}
+          hideProgressBar={false}
+          closeOnClick
+          pauseOnHover
+          draggable
+          newestOnTop
+          theme="light"
+        />
+
         <div className="max-w-5xl mx-auto mt-4 md:mt-6 space-y-5">
 
           <PageHeader
@@ -217,7 +273,7 @@ export default function ViewClients() {
               </Link>
             </div>
 
-            {/* Success banner */}
+            {/* Success banner
             {successMessage && (
               <div className="px-6 py-4 bg-emerald-50 border-t border-emerald-100">
                 <div className="max-w-5xl mx-auto flex items-center justify-between">
@@ -225,7 +281,7 @@ export default function ViewClients() {
                   <button onClick={() => setSuccessMessage("")} className="text-emerald-700 bg-emerald-100 px-2 py-1 rounded">OK</button>
                 </div>
               </div>
-            )}
+            )} */}
 
             {/* Search */}
             <div className="px-6 py-5">
