@@ -5,6 +5,9 @@ import { FiPlus, FiFolder, FiCalendar } from "react-icons/fi";
 import Sidebar from "../components/Sidebar";
 import PageHeader from "../components/PageHeader";
 import projectService from "../services/AdminDashboard/projectService";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 
 const SIDEBAR_STORAGE_KEY = "td_sidebar_collapsed";
 
@@ -24,8 +27,6 @@ export default function AddProject() {
     end_date: "",
   });
 
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
 
   // layout: track sidebar collapsed state so main content margin adjusts
   const [sidebarCollapsed, setSidebarCollapsed] = useState(
@@ -81,23 +82,64 @@ export default function AddProject() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
-    setSuccess("");
 
     const validationError = validateForm();
     if (validationError) {
-      setError(validationError);
+      showError(validationError);
       return;
     }
 
+    const loadingToast = showLoading("Creating project...");
+
     try {
       await projectService.addProject(form);
-      setSuccess("Project added successfully!");
-      setTimeout(() => navigate("/projectlist"), 1500);
+
+      toast.dismiss(loadingToast);
+      showSuccess("Project added successfully!");
+
+      setTimeout(() => navigate("/projectlist"), 1200);
     } catch (err) {
-      setError(err?.response?.data?.message || "Error adding project");
+      toast.dismiss(loadingToast);
+      showError(err?.response?.data?.message || "Error adding project");
     }
   };
+
+
+  const showSuccess = (msg) =>
+    toast.success(msg, {
+      icon: "✅",
+      style: {
+        borderLeft: "6px solid #22c55e",
+        borderRadius: "10px",
+        background: "#ffffff",
+        color: "#1f2937",
+        fontSize: "14px",
+      },
+    });
+
+  const showError = (msg) =>
+    toast.error(msg, {
+      icon: "❌",
+      style: {
+        borderLeft: "6px solid #ef4444",
+        borderRadius: "10px",
+        background: "#ffffff",
+        color: "#1f2937",
+        fontSize: "14px",
+      },
+    });
+
+  const showLoading = (msg) =>
+    toast.loading(msg, {
+      style: {
+        borderLeft: "6px solid #3b82f6",
+        borderRadius: "10px",
+        background: "#ffffff",
+        color: "#1f2937",
+        fontSize: "14px",
+      },
+    });
+
 
   // main margin classes mirror sidebar widths: collapsed -> md:ml-20 (icons only); expanded -> md:ml-72
   const mainMarginClass = sidebarCollapsed ? "md:ml-20" : "md:ml-72";
@@ -114,6 +156,17 @@ export default function AddProject() {
         className={`flex-1 transition-all duration-200 ${mainMarginClass} px-4 md:px-10 py-6 md:py-2`}
         style={{ minHeight: "100vh" }}
       >
+        <ToastContainer
+          position="top-right"
+          autoClose={3000}
+          hideProgressBar={false}
+          closeOnClick
+          pauseOnHover
+          draggable
+          newestOnTop
+          theme="light"
+        />
+
         <div className="max-w-5xl w-full mx-auto mt-4 md:mt-6 space-y-5">
           {/* Header with shared PageHeader component */}
           <PageHeader
@@ -122,7 +175,7 @@ export default function AddProject() {
             description="Link the project with a client and define its billability."
           />
 
-          {/* Alerts */}
+          {/* Alerts
           {error && (
             <div className="rounded-2xl px-4 py-3 text-sm mb-4 bg-rose-50 text-rose-800 border border-rose-100">
               {error}
@@ -132,7 +185,7 @@ export default function AddProject() {
             <div className="rounded-2xl px-4 py-3 text-sm mb-4 bg-emerald-50 text-emerald-800 border border-emerald-100">
               {success}
             </div>
-          )}
+          )} */}
 
           {/* Card with form */}
           <div className="bg-white border border-slate-100 rounded-3xl shadow-[0_14px_35px_rgba(15,23,42,0.08)] p-5 md:p-6">

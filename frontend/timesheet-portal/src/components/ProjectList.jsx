@@ -89,8 +89,8 @@ export default function ProjectList() {
 
       // 🔹 Map UI filters -> API filters
       const apiFilters = {
-        client_id: filters.client || undefined,
-        project_billability: filters.billability || undefined,
+        client: filters.client || undefined,
+        billability: filters.billability || undefined,
         project_type: filters.project_type || undefined,
       };
 
