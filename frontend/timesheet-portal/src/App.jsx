@@ -43,6 +43,7 @@ import UtilizationReport from "./components/UtilizationReport";
 import LeaveApprover from "./components/leave_report/LeaveApprover";
 import ApproverEmployees from "./components/Approver'sEmployeeList";
 import EditUser from "./components/EditUser"
+import EmployeeExcelUpload from "./components/EmployeeExcelUpload";
 function App() {
   return (
     <Router>
@@ -111,6 +112,10 @@ function App() {
         <Route path="/timesheet-approvers" element={<TimesheetApprovers />} />
         <Route path="/leave-reports-admin" element={<LeaveReportsAdmin />} />
         <Route path="/leave-approvers-admin" element={<LeaveApprover />} />
+
+
+        {/* Upload Excel */}
+        <Route path="/employee-excel-upload" element={<EmployeeExcelUpload />} />
       </Routes>
     </Router>
   );

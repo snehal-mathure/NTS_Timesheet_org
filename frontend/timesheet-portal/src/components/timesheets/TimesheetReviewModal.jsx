@@ -31,24 +31,31 @@ export default function TimesheetReviewModal({ isOpen, onClose, data }) {
   const isSubmitted = String(timesheet?.status || "").trim() === "Submitted";
 
   return (
-    <div className="fixed inset-0 flex justify-center items-center z-50 pointer-events-none">
+    <div className="fixed inset-0 z-50 pointer-events-none">
       {/* POPUP CARD */}
       <div
         className="
-          pointer-events-auto
-          backdrop-blur-xl
-          bg-white/90
-          shadow-2xl
-          border border-white/60
-          rounded-3xl
-          p-8
-          max-w-6xl
-          w-[95%]
-          max-h-[95vh]
-          overflow-y-auto
-          animate-scaleIn
-        "
+    pointer-events-auto
+    fixed
+    top-1/2
+    left-1/2
+    -translate-y-1/2
+    -translate-x-[45%]
+    backdrop-blur-md
+    bg-white
+    shadow-lg
+    border border-slate-200
+    rounded-xl
+    p-4
+    w-[900px]
+    max-w-none
+    max-h-[80vh]
+    overflow-y-auto
+    animate-scaleIn
+  "
       >
+
+
         {/* HEADER ROW WITH STATUS BADGE */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-5 gap-4">
           {/* LEFT SIDE TEXT */}

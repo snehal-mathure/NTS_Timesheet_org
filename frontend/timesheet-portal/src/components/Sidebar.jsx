@@ -53,7 +53,7 @@ const groups = [
 
 const STORAGE_KEY = "td_sidebar_collapsed";
 
-export default function Sidebar() {
+export default function Sidebar({ onUploadClick }) {
   const [collapsed, setCollapsed] = useState(() => {
     try {
       return localStorage.getItem(STORAGE_KEY) === "true";
@@ -112,6 +112,15 @@ export default function Sidebar() {
       alert("Logout failed");
     }
   }
+
+  const handleUploadClick = () => {
+    if (onUploadClick) {
+      onUploadClick();
+    } else {
+      console.warn("onUploadClick not provided");
+    }
+  };
+
 
 
   return (
@@ -436,6 +445,34 @@ export default function Sidebar() {
                     <span className="text-[11px]">Utilization</span>
                   )}
                 </NavLink>
+              </li>
+
+              {/* Upload Data */}
+              <li>
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleUploadClick();
+                    closeMobile();
+                  }}
+                  className={[
+                    baseItem,
+                    inactiveItem,
+                    "w-full text-left cursor-pointer",
+                    collapsed ? "justify-center px-1" : "",
+                  ].join(" ")}
+                >
+                  <div
+                    className="w-7 h-7 flex items-center justify-center rounded-lg"
+                    style={{ backgroundColor: softBlueBg }}
+                  >
+                    <FiBarChart2 className={iconClass} size={14} />
+                  </div>
+
+                  {!collapsed && (
+                    <span className="text-[11px]">Upload Data</span>
+                  )}
+                </button>
               </li>
             </ul>
           </nav>

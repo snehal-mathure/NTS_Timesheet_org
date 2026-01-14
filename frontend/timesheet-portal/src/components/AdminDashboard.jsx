@@ -3,6 +3,9 @@ import Sidebar from "./Sidebar";
 import { useNavigate } from "react-router-dom";
 import { getAdminDashboard } from "../services/AdminDashboard/admindashboard";
 import { logoutUser } from "../services/authservice";
+import Modal from "../components/Modal";
+import EmployeeExcelUpload from "./EmployeeExcelUpload";
+
 const BLUE_GRADIENT_COLORS = [
   "#7DE7EA",
   "#4EC3E0",
@@ -61,6 +64,13 @@ export default function AdminDashboard() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(
     typeof window !== "undefined" && localStorage.getItem(SIDEBAR_STORAGE_KEY) === "true"
   );
+
+  const [showUploadModal, setShowUploadModal] = useState(false);
+
+  const handleUploadOpen = () => {
+    setShowUploadModal(true);
+  };
+
 
   useEffect(() => {
     loadDashboard();
@@ -200,7 +210,7 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-[#EEF2FF] flex">
       {/* FIXED SIDEBAR (desktop) */}
-      <Sidebar />
+      <Sidebar onUploadClick={handleUploadOpen} />
 
       {/* Mobile Sidebar Drawer */}
       {sidebarOpen && (
@@ -218,7 +228,7 @@ export default function AdminDashboard() {
             </div>
 
             <div className="p-3 overflow-y-auto h-full">
-              <Sidebar />
+              <Sidebar onUploadClick={handleUploadOpen} />
             </div>
           </div>
         </div>
@@ -308,6 +318,13 @@ export default function AdminDashboard() {
           </section>
         </main>
       </div>
+      <Modal
+        open={showUploadModal}
+        onClose={() => setShowUploadModal(false)}
+      >
+        <EmployeeExcelUpload />
+      </Modal>
+
     </div>
   );
 }

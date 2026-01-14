@@ -1,145 +1,3 @@
-// import React, { useEffect, useState } from "react";
-// import { useLocation, useNavigate } from "react-router-dom";
-
-// // Services
-// import { getReviewTimesheet } from "../../services/TimesheestReviewServices";
-// import { submitTimesheetFinal } from "../../services/TimesheestReviewServices";
-
-// import UserDashboardSidebar from "../UserDashboardSidebar";
-
-// export default function TimesheetReview() {
-//   const location = useLocation();
-//   const navigate = useNavigate();
-
-//   // Read week_start_date from query params
-//   const weekStart = new URLSearchParams(location.search).get("week_start_date");
-
-//   const [loading, setLoading] = useState(true);
-
-//   const [rows, setRows] = useState([]);
-//   const [timesheetId, setTimesheetId] = useState(null);
-
-//   const [empName, setEmpName] = useState("");
-//   const [weekEnd, setWeekEnd] = useState("");
-//   const [status, setStatus] = useState("");
-
-//   useEffect(() => {
-//     loadReviewData();
-//   }, []);
-
-//   const loadReviewData = async () => {
-//     try {
-//       const data = await getReviewTimesheet(weekStart);
-
-//       setRows(data.rows);
-//       setTimesheetId(data.timesheet_id);
-
-//       setEmpName(data.emp_name);
-//       setWeekEnd(data.end_of_week);
-//       setStatus(data.ts_status);
-
-//     } catch (error) {
-//       console.error("Error loading review timesheet:", error);
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   const handleSubmit = async () => {
-//     try {
-//       await submitTimesheetFinal(timesheetId, weekStart);
-//       alert("Timesheet submitted successfully!");
-//       navigate("/dashboard/my_timesheets");
-//     } catch (error) {
-//       console.error("Error submitting timesheet:", error);
-//       alert("Error submitting timesheet.");
-//     }
-//   };
-
-//   const handleBackToEdit = () => {
-//     navigate(`/userdashboard?week_start_date=${weekStart}`);
-//   };
-
-//   if (loading) {
-//     return <div className="p-10 text-center">Loading review data...</div>;
-//   }
-
-//   return (
-
-//     <div className="flex min-h-screen">
-//      <UserDashboardSidebar/>
-//     <div className="p-10 flex-1">
-
-//       <h1 className="text-2xl font-bold mb-6">Timesheet Review</h1>
-
-//       {/* Employee & Week Details */}
-//       <div className="mb-4 text-gray-700">
-//         <p>Employee: <strong>{empName}</strong></p>
-//         <p>Week: <strong>{weekStart} → {weekEnd}</strong></p>
-//         <p>Status: <strong>{status || "Not Submitted"}</strong></p>
-//       </div>
-
-//       <div className="bg-white rounded-xl shadow p-6">
-//         <table className="w-full text-center">
-//           <thead>
-//             <tr className="font-semibold bg-gray-100">
-//               <th className="p-3">Client</th>
-//               <th className="p-3">Project</th>
-//               <th className="p-3">Mon</th>
-//               <th className="p-3">Tue</th>
-//               <th className="p-3">Wed</th>
-//               <th className="p-3">Thu</th>
-//               <th className="p-3">Fri</th>
-//               <th className="p-3 bg-yellow-100">Sat</th>
-//               <th className="p-3 bg-yellow-100">Sun</th>
-//               <th className="p-3">Total</th>
-//             </tr>
-//           </thead>
-
-//           <tbody>
-//             {rows.map((row, idx) => (
-//               <tr key={idx} className="border-b">
-//                 <td className="p-3">{row.client_name}</td>
-//                 <td className="p-3">{row.project_name}</td>
-//                 <td className="p-3">{row.hours.mon}</td>
-//                 <td className="p-3">{row.hours.tue}</td>
-//                 <td className="p-3">{row.hours.wed}</td>
-//                 <td className="p-3">{row.hours.thu}</td>
-//                 <td className="p-3">{row.hours.fri}</td>
-//                 <td className="p-3 bg-yellow-50">{row.hours.sat}</td>
-//                 <td className="p-3 bg-yellow-50">{row.hours.sun}</td>
-//                 <td className="p-3 font-semibold">{row.total_hours}</td>
-//               </tr>
-//             ))}
-//           </tbody>
-//         </table>
-//       </div>
-
-//       {/* Buttons */}
-//       <div className="mt-6 flex justify-between">
-        
-//         {/* Back to Edit */}
-//         <button
-//           onClick={handleBackToEdit}
-//           className="px-6 py-3 bg-gray-400 text-white rounded-xl shadow hover:bg-gray-500"
-//         >
-//           Back to Edit
-//         </button>
-
-//         {/* Submit */}
-//         <button
-//           onClick={handleSubmit}
-//           className="px-6 py-3 bg-blue-600 text-white rounded-xl shadow hover:bg-blue-700"
-//         >
-//           Submit Timesheet
-//         </button>
-//       </div>
-//     </div>
-//     </div>
-//   );
-// }
-
-
 // src/pages/TimesheetReview.jsx
 import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -285,21 +143,23 @@ const weekDates = getWeekDates(weekStart);
       <UserDashboardSidebar />
 
       {/* Main content respects sidebar width so it lines up/overlaps consistently */}
-      <main className={`flex-1 p-10 transition-all duration-200 ${mainMarginClass}`}>
+      <main className={`flex-1 p-5 transition-all duration-200 ${mainMarginClass}`}>
+        
+        <div className="mx-auto w-full max-w-4xl bg-transparent">
         {/* Header */}
         {/* Gradient Header */}
-        <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden mb-6">
+        <div className="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden mb-4">
           <div className="
             w-full 
             rounded-2xl 
             bg-gradient-to-r from-[#4C6FFF] to-[#8A7DFF]
             shadow-[0_8px_20px_rgba(76,111,255,0.18)]
-            px-5 py-3
+            px-4 py-2
             flex items-center gap-3
             text-white
           ">
             <div className="
-              w-9 h-9 rounded-xl bg-white/20 
+              w-8 h-8 rounded-xl bg-white/20 
               backdrop-blur-md border border-white/20
               flex items-center justify-center
             ">
@@ -314,7 +174,7 @@ const weekDates = getWeekDates(weekStart);
         </div>
 
               {/* Details Below Header */}
-        <div className="w-full bg-white rounded-2xl shadow-md border border-slate-200 px-6 py-5 mb-6 space-y-3">
+        <div className="w-full bg-white rounded-2xl shadow-md border border-slate-200 px-4 py-3 mb-4 space-y-2">
 
   {/* Employee */}
   <div className="flex items-center gap-2 text-sm">
@@ -524,7 +384,7 @@ const weekDates = getWeekDates(weekStart);
             </div>
 
           </div>
-
+        </div>
       </main>
     </div>
   );

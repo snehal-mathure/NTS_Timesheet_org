@@ -67,6 +67,8 @@ from flask import Flask
 from flask import jsonify
 from sqlalchemy import func, case
 from models import db, Employee_Info, Department
+from employee_upload import employee_upload_bp
+
 
 
 db = SQLAlchemy() 
@@ -86,7 +88,8 @@ CORS(
     }
 )
 
-
+app.register_blueprint(employee_upload_bp)
+ 
 @app.after_request
 def add_cors_headers(response):
     response.headers["Access-Control-Allow-Credentials"] = "true"
