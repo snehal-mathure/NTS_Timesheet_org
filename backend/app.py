@@ -23,7 +23,8 @@ from models import (
     Client_Info,
     Client_Employee,
     Holidays,
-    Leave_Entries
+    Leave_Entries,
+    JobRole
 )
 from models import JobRole
 
@@ -1065,7 +1066,11 @@ def employee_details(empid):
         "department": {
             "id": emp.department.id,
             "dept_name": emp.department.dept_name
-        } if emp.department else None
+        } if emp.department else None,
+        "job_role": {
+            "id": emp.job_role.id,
+            "job_role": emp.job_role.job_role
+        } if emp.job_role else None,
     }
 
     return jsonify({
@@ -1105,10 +1110,15 @@ def api_get_employee(empid):
             "work_location": employee.work_location,
             "country": employee.country,
             "city": employee.city,
+            "job_role_id": employee.job_role_id,
         },
         "departments": [
             {"id": d.id, "dept_name": d.dept_name}
             for d in Department.query.all()
+        ],
+        "job_roles": [
+            {"id": jr.id, "job_role": jr.job_role}
+            for jr in JobRole.query.all()
         ],
         "available_clients": [
             {"clientID": c.clientID, "client_name": c.client_name}

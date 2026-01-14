@@ -467,7 +467,7 @@ def upload_employees_from_excel(df):
             "country": normalize_value(e.country),
             "city": normalize_value(e.city),
             "core_skill": normalize_value(e.core_skill),
-    "skill_details": normalize_value(e.skill_details),
+            "skill_details": normalize_value(e.skill_details),
         }
 
     email_to_empid = {
@@ -612,7 +612,12 @@ def upload_employees_from_excel(df):
                 lwd=lwd,
                 approver_id=approver,
                 secondary_approver_id=secondary,
-                prev_total_exp=row.get("prev_total_exp")
+                prev_total_exp=row.get("prev_total_exp"),
+                work_location=row.get("work_location"),
+                country=row.get("country"),
+                city=row.get("city"),
+                core_skill=row.get("core_skill"),
+                skill_details=row.get("skill_details"),
             )
 
             emp.set_password(row.password if row.password else f"{empid}@123")

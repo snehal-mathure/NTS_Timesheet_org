@@ -71,6 +71,7 @@ export default function EditEmployeePage() {
     city: "",
     job_role_id: "",
     custom_job_role: "",
+    is_new_job_role: false,
 
   });
 
@@ -96,44 +97,36 @@ export default function EditEmployeePage() {
   useEffect(() => {
     if (!employeeLoaded || !jobRoles.length) return;
 
-    setForm((prev) => ({
-      ...prev,
-      job_role_id: prev.job_role_id ? String(prev.job_role_id) : "",
-    }));
+    const exists = jobRoles.some(
+      (r) => String(r.id) === String(form.job_role_id)
+    );
+
+    if (!exists && form.job_role_id) {
+      setForm((prev) => ({
+        ...prev,
+        job_role_id: "",
+      }));
+    }
   }, [jobRoles, employeeLoaded]);
 
 
 
+  useEffect(() => {
+    if (!employeeLoaded || !form.dept_id) return;
 
+    async function fetchRoles() {
+      try {
+        setLoadingRoles(true);
+        const res = await employeeService.getJobRolesByDepartment(form.dept_id);
+        setJobRoles(res.roles || []);
+      } finally {
+        setLoadingRoles(false);
+      }
+    }
 
+    fetchRoles();
+  }, [employeeLoaded, form.dept_id]);
 
-  // useEffect(() => {
-  //   if (!form.dept_id || form.is_new_dept) return;
-
-  //   async function fetchRoles() {
-  //     const res = await employeeService.getJobRolesByDepartment(form.dept_id);
-  //     setJobRoles(res.roles || []);
-  //   }
-
-  //   fetchRoles();
-  // }, [form.dept_id]);
-
-
-  // useEffect(() => {
-  //   async function fetchAllRoles() {
-  //     try {
-  //       setLoadingRoles(true);
-  //       const res = await employeeService.getAllJobRoles();
-  //       setJobRoles(res.roles || []);
-  //     } catch (err) {
-  //       setJobRoles([]);
-  //     } finally {
-  //       setLoadingRoles(false);
-  //     }
-  //   }
-
-  //   fetchAllRoles();
-  // }, []);
 
 
   useEffect(() => {
@@ -156,7 +149,7 @@ export default function EditEmployeePage() {
           gender: emp.gender || "",
           core_skill: emp.core_skill || "",
           skill_details: emp.skill_details || "",
-          dept_id: emp.dept_id || "",
+          dept_id: emp.dept_id ? String(emp.dept_id) : "",
           designation: emp.designation || "",
           employee_type: emp.employee_type || "",
           prev_total_exp: emp.prev_total_exp ?? "",
@@ -168,7 +161,9 @@ export default function EditEmployeePage() {
           work_location: emp.work_location || "",
           country: emp.country || "",
           city: emp.city || "",
-          job_role_id: emp.job_role_id ? String(emp.job_role_id) : "",        }));
+          job_role_id: emp.job_role_id ? String(emp.job_role_id) : "",
+          is_new_job_role: false,
+        }));
       } finally {
         setLoading(false);
         setEmployeeLoaded(true);
@@ -548,8 +543,18 @@ export default function EditEmployeePage() {
                     </label>
 
                     <select
-                      value={form.job_role_id}
-                      onChange={(e) => handleJobRoleChange(e.target.value)}
+                      value={form.is_new_job_role ? "custom" : form.job_role_id}
+                      onChange={(e) => {
+                        const v = e.target.value;
+
+                        if (v === "custom") {
+                          updateField("is_new_job_role", true);
+                          updateField("custom_job_role", "");
+                        } else {
+                          updateField("is_new_job_role", false);
+                          updateField("job_role_id", v);
+                        }
+                      }}
                       className="mt-1 block w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm"
                     >
                       <option value="">
@@ -566,18 +571,13 @@ export default function EditEmployeePage() {
                     </select>
                   </div>
 
-                  {form.job_role_id === "custom" && (
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600">
-                        New Job Role <span className="text-rose-600">*</span>
-                      </label>
-                      <input
-                        value={form.custom_job_role}
-                        onChange={(e) => updateField("custom_job_role", e.target.value)}
-                        className="mt-1 block w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm"
-                        placeholder="Enter new job role"
-                      />
-                    </div>
+                  {form.is_new_job_role && (
+                    <input
+                      className="mt-2 block w-full rounded-2xl border border-slate-300 px-3 py-2 text-sm"
+                      placeholder="New Job Role Name"
+                      value={form.custom_job_role}
+                      onChange={(e) => updateField("custom_job_role", e.target.value)}
+                    />
                   )}
 
 
