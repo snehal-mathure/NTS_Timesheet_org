@@ -725,10 +725,35 @@ def add_employee():
         return jsonify({"status": "error", "message": str(e)}), 500
 
 
+# @app.route('/admin/job-roles/<int:dept_id>', methods=['GET'])
+# def get_job_roles_by_department(dept_id):
+#     try:
+#         roles = JobRole.query.filter_by(dept_id=dept_id).order_by(JobRole.job_role).all()
+
+#         return jsonify({
+#             "status": "success",
+#             "roles": [
+#                 {
+#                     "id": role.id,
+#                     "job_role": role.job_role
+#                 }
+#                 for role in roles
+#             ]
+#         }), 200
+
+#     except Exception as e:
+#         return jsonify({
+#             "status": "error",
+#             "message": str(e)
+#         }), 500
+
+
 @app.route('/admin/job-roles/<int:dept_id>', methods=['GET'])
 def get_job_roles_by_department(dept_id):
     try:
-        roles = JobRole.query.filter_by(dept_id=dept_id).order_by(JobRole.job_role).all()
+        roles = JobRole.query.filter_by(dept_id=dept_id)\
+                             .order_by(JobRole.job_role)\
+                             .all()
 
         return jsonify({
             "status": "success",
@@ -746,6 +771,31 @@ def get_job_roles_by_department(dept_id):
             "status": "error",
             "message": str(e)
         }), 500
+    
+    
+@app.route('/admin/job-roles', methods=['GET'])
+def get_all_job_roles():
+    try:
+        roles = JobRole.query.order_by(JobRole.job_role).all()
+
+        return jsonify({
+            "status": "success",
+            "roles": [
+                {
+                    "id": role.id,
+                    "job_role": role.job_role,
+                    "dept_id": role.dept_id
+                }
+                for role in roles
+            ]
+        }), 200
+
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
+
 
 
 @app.route('/admin/job-roles', methods=['POST'])
@@ -762,10 +812,10 @@ def create_job_role():
                 "message": "Department ID and job role are required"
             }), 400
 
-        # Check duplicate role in same department
-        existing = JobRole.query.filter_by(
-            dept_id=dept_id,
-            job_role=job_role_name
+        # Check duplicate role (case-insensitive)
+        existing = JobRole.query.filter(
+            JobRole.dept_id == dept_id,
+            db.func.lower(JobRole.job_role) == job_role_name.lower()
         ).first()
 
         if existing:
@@ -797,15 +847,6 @@ def create_job_role():
             "status": "error",
             "message": str(e)
         }), 500
-
-
-@app.route("/api/departments", methods=["GET"])
-def api_get_departments():
-    depts = Department.query.order_by(Department.dept_name).all()
-    return jsonify([
-        {"id": d.id, "dept_name": d.dept_name}
-        for d in depts
-    ])
 
 
 # ===========================================

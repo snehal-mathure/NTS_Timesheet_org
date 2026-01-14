@@ -2,35 +2,49 @@
 // import { useLocation } from "react-router-dom";
 // import PageHeader from "../PageHeader";
 // import Pagination from "../Pagination";
-// import axios from "axios";
+// import { useNavigate } from "react-router-dom";
+// import { FiArrowLeft } from "react-icons/fi";
+// import {
+//   getWorkforceEmployeeDetails,
+//   exportWorkforceEmployeeDetails,
+// } from "../../services/AdminDashboard/workforceEmployeeDetails";
 
 // const SIDEBAR_STORAGE_KEY = "td_sidebar_collapsed";
 
 // const WorkforceEmployeeDetails = () => {
 //   const [data, setData] = useState([]);
+//   const [page, setPage] = useState(1);
+//   const [pageSize, setPageSize] = useState(10);
+//   const [billableCount, setBillableCount] = useState(0);
+//   const [nonBillableCount, setNonBillableCount] = useState(0);
+
 
 //   const [sidebarCollapsed, setSidebarCollapsed] = useState(
 //     typeof window !== "undefined" &&
 //       localStorage.getItem(SIDEBAR_STORAGE_KEY) === "true"
 //   );
 
-//   /* ---------------- Pagination ---------------- */
-//   const [page, setPage] = useState(1);
-//   const [pageSize, setPageSize] = useState(10);
-
+//   /* ---------------- URL PARAMS ---------------- */
 //   const location = useLocation();
 //   const params = new URLSearchParams(location.search);
 
 //   const department = params.get("department");
+//   const jobRole = params.get("job_role");
 //   const coreSkill = params.get("core_skill");
 //   const experience = params.get("experience");
 //   const billable = params.get("billable");
 
+//   const navigate = useNavigate();
+
+//   const backToList = () => {
+//     navigate(-1); // go back to previous page
+//   };
+
+
 //   /* ---------------- Sidebar Sync ---------------- */
 //   useEffect(() => {
-//     const handler = () => {
+//     const handler = () =>
 //       setSidebarCollapsed(localStorage.getItem(SIDEBAR_STORAGE_KEY) === "true");
-//     };
 
 //     window.addEventListener("td_sidebar_change", handler);
 //     window.addEventListener("storage", handler);
@@ -47,19 +61,19 @@
 //   useEffect(() => {
 //     const loadEmployees = async () => {
 //       try {
-//         const res = await axios.get(
-//           "http://127.0.0.1:5000/admin/workforce_employee_details",
-//           {
-//             params: {
-//               department,
-//               core_skill: coreSkill,
-//               experience,
-//               billable,
-//             },
-//           }
-//         );
+//         const res = await getWorkforceEmployeeDetails({
+//           department,
+//           job_role: jobRole,        // ✅ ADD THIS
+//           core_skill: coreSkill,
+//           experience,
+//           billable,
+//         });
 
-//         setData(Array.isArray(res.data?.data) ? res.data.data : []);
+//         // setData(Array.isArray(res.data) ? res.data : []);
+//         setData(res.data || []);
+//         setBillableCount(res.billable_count || 0);
+//         setNonBillableCount(res.non_billable_count || 0);
+
 //         setPage(1);
 //       } catch (err) {
 //         console.error("Employee API error:", err);
@@ -70,7 +84,30 @@
 //     loadEmployees();
 //   }, [location.search]);
 
-//   /* ---------------- Pagination Data ---------------- */
+//   /* ---------------- CSV EXPORT ---------------- */
+//   const downloadCSV = async () => {
+//     try {
+//       const response = await exportWorkforceEmployeeDetails({
+//         department,
+//         job_role: jobRole,        // ✅ ADD THIS
+//         core_skill: coreSkill,
+//         experience,
+//         billable,
+//       });
+
+//       const url = window.URL.createObjectURL(new Blob([response.data]));
+//       const link = document.createElement("a");
+//       link.href = url;
+//       link.setAttribute("download", "workforce_employee_details.csv");
+//       document.body.appendChild(link);
+//       link.click();
+//       link.remove();
+//     } catch (err) {
+//       console.error("CSV export error:", err);
+//     }
+//   };
+
+//   /* ---------------- Pagination ---------------- */
 //   const totalItems = data.length;
 //   const startIndex = (page - 1) * pageSize;
 //   const displayedData = data.slice(startIndex, startIndex + pageSize);
@@ -83,10 +120,12 @@
 //       <div className="max-w-6xl mx-auto">
 //         <PageHeader
 //           title="Employee Details"
-//           subtitle={`${department || ""} • ${coreSkill || ""}`}
+//           subtitle={`${department || "All Departments"} • ${
+//             coreSkill || "All Core Skills"
+//           }`}
 //         />
 
-//         {/* CARD WRAPPER */}
+//         {/* CARD */}
 //         <div className="bg-white/90 border border-[#e5e7f5] rounded-3xl shadow-[0_24px_60px_rgba(15,23,42,0.12)] overflow-hidden">
 
 //           {/* HEADER */}
@@ -96,15 +135,32 @@
 //                 Employee Details
 //               </h2>
 //               <p className="text-sm text-slate-500">
-//                 Department-wise employee listing
+//                 Filtered workforce employee listing
 //               </p>
 //             </div>
+
+//             {/* EXPORT */}
+//             <button
+//               onClick={downloadCSV}
+//               className="w-10 h-10 rounded-2xl bg-emerald-50 flex items-center justify-center hover:bg-emerald-100 transition shadow-sm"
+//               title="Export CSV"
+//             >
+//               <svg
+//                 xmlns="http://www.w3.org/2000/svg"
+//                 className="w-5 h-5 text-emerald-700"
+//                 fill="none"
+//                 viewBox="0 0 24 24"
+//                 strokeWidth="2"
+//                 stroke="currentColor"
+//               >
+//                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2" />
+//                 <path strokeLinecap="round" strokeLinejoin="round" d="M7 10l5 5m0 0l5-5m-5 5V4" />
+//               </svg>
+//             </button>
 //           </div>
 
 //           {/* BODY */}
 //           <div className="px-6 py-6 space-y-6">
-
-//             {/* TABLE */}
 //             <div className="overflow-x-auto rounded-2xl border border-[#e1e4f3] bg-white">
 //               <table className="w-full text-sm">
 //                 <thead className="bg-[#F3F5FF] text-xs font-semibold text-slate-600">
@@ -122,25 +178,18 @@
 //                 <tbody>
 //                   {displayedData.length > 0 ? (
 //                     displayedData.map((emp, i) => (
-//                       <tr key={i} className="border-t hover:bg-[#F8F9FF]">
+//                       <tr key={i} className="border-t border-[#f1f2fb] hover:bg-[#F8F9FF]">
 //                         <td className="px-4 py-3">{emp.empid}</td>
-
-//                         <td className="px-4 py-3 font-semibold text-slate-800">
+//                         <td className="px-4 py-3 font-semibold">
 //                           {emp.employee_name}
 //                         </td>
-
 //                         <td className="px-4 py-3">
 //                           {emp.designation || "-"}
 //                         </td>
-
 //                         <td className="px-4 py-3">{emp.email}</td>
-
-//                         {/* TOTAL EXPERIENCE */}
 //                         <td className="px-4 py-3 text-center font-semibold">
-//                           {emp.total_experience_years?.toFixed(2) || "0.00"}
+//                           {emp.total_experience_years?.toFixed(2)}
 //                         </td>
-
-//                         {/* SKILL SET */}
 //                         <td className="px-4 py-3 text-xs text-slate-600">
 //                           {emp.skill_details || "-"}
 //                         </td>
@@ -148,10 +197,7 @@
 //                     ))
 //                   ) : (
 //                     <tr>
-//                       <td
-//                         colSpan="6"
-//                         className="py-6 text-center text-slate-500"
-//                       >
+//                       <td colSpan="6" className="py-6 text-center text-slate-500">
 //                         No employees found
 //                       </td>
 //                     </tr>
@@ -160,7 +206,6 @@
 //               </table>
 //             </div>
 
-//             {/* PAGINATION */}
 //             <Pagination
 //               totalItems={totalItems}
 //               page={page}
@@ -171,7 +216,6 @@
 //                 setPage(1);
 //               }}
 //             />
-
 //           </div>
 //         </div>
 //       </div>
@@ -186,6 +230,8 @@ import React, { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import PageHeader from "../PageHeader";
 import Pagination from "../Pagination";
+import { useNavigate } from "react-router-dom";
+import { FiArrowLeft } from "react-icons/fi";
 import {
   getWorkforceEmployeeDetails,
   exportWorkforceEmployeeDetails,
@@ -215,6 +261,13 @@ const WorkforceEmployeeDetails = () => {
   const coreSkill = params.get("core_skill");
   const experience = params.get("experience");
   const billable = params.get("billable");
+
+  const navigate = useNavigate();
+
+  const backToList = () => {
+    navigate(-1); // go back to previous page
+  };
+
 
   /* ---------------- Sidebar Sync ---------------- */
   useEffect(() => {
@@ -305,13 +358,28 @@ const WorkforceEmployeeDetails = () => {
 
           {/* HEADER */}
           <div className="flex items-center justify-between px-6 py-5 border-b border-[#e5e7f5] bg-white/80">
-            <div>
-              <h2 className="text-lg font-semibold text-slate-900">
-                Employee Details
-              </h2>
-              <p className="text-sm text-slate-500">
-                Filtered workforce employee listing
-              </p>
+            <div className="flex items-center gap-3">
+              
+              {/* BACK BUTTON */}
+              <button
+                onClick={backToList}
+                className="inline-flex items-center justify-center 
+                          w-9 h-9 bg-white hover:bg-slate-100 
+                          rounded-xl border border-slate-300 transition"
+                title="Back"
+              >
+                <FiArrowLeft size={16} className="text-slate-700" />
+              </button>
+
+              {/* TITLE */}
+              <div>
+                <h2 className="text-lg font-semibold text-slate-900">
+                  Employee Details
+                </h2>
+                <p className="text-sm text-slate-500">
+                  Filtered workforce employee listing
+                </p>
+              </div>
             </div>
 
             {/* EXPORT */}
@@ -333,6 +401,7 @@ const WorkforceEmployeeDetails = () => {
               </svg>
             </button>
           </div>
+
 
           {/* BODY */}
           <div className="px-6 py-6 space-y-6">

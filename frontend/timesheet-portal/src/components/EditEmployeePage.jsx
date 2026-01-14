@@ -10,6 +10,7 @@ import "react-toastify/dist/ReactToastify.css";
 
 const SIDEBAR_STORAGE_KEY = "td_sidebar_collapsed";
 
+
 export default function EditEmployeePage() {
   const { empid: paramEmpid } = useParams();
   const empid = paramEmpid || localStorage.getItem("empid");
@@ -25,6 +26,8 @@ export default function EditEmployeePage() {
   // Job roles
   const [jobRoles, setJobRoles] = useState([]);
   const [loadingRoles, setLoadingRoles] = useState(false);
+  const [employeeLoaded, setEmployeeLoaded] = useState(false);
+
 
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(
@@ -74,42 +77,67 @@ export default function EditEmployeePage() {
   const [assignments, setAssignments] = useState([]);
 
   useEffect(() => {
-    if (!form.dept_id || form.is_new_dept) {
-      setJobRoles([]);
-      setForm((p) => ({ ...p, job_role_id: "", custom_job_role: "" }));
-      return;
-    }
+    if (!employeeLoaded || !form.dept_id) return;
 
     async function fetchRoles() {
       try {
         setLoadingRoles(true);
         const res = await employeeService.getJobRolesByDepartment(form.dept_id);
         setJobRoles(res.roles || []);
-      } catch {
-        setJobRoles([]);
       } finally {
         setLoadingRoles(false);
       }
     }
 
     fetchRoles();
-  }, [form.dept_id, form.is_new_dept]);
+  }, [employeeLoaded, form.dept_id]);
 
 
   useEffect(() => {
-    if (!form.dept_id || form.is_new_dept) return;
+    if (!employeeLoaded || !jobRoles.length) return;
 
-    async function fetchRoles() {
-      const res = await employeeService.getJobRolesByDepartment(form.dept_id);
-      setJobRoles(res.roles || []);
-    }
+    setForm((prev) => ({
+      ...prev,
+      job_role_id: prev.job_role_id ? String(prev.job_role_id) : "",
+    }));
+  }, [jobRoles, employeeLoaded]);
 
-    fetchRoles();
-  }, [form.dept_id]);
+
+
+
+
+
+  // useEffect(() => {
+  //   if (!form.dept_id || form.is_new_dept) return;
+
+  //   async function fetchRoles() {
+  //     const res = await employeeService.getJobRolesByDepartment(form.dept_id);
+  //     setJobRoles(res.roles || []);
+  //   }
+
+  //   fetchRoles();
+  // }, [form.dept_id]);
+
+
+  // useEffect(() => {
+  //   async function fetchAllRoles() {
+  //     try {
+  //       setLoadingRoles(true);
+  //       const res = await employeeService.getAllJobRoles();
+  //       setJobRoles(res.roles || []);
+  //     } catch (err) {
+  //       setJobRoles([]);
+  //     } finally {
+  //       setLoadingRoles(false);
+  //     }
+  //   }
+
+  //   fetchAllRoles();
+  // }, []);
 
 
   useEffect(() => {
-    async function load() {
+    async function loadEmployee() {
       setLoading(true);
       try {
         const res = await employeeService.getEmployee(empid);
@@ -140,21 +168,16 @@ export default function EditEmployeePage() {
           work_location: emp.work_location || "",
           country: emp.country || "",
           city: emp.city || "",
-          job_role_id: emp.job_role_id || "",
-          custom_job_role: "",
-
-        }));
-
-        setAssignments(res.assignments?.length ? res.assignments : []);
-      } catch (err) {
-        setError("Failed to load employee data.");
+          job_role_id: emp.job_role_id ? String(emp.job_role_id) : "",        }));
       } finally {
         setLoading(false);
+        setEmployeeLoaded(true);
       }
     }
 
-    if (empid) load();
+    if (empid) loadEmployee();
   }, [empid]);
+
 
 
   const handleJobRoleChange = (value) => {
@@ -534,7 +557,7 @@ export default function EditEmployeePage() {
                       </option>
 
                       {jobRoles.map((r) => (
-                        <option key={r.id} value={r.id}>
+                        <option key={r.id} value={String(r.id)}>
                           {r.job_role}
                         </option>
                       ))}

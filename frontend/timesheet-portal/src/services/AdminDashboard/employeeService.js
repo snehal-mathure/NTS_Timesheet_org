@@ -239,6 +239,14 @@ const employeeService = {
     return res.data;
   },
 
+  // ✅ CORRECT
+  getAllJobRoles: async () => {
+    const res = await API.get("/admin/job-roles");
+    return res.data;
+  },
+
+
+
   // Create new job role
   createJobRole: async (payload) => {
     const res = await API.post(`/admin/job-roles`, payload);
