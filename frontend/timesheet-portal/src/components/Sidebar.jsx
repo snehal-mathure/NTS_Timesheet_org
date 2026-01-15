@@ -14,6 +14,7 @@ import {
   FiCalendar,
   FiPieChart,
   FiBarChart2,
+  FiUpload,
   FiLogOut,
   FiSettings,
   FiChevronDown,
@@ -466,7 +467,7 @@ export default function Sidebar({ onUploadClick }) {
                     className="w-7 h-7 flex items-center justify-center rounded-lg"
                     style={{ backgroundColor: softBlueBg }}
                   >
-                    <FiBarChart2 className={iconClass} size={14} />
+                    <FiUpload className={iconClass} size={14} />
                   </div>
 
                   {!collapsed && (

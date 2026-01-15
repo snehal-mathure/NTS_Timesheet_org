@@ -3296,7 +3296,7 @@ def utilization_filters():
             {"client_name": c.client_name} for c in clients_list
         ]
     }), 200
- 
+
 
 @app.route("/admin/utilization", methods=["POST"])
 def api_utilization():
@@ -3363,13 +3363,12 @@ def api_utilization():
             if (client_start + timedelta(days=i)).weekday() < 5
         )
  
-        daily_hrs = client.daily_hours or 8
-        billable = working_days * daily_hrs
+        billable = 0
  
         emp_client_data[a.empid][client.client_name] = {
             "start_date": client_start.strftime("%Y-%m-%d"),
             "end_date": client_end.strftime("%Y-%m-%d") if a.end_date else "Ongoing",
-            "billable": billable,
+            "billable": 0,
             "billed": 0,
             "non_billable": 0,
             "projects": [],
@@ -3383,6 +3382,7 @@ def api_utilization():
             Project_Info.project_billability,
             Client_Info.client_name,
             Project_Info.project_name,
+            Project_Info.daily_hours,
         )
         .select_from(TimesheetEntry)
         .join(Project_Info, TimesheetEntry.project_id == Project_Info.id)
@@ -3396,19 +3396,26 @@ def api_utilization():
     if selected_client != "All":
         entry_query = entry_query.filter(Client_Info.client_name == selected_client)
  
-    for emp_id, hrs, bill, cname, pname in entry_query:
+    for emp_id, hrs, bill, cname, pname, project_daily_hours in entry_query:
         if emp_id not in emp_client_data or cname not in emp_client_data[emp_id]:
             continue
- 
+
         data = emp_client_data[emp_id][cname]
- 
+
         if pname and pname not in data["projects"]:
             data["projects"].append(pname)
- 
-        if (bill or "").lower() == "billable":
+
+        daily_hrs = project_daily_hours or 8   # ✅ ADD HERE
+
+        bill_type = (bill or "").lower()
+
+        if bill_type == "billable":
             data["billed"] += hrs
+            data["billable"] += daily_hrs       # ✅ project-based capacity
         else:
             data["non_billable"] += hrs
+
+
  
     # Build final results
     result = []
@@ -3528,7 +3535,6 @@ def api_download_utilization():
             Client_Info.client_name,
             Client_Employee.start_date,
             Client_Employee.end_date,
-            Client_Info.daily_hours,
             Client_Info.clientID
         )
         .select_from(Client_Employee)
@@ -3543,7 +3549,7 @@ def api_download_utilization():
  
     emp_client_data = {}
  
-    for empid, client_name, client_start, client_end, daily_hours, _ in client_assignments:
+    for empid, client_name, client_start, client_end, _ in client_assignments:
         # Enforce client filter again defensively
         if selected_client != "All" and client_name.strip().lower() != selected_client.strip().lower():
             continue
@@ -3562,13 +3568,13 @@ def api_download_utilization():
             and (client_start_adj + timedelta(days=i)) not in holiday_dates
         )
  
-        daily_hrs = daily_hours or 8
-        billable = working_days * daily_hrs
+        # daily_hrs = daily_hours or 8
+        # billable = working_days * daily_hrs
  
         emp_client_data[empid][client_name] = {
             "start_date": client_start.strftime('%Y-%m-%d') if client_start else "N/A",
             "end_date": client_end.strftime('%Y-%m-%d') if client_end else "Present",
-            "billable": billable,
+            "billable": 0,   
             "non_billable": 0,
             "billed": 0,
             "billed_utilization": 0.0,
@@ -3583,7 +3589,8 @@ def api_download_utilization():
             TimesheetEntry.hours_worked,
             Project_Info.project_billability,
             Client_Info.client_name,
-            Project_Info.project_name
+            Project_Info.project_name,
+            Project_Info.daily_hours,
         )
         .select_from(TimesheetEntry)  # ✅ IMPORTANT: remove ambiguous FROMs
         .join(Project_Info, TimesheetEntry.project_id == Project_Info.id)
@@ -3599,25 +3606,33 @@ def api_download_utilization():
  
     ts_entries = ts_query.all()
  
-    for empid, hrs, bill, cname, pname in ts_entries:
-        # Enforce client filter again defensively
+    for empid, hrs, bill, cname, pname, project_daily_hours in ts_entries:
         if selected_client != "All" and cname.strip().lower() != selected_client.strip().lower():
             continue
- 
+
         bill_type = (bill or "").strip().lower()
         cname = (cname or "").strip()
- 
-        if empid in emp_client_data:
-            for stored_client, client_data in emp_client_data[empid].items():
-                if stored_client.strip().lower() == cname.lower():
-                    if pname and pname not in client_data["projects"]:
-                        client_data["projects"].append(pname)
- 
-                    if bill_type == "billable":
-                        client_data["billed"] += hrs
-                    elif bill_type == "non-billable":
-                        client_data["non_billable"] += hrs
-                    break
+        daily_hrs = project_daily_hours or 8
+
+        if empid not in emp_client_data:
+            continue
+
+        for stored_client, client_data in emp_client_data[empid].items():
+            if stored_client.strip().lower() != cname.lower():
+                continue
+
+            # ✅ client_data is GUARANTEED here
+            if pname and pname not in client_data["projects"]:
+                client_data["projects"].append(pname)
+
+            if bill_type == "billable":
+                client_data["billed"] += hrs
+                client_data["billable"] += daily_hrs   # ✅ project-based capacity
+            elif bill_type == "non-billable":
+                client_data["non_billable"] += hrs
+
+            break  # stop after matching client
+
  
     # --- Utilization % ---
     for emp_clients in emp_client_data.values():
@@ -3669,18 +3684,14 @@ def api_download_utilization():
     filename = f"utilization_report_{start_date}_to_{end_date}.csv"
  
     # ✅ JSON-only response (no flash, no redirect, no HTML)
-    return jsonify({
-        "status": "success",
-        "filename": filename,
-        "file": csv_content,
-        "filters": {
-            "start_date": start_date,
-            "end_date": end_date,
-            "department": selected_department,
-            "employee": selected_employee,
-            "client": selected_client
+    return Response(
+        csv_content,
+        mimetype="text/csv",
+        headers={
+            "Content-Disposition": f"attachment; filename={filename}",
+            "Cache-Control": "no-cache"
         }
-    }), 200
+    )
 
 
 @app.route("/api/utilization_data", methods=["GET"])
