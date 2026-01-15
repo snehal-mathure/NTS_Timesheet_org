@@ -261,15 +261,6 @@ export default function AdminDashboard() {
                   </p>
                 </div>
               </div>
-
-              {/* Logout Desktop */}
-              {/* <button
-                onClick={handleLogout}
-                className="hidden md:block text-red-600 hover:text-red-700 transition"
-                title="Sign Out"
-              >
-                <FiLogOut size={24} strokeWidth={2.4} />
-              </button> */}
             </div>
           </div>
 

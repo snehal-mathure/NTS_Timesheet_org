@@ -47,7 +47,6 @@ export default function TimesheetReview() {
       window.removeEventListener("td_sidebar_change", handler);
       window.removeEventListener("storage", handler);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadReviewData = async () => {

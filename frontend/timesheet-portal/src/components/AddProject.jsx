@@ -175,18 +175,6 @@ export default function AddProject() {
             description="Link the project with a client and define its billability."
           />
 
-          {/* Alerts
-          {error && (
-            <div className="rounded-2xl px-4 py-3 text-sm mb-4 bg-rose-50 text-rose-800 border border-rose-100">
-              {error}
-            </div>
-          )}
-          {success && (
-            <div className="rounded-2xl px-4 py-3 text-sm mb-4 bg-emerald-50 text-emerald-800 border border-emerald-100">
-              {success}
-            </div>
-          )} */}
-
           {/* Card with form */}
           <div className="bg-white border border-slate-100 rounded-3xl shadow-[0_14px_35px_rgba(15,23,42,0.08)] p-5 md:p-6">
             <form onSubmit={handleSubmit} className="space-y-8">

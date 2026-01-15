@@ -4,16 +4,8 @@ import UserDashboardSidebar from "./UserDashboardSidebar";
 
 const STORAGE_KEY = "td_sidebar_collapsed";
 
-/**
- * DashboardLayout
- * - Default behavior: sidebar OPEN (expanded) on first visit (unless user previously collapsed it).
- * - When open => sidebar overlays content (no left margin).
- * - When collapsed => content gets md:ml-20 so icon rail is visible.
- */
+
 export default function DashboardLayout({ children, className = "" }) {
-  // Determine initial collapsed state:
-  // - If not set in localStorage => default to false (expanded/open).
-  // - If set => use the stored value.
   const getInitialCollapsed = () => {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw === null) return false; // default -> OPEN

@@ -104,7 +104,6 @@ export default function MyTimesheets() {
   useEffect(() => {
     const totalPages = Math.max(1, Math.ceil((timesheets?.length || 0) / pageSize));
     if (page > totalPages) setPage(totalPages);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timesheets, pageSize]);
 
   // compute displayed slice

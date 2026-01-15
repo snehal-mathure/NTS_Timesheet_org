@@ -42,11 +42,9 @@ export default function ApprovalHistory() {
       window.removeEventListener("td_sidebar_change", onCustom);
       window.removeEventListener("storage", onStorage);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
-    // Skip initial load (already handled by loadInitialData)
     if (!mountedRef.current) return;
 
     const timer = setTimeout(() => {
@@ -71,19 +69,6 @@ export default function ApprovalHistory() {
       if (mountedRef.current) setLoading(false);
     }
   };
-
-  // const handleFilter = async () => {
-  //   setLoading(true);
-  //   try {
-  //     const data = await approvalHistoryService.getFiltered(filters);
-  //     if (!mountedRef.current) return;
-  //     setTimesheets(data.timesheets || []);
-  //   } catch (err) {
-  //     console.error("Filter error", err);
-  //   } finally {
-  //     if (mountedRef.current) setLoading(false);
-  //   }
-  // };
 
   const handleFilter = async () => {
     setLoading(true);
@@ -157,24 +142,6 @@ export default function ApprovalHistory() {
     );
   };
 
-
-  // const renderStatusPill = (status) => {
-  //   return (
-  //     <span
-  //       className={`inline-flex items-center justify-center px-4 py-1.5 rounded-full 
-  //                   text-xs font-semibold transition-all ${
-  //         status === "Approved"
-  //           ? "bg-emerald-600 text-white"
-  //           : status === "Submitted"
-  //           ? "bg-blue-50 text-blue-600 border border-blue-300 hover:bg-blue-100"
-  //           : "bg-rose-500 text-white"
-  //       }`}
-  //     >
-  //       {status}
-  //     </span>
-  //   );
-  // };
-
   return (
     <div className="min-h-screen flex bg-[#F5F7FF]">
       <UserDashboardSidebar />
@@ -187,21 +154,6 @@ export default function ApprovalHistory() {
             title="Approve Timesheets"
             description="View approval history and manage approved timesheets."
           />
-          {/* Download CSV */}
-          {/* <div className="flex justify-start">
-            <a
-              href={loading ? undefined : approvalHistoryService.getDownloadURL(filters)}
-              title={loading ? "Loading..." : "Download CSV"}
-              className={`inline-flex items-center justify-center p-2 rounded-xl 
-                border transition ${
-                  loading
-                    ? "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed"
-                    : "bg-green-100 text-green-700 border-green-200 hover:bg-green-200"
-                }`}
-            >
-              <FiDownload size={16} />
-            </a>
-          </div> */}
 
           {/* Filters card */}
           <div className="bg-white/90 border border-[#e5e7f5] rounded-3xl shadow-[0_24px_60px_rgba(15,23,42,0.06)] overflow-hidden">
@@ -248,21 +200,6 @@ export default function ApprovalHistory() {
 
               </div>
             </div>
-            {/* <div className="px-6 py-5 border-b border-[#e5e7f5] bg-white/80">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-[#F3F5FF] flex items-center justify-center shadow-sm">
-                    <svg className="w-6 h-6 text-[#4C6FFF]" fill="none" viewBox="0 0 24 24">
-                      <path d="M3 7a2 2 0 012-2h4l2 2h6a2 2 0 012 2v7a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" stroke="currentColor" strokeWidth="1.4" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-slate-900">Approval History</h3>
-                    <p className="text-sm text-slate-500">Filter and export approved timesheets.</p>
-                  </div>
-                </div>
-              </div>
-            </div> */}
 
             <div className="px-6 py-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -351,13 +288,6 @@ export default function ApprovalHistory() {
                 </div>
 
                 <div className="flex items-end">
-                  {/* <button
-                    onClick={handleFilter}
-                    className="w-full md:w-auto inline-flex items-center justify-center gap-2 px-4 py-2 rounded-2xl text-white font-semibold"
-                    style={{ background: `linear-gradient(135deg, ${accent}, #6C5CE7)` }}
-                  >
-                    Apply Filter
-                  </button> */}
                 </div>
               </div>
             </div>

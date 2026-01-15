@@ -13,9 +13,6 @@ export const getClientReports = async () => {
 
         console.log("Raw API response:", response);
         console.log("response.data:", response.data);
-
-        // Flask returns nested structure: { key: value, key: [...] }
-        // Extract the array from the response
         if (Array.isArray(response.data)) {
             return response.data;  // Direct array
         } else if (response.data?.data && Array.isArray(response.data.data)) {

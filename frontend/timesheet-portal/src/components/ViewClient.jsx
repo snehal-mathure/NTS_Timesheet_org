@@ -28,10 +28,6 @@ export default function ViewClients() {
   const [search, setSearch] = useState("");
   const [modalDeleteId, setModalDeleteId] = useState(null);
   const [errorModalId, setErrorModalId] = useState(null);
-
-  // const [successMessage, setSuccessMessage] = useState("");
-  // const successTimerRef = useRef(null);
-
   const accent = "#4C6FFF";
 
   // layout: track sidebar collapsed state so main content margin adjusts
@@ -45,10 +41,6 @@ export default function ViewClients() {
 
   useEffect(() => {
     loadClients();
-    // return () => {
-    //   if (successTimerRef.current) clearTimeout(successTimerRef.current);
-    // };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -78,9 +70,6 @@ export default function ViewClients() {
   useEffect(() => {
     const totalPages = Math.max(1, Math.ceil(clients.length / pageSize));
     if (page > totalPages) setPage(totalPages);
-    // if clients changed (e.g., new search) move to page 1
-    // We'll reset to 1 when search changes or new load completes, but keep this safe clamp here.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clients, pageSize]);
 
   async function loadClients(q = "") {
@@ -103,7 +92,6 @@ export default function ViewClients() {
       client_name: client.client_name || "",
       start_date: client.start_date?.slice(0, 10) || "",
       end_date: client.end_date?.slice(0, 10) || "",
-      // daily_hours: client.daily_hours ?? "",
     });
   }
 
@@ -111,12 +99,6 @@ export default function ViewClients() {
     setEditingId(null);
     setFormValues({});
   }
-
-  // const showSuccess = (msg) => {
-  //   setSuccessMessage(msg);
-  //   if (successTimerRef.current) clearTimeout(successTimerRef.current);
-  //   successTimerRef.current = setTimeout(() => setSuccessMessage(""), 3000);
-  // };
 
   async function onSave(clientId) {
     const loadingToast = showLoading("Updating client...");
@@ -273,16 +255,6 @@ export default function ViewClients() {
               </Link>
             </div>
 
-            {/* Success banner
-            {successMessage && (
-              <div className="px-6 py-4 bg-emerald-50 border-t border-emerald-100">
-                <div className="max-w-5xl mx-auto flex items-center justify-between">
-                  <div className="text-emerald-800 text-sm">{successMessage}</div>
-                  <button onClick={() => setSuccessMessage("")} className="text-emerald-700 bg-emerald-100 px-2 py-1 rounded">OK</button>
-                </div>
-              </div>
-            )} */}
-
             {/* Search */}
             <div className="px-6 py-5">
               <form onSubmit={onSearchSubmit} className="flex flex-col md:flex-row gap-3 md:items-center">
@@ -332,7 +304,6 @@ export default function ViewClients() {
                         <th className="py-3 px-4 text-left font-medium">Name</th>
                         <th className="py-3 px-4 text-left font-medium">Start Date</th>
                         <th className="py-3 px-4 text-left font-medium">End Date</th>
-                        {/* <th className="py-3 px-4 text-left font-medium">Daily Hours</th> */}
                         <th className="py-3 px-4 text-left font-medium">Actions</th>
                       </tr>
                     </thead>
@@ -398,26 +369,6 @@ export default function ViewClients() {
                                 client.end_date?.slice(0, 10)
                               )}
                             </td>
-
-                            {/* Daily Hours */}
-                            {/* <td className="py-3 px-4">
-                              {editingId === client.clientID ? (
-                                <input
-                                  type="number"
-                                  step="0.5"
-                                  className="px-2 py-2 rounded-xl border w-20"
-                                  value={formValues.daily_hours}
-                                  onChange={(e) =>
-                                    setFormValues({
-                                      ...formValues,
-                                      daily_hours: e.target.value,
-                                    })
-                                  }
-                                />
-                              ) : (
-                                client.daily_hours
-                              )}
-                            </td> */}
 
                             {/* ACTION BUTTONS — UPDATED TO MATCH PROJECTLIST.JSX */}
                             <td className="py-3 px-4">

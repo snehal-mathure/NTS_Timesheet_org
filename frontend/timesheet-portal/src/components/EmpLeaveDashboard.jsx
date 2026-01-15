@@ -93,8 +93,6 @@ export default function EmpLeaveDashboard() {
   };
 
   // compute main margin:
-  // - sidebarCollapsed === true  -> show icon rail width (md:ml-20)
-  // - sidebarCollapsed === false -> show full sidebar width (md:ml-72)
   const mainMarginClass = sidebarCollapsed ? "md:ml-20" : "md:ml-60";
 
   return (
@@ -146,7 +144,6 @@ export default function EmpLeaveDashboard() {
                     Object.entries(balance).map(([type, count]) => (
                       <div
                         key={type}
-                        // className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm"
                         className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm text-center flex flex-col items-center justify-center"
                       >
                         <h4 className="text-sm font-semibold text-slate-600 mb-2">
@@ -185,14 +182,6 @@ export default function EmpLeaveDashboard() {
                   >
                     Apply for Leave
                   </Link>
-
-                  {/* <Link
-                    to="/applyleave"
-                    className="inline-flex items-center gap-2 text-white px-2 py-0 rounded-2xl text-xs"
-                    style={{ background: "linear-gradient(135deg,#4C6FFF,#6C5CE7)" }}
-                  >
-                    Apply for Leave
-                  </Link> */}
                 </div>
 
                 {/* Filters */}

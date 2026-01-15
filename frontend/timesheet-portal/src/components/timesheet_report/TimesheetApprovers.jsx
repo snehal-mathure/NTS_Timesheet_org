@@ -75,7 +75,6 @@ export default function TimesheetApprovers() {
   /* ✅ LIVE AUTO FILTERING */
   useEffect(() => {
     loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters]);
 
   /* Input change */

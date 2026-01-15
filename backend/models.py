@@ -5,14 +5,6 @@ from datetime import date
 import os
 
 db = SQLAlchemy()  
-
-# class User(db.Model):
-#     id = db.Column(db.Integer, primary_key=True)
-#     name = db.Column(db.String(100))
-
- 
-#Onboarding
-
 class Department(db.Model):
     __tablename__ = 'departments'
     id = db.Column(db.Integer, primary_key=True)
@@ -138,9 +130,6 @@ class Client_Employee(db.Model):
     employee = db.relationship('Employee_Info', backref=db.backref('assigned_clients', lazy=True))
     client = db.relationship('Client_Info', backref=db.backref('assigned_employees', lazy=True))
  
- 
-#Timesheets
- 
 # Timesheet model for storing work hours per day
 class Timesheet(db.Model):
     __tablename__ = 'timesheets'
@@ -173,10 +162,7 @@ class TimesheetEntry(db.Model):
     timesheet = db.relationship('Timesheet', backref=db.backref('entries', lazy=True))
     project = db.relationship('Project_Info', backref=db.backref('timesheet_entries', lazy=True))
  
- 
- 
 #######Leaves
-
 class LeaveType(db.Model):
     __tablename__ = 'leave_type'
     leave_id = db.Column(db.Integer, primary_key=True)

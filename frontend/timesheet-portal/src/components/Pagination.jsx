@@ -1,16 +1,5 @@
 import React, { useMemo } from "react";
 import PropTypes from "prop-types";
-
-/**
- * Props
- * - totalItems (number)
- * - page (number)
- * - pageSize (number)
- * - onPageChange (fn: newPage) 
- * - onPageSizeChange (fn: newSize)
- * - pageSizeOptions (array) default [5,10,20,50]
- * - maxButtons (number) default 7
- */
 export default function Pagination({
   totalItems,
   page,

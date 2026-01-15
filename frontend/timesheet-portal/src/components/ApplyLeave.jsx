@@ -56,7 +56,6 @@ export default function ApplyLeave() {
     async function load() {
       try {
         const res = await applyLeaveService.getFormData();
-        // expected keys: leave_balance, public_holidays, restricted_holidays, disable_submit
         if (!mounted) return;
         setLeaveBalances(res.leave_balance || []);
         setPublicHolidays((res.public_holidays || []).map((h) => h.start_date));
@@ -326,7 +325,6 @@ export default function ApplyLeave() {
   const accent = "#4C6FFF";
 
   // --- SMALL (subtle) OVERLAP SETTINGS ---
-  // w-72 sidebar ~= 18rem; we set margin slightly smaller so main overlaps a bit.
   const expandedLeft = "16rem"; // ~2rem overlap when sidebar expanded
   const collapsedLeft = "5rem";  // ~1rem overlap when sidebar collapsed
   const mainMarginLeft = sidebarCollapsed ? collapsedLeft : expandedLeft;

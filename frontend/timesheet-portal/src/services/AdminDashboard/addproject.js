@@ -1,5 +1,3 @@
-// src/services/api.js
-// Unified API service file for Clients + Projects
 
 const BASE_URL = "http://127.0.0.1:5000";
 

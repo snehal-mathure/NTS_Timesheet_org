@@ -18,9 +18,6 @@ export default function EditEmployeePage() {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  // const [error, setError] = useState("");
-  // const [success, setSuccess] = useState("");
-
   const [departments, setDepartments] = useState([]);
   const [availableClients, setAvailableClients] = useState([]);
   // Job roles
@@ -352,28 +349,6 @@ export default function EditEmployeePage() {
             title={`Edit Employee — ${form.fname} ${form.lname} (${form.empid})`}
             description="Update employee details, assignments, and access information."
           />
-
-          {/* Alerts
-          {error && (
-            <div className="rounded-2xl px-4 py-3 text-sm bg-rose-50 text-rose-800 border border-rose-100 flex justify-between">
-              <span>{error}</span>
-              <button onClick={() => setError("")} className="text-xs underline">
-                Dismiss
-              </button>
-            </div>
-          )}
-
-          {success && (
-            <div className="rounded-2xl px-4 py-3 text-sm bg-emerald-50 text-emerald-800 border border-emerald-100 flex justify-between">
-              <span>{success}</span>
-              <button
-                onClick={() => setSuccess("")}
-                className="text-xs underline"
-              >
-                Dismiss
-              </button>
-            </div>
-          )} */}
 
           {/* MAIN CARD */}
           <div className="bg-white/90 rounded-3xl shadow-[0_24px_60px_rgba(15,23,42,0.12)] border border-[#e5e7f5] overflow-hidden">

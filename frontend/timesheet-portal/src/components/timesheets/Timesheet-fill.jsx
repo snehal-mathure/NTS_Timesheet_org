@@ -121,7 +121,6 @@ export default function TimesheetDashboard() {
   // Whenever weekStart changes, reload clients & dashboard (clients first)
   useEffect(() => {
     loadDropdownDataAndDashboard();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [weekStart]);
 
   // If URL changes (for example user clicked Back to Edit and URL contains week_start_date),
@@ -136,7 +135,6 @@ export default function TimesheetDashboard() {
         setWeekStart(d);
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.search]);
 
   // listen for sidebar toggle events (same-tab custom event 'td_sidebar_change' or storage from other tabs)
@@ -175,7 +173,6 @@ export default function TimesheetDashboard() {
   const loadDashboard = async (weekStartDate, clientList = []) => {
     try {
       const response = await getDashboardData(weekStartDate);
-      // Your backend returns { status: "success", data: { ..., rows: [...] } }
       const backend = response.data || response; // handle both shapes safely
       const payload = backend.data || backend; // in case response.data.data used
 
@@ -652,16 +649,6 @@ export default function TimesheetDashboard() {
                               cursor-default
                             "
                           />
-                          {/* <div
-                            className="inline-flex items-center justify-center min-w-[3.2rem] px-3 py-1 rounded-xl border border-[#C9D7FF] bg-[#F3F6FF] text-[11px] md:text-xs"
-                            // className="w-12 md:w-14 h-8 rounded-xl px-2.5 text-center text-xs md:text-sm border border-[#C9D7FF] bg-[#F3F6FF] text-[#17408A] font-semibold cursor-default"
-                            style={{
-                              color: "#17408A",
-                              fontWeight: 600,
-                            }}
-                          >
-                            {rowTotal.toFixed(1)}
-                          </div> */}
                         </td>
                       </tr>
                     );
@@ -711,16 +698,6 @@ export default function TimesheetDashboard() {
                                 cursor-default
                               `}
                             />
-                            {/* <div
-                              className={`inline-flex items-center justify-center min-w-[3.2rem] px-3 py-1 rounded-xl border text-[11px] md:text-xs ${
-                                isWeekend
-                                  ? "bg-[#FFF9EC] border-[#F2DCA2]"
-                                  : "bg-white border-[#C9D7FF]"
-                              }`}
-                              style={{ color: "#17408A" }}
-                            >
-                              {total.toFixed(1)}
-                            </div> */}
                           </td>
                         );
                       }
@@ -728,7 +705,6 @@ export default function TimesheetDashboard() {
 
                     <td className="p-2.5 text-center align-middle">
                       <div
-                        // className="inline-flex items-center justify-center min-w-[3.2rem] px-3 py-1 rounded-xl border border-[#C9D7FF] bg-white text-[11px] md:text-xs"
                         className="
                           w-12 md:w-14 h-8
                           rounded-xl px-2.5
