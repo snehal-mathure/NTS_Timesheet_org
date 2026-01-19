@@ -5,14 +5,6 @@ from datetime import date
 import os
 
 db = SQLAlchemy()  
-
-# class User(db.Model):
-#     id = db.Column(db.Integer, primary_key=True)
-#     name = db.Column(db.String(100))
-
- 
-#Onboarding
-
 class Department(db.Model):
     __tablename__ = 'departments'
     id = db.Column(db.Integer, primary_key=True)
@@ -34,6 +26,11 @@ class Employee_Info(db.Model):
 
     password = db.Column(db.String(120), nullable=False)
     approver_id = db.Column(db.String(50), db.ForeignKey('employee_info.empid', name='fk_approver_id'), nullable=True)
+    secondary_approver_id = db.Column(
+    db.String(50),
+    db.ForeignKey('employee_info.empid', name='fk_secondary_approver_id'),
+    nullable=True
+)
 
     # Remaining columns...
     mobile = db.Column(db.String(15), nullable=True)
@@ -51,6 +48,11 @@ class Employee_Info(db.Model):
     doj = db.Column(db.Date, nullable=True)
     lwd = db.Column(db.Date, nullable=True)
     prev_total_exp = db.Column(db.Float, nullable=True)
+    role = db.Column(db.String(20), nullable=False, default="Employee")
+    job_role_id = db.Column(db.Integer, db.ForeignKey('job_roles.id'), nullable=True)
+
+    job_role = db.relationship('JobRole', backref=db.backref('employees', lazy=True))
+
 
     # Relationship to department
     department = db.relationship('Department', back_populates='employees')
@@ -80,11 +82,10 @@ class Project_Info(db.Model):
     end_date = db.Column(db.Date, nullable=True)
     project_billability = db.Column(db.String(20), nullable=True, default="Billable")
     project_type = db.Column(db.String(50), nullable=True)
+    daily_hours = db.Column(db.Float, nullable=True)
 
     def __repr__(self):
-        return (f'<Project {self.client.client_name} - {self.project_name} (Code: {self.project_code}), '
-                f'Start: {self.start_date}, End: {self.end_date}, '
-                f'Billability: {self.project_billability}, Type: {self.project_type}>')
+        return (f'<Project {self.client.client_name} - {self.project_name} (Code: {self.project_code}), 'f'Start: {self.start_date}, End: {self.end_date}, 'f'Billability: {self.project_billability}, Type: {self.project_type},'f'Daily Hours: {self.daily_hours}>')
 
 
 # Association table for many-to-many relationship between Employee_Info and Project_Info
@@ -106,12 +107,11 @@ class Client_Info(db.Model):
     client_name = db.Column(db.String(100), nullable=False)  # Client Name
     start_date = db.Column(db.Date, nullable=True)  # Start Date
     end_date = db.Column(db.Date, nullable=True)  # End Date (nullable, as the client relationship might be ongoing)
-    daily_hours = db.Column(db.Float, nullable=True)  # New column for daily hours
+    # daily_hours = db.Column(db.Float, nullable=True)  # New column for daily hours
  
     def __repr__(self):
         return (f'<Client {self.client_name} (ID: {self.clientID}), '
-                f'Start: {self.start_date}, End: {self.end_date}, '
-                f'Daily Hours: {self.daily_hours}>')
+                f'Start: {self.start_date}, End: {self.end_date}>')
  
 # Association table for many-to-many relationship between Employee_Info and Client_Info
 class Client_Employee(db.Model):
@@ -129,9 +129,6 @@ class Client_Employee(db.Model):
    
     employee = db.relationship('Employee_Info', backref=db.backref('assigned_clients', lazy=True))
     client = db.relationship('Client_Info', backref=db.backref('assigned_employees', lazy=True))
- 
- 
-#Timesheets
  
 # Timesheet model for storing work hours per day
 class Timesheet(db.Model):
@@ -165,10 +162,7 @@ class TimesheetEntry(db.Model):
     timesheet = db.relationship('Timesheet', backref=db.backref('entries', lazy=True))
     project = db.relationship('Project_Info', backref=db.backref('timesheet_entries', lazy=True))
  
- 
- 
 #######Leaves
-
 class LeaveType(db.Model):
     __tablename__ = 'leave_type'
     leave_id = db.Column(db.Integer, primary_key=True)
@@ -242,4 +236,22 @@ class Leave_Entries(db.Model):
  
     def __repr__(self):
         return f"<LeaveEntry {self.date} | Half: {self.is_half} ({self.half_type})>"
+    
+
+class JobRole(db.Model):
+    __tablename__ = 'job_roles'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    dept_id = db.Column(db.Integer, db.ForeignKey('departments.id', ondelete='CASCADE'),nullable=False)
+    job_role = db.Column(db.String(100), nullable=False)
+
+    # Relationship
+    department = db.relationship(
+        'Department',
+        backref=db.backref('job_roles', cascade='all, delete-orphan', lazy=True)
+    )
+
+    def __repr__(self):
+        return f'<JobRole {self.job_role} (Dept ID: {self.dept_id})>'
+
  
