@@ -71,6 +71,8 @@ from models import db, Employee_Info, Department
 from employee_upload import employee_upload_bp
 
 
+from flasgger import Swagger
+
 
 db = SQLAlchemy() 
 
@@ -98,6 +100,7 @@ def add_cors_headers(response):
     response.headers["Access-Control-Allow-Methods"] = "GET,POST,PUT,DELETE,OPTIONS"
     return response
 
+swagger = Swagger(app)
 
 db_path = os.path.join(app.root_path, 'mydatabase.db') #this is for local
 # db_path = '/home/nts_sqlite_db/mydatabase.db'          #this for server
@@ -125,7 +128,6 @@ CORS(app, supports_credentials=True)  # Allow requests from React frontend
 def register():
     # Get JSON data from frontend
     data = request.get_json()
-
     empid = data.get("empid")
     fname = data.get("fname")
     lname = data.get("lname")
@@ -135,38 +137,48 @@ def register():
     dept_id = data.get("dept_id")
     approver_id = data.get("approver_id")
 
-    # Check if passwords match
+    # Validate required fields
+    required = ["empid", "fname", "lname", "email", "password", "confirm_password", "dept_id"]
+    for field in required:
+        if not data.get(field):
+            return jsonify({"error": f"{field} is required"}), 400
+
+    # Check password match
     if password != confirm_password:
-        return jsonify({"error": "Passwords do not match. Please try again."}), 400
+        return jsonify({"error": "Passwords do not match"}), 400
 
-    # Check if the email already exists
-    user = Employee_Info.query.filter_by(email=email).first()
-    if user:
-        return jsonify({"error": "Email already registered. Please log in."}), 400
+    # Check email exists
+    if Employee_Info.query.filter_by(email=email).first():
+        return jsonify({"error": "Email already registered"}), 409
 
-    # Check if the empid already exists
-    existing_emp = Employee_Info.query.filter_by(empid=empid).first()
-    if existing_emp:
-        return jsonify({"error": "Employee ID already exists. Please choose a different one."}), 400
+    # Check empid exists
+    if Employee_Info.query.filter_by(empid=empid).first():
+        return jsonify({"error": "Employee ID already exists"}), 409
+# >>>>>>> Stashed changes
 
     # Validate approver_id if provided
     if approver_id:
         approver = Employee_Info.query.filter_by(empid=approver_id).first()
         if not approver:
-            return jsonify({"error": f"No employee found with empid {approver_id}. Please provide a valid approver ID."}), 400
+# <<<<<<< Updated upstream
+#             return jsonify({"error": f"No employee found with empid {approver_id}. Please provide a valid approver ID."}), 400
 
-    # Create a new user instance and hash the password
+#     # Create a new user instance and hash the password
+# =======
+            return jsonify({"error": f"No employee found with empid {approver_id}"}), 400
+
+    # Create user
+# >>>>>>> Stashed changes
     new_user = Employee_Info(
         empid=empid,
         fname=fname,
         lname=lname,
         email=email,
         dept_id=dept_id,
-        approver_id=approver_id if approver_id else None,
+        approver_id=approver_id if approver_id else None
     )
-    new_user.set_password(password)  # same password hashing method
+    new_user.set_password(password)
 
-    # Add the new user to the database
     db.session.add(new_user)
     db.session.commit()
 
@@ -180,9 +192,14 @@ def login():
     email = data.get("email")
     password = data.get("password")
 
+    # Basic validation
     if not email or not password:
-        return jsonify({"error": "Please enter both email and password"}), 400
+        return jsonify({
+            "status": "error",
+            "message": "Email and password are required"
+        }), 400
 
+    # Query user by email
     user = Employee_Info.query.filter_by(email=email).first()
 
     if user and (user.password == password or check_password_hash(user.password, password)):
@@ -1304,6 +1321,7 @@ def edit_employee(empid):
 
     
 
+# Need to check
 @app.route('/get_approvers_by_department')
 def get_approvers_by_department():
     dept = request.args.get('dept')
@@ -1512,7 +1530,10 @@ def manage_holidays():
 
 
 
-@app.route('/admin/delete_holiday/<int:holiday_id>', methods=['POST'])
+
+
+# Delete holiday by holiday_id
+@app.route('/admin/delete_holiday/<int:holiday_id>', methods=['DELETE'])
 def delete_holiday(holiday_id):
     if 'user_id' not in session:
         return jsonify({"error": "You must log in first."}), 401
@@ -1520,8 +1541,9 @@ def delete_holiday(holiday_id):
     if session['user_id'] != 'N0482':
         return jsonify({"error": "You do not have permission to access the admin dashboard"}), 403
 
-    delete_sql = text("DELETE FROM holidays WHERE id = :holiday_id")
-    db.session.execute(delete_sql, {"holiday_id": holiday_id})
+    holiday = Holidays.query.get_or_404(holiday_id)
+
+    db.session.delete(holiday)
     db.session.commit()
 
     return jsonify({
@@ -1654,6 +1676,8 @@ def list_projects():
 
     return jsonify(data)
 
+    start_date = data.get("start_date")
+    end_date = data.get("end_date")
 
 @app.route('/api/update_project/<int:project_id>', methods=['PUT'])
 def update_project(project_id):
@@ -1809,8 +1833,10 @@ def api_leave_reports():
 
 
 
+    return jsonify(response), 200
 
-#########################Admin-END###################
+
+######################### Admin-END ###################
 
 # ==========================
 # client_reports 3rd option
